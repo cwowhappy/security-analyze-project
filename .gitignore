@@ -1,27 +1,63 @@
-# Backend
+# ============================================
+# Backend (Gradle + Spring Boot)
+# ============================================
 backend/.gradle/
 backend/build/
 backend/out/
+backend/*.jar
+!backend/gradle/wrapper/gradle-wrapper.jar
+backend/gradle-app.setting
+backend/.gradletasknamecache
 
-# Frontend
+# ============================================
+# Frontend (Node.js + Vue + Vite)
+# ============================================
 frontend/node_modules/
 frontend/dist/
 frontend/.cache/
+frontend/.vite/
+frontend/*.local
+frontend/coverage/
+frontend/*.tsbuildinfo
 
-# Python
-collector/__pycache__/
-collector/*.py[cod]
-collector/*$py.class
-.collector/venv/
+# ============================================
+# Collector (Python + Poetry)
+# ============================================
+# Byte-compiled / optimized / DLL files
+collector/**/__pycache__/
+collector/**/*.py[cod]
+collector/**/*$py.class
+
+# Virtual environments
+collector/venv/
+collector/.venv/
+
+# Environment variables
 collector/.env
 
+# Distribution / packaging
+collector/**/*.egg-info/
+collector/**/.pytest_cache/
+collector/**/.mypy_cache/
+collector/**/.ruff_cache/
+
+# ============================================
+# Data (Docker volumes)
+# ============================================
+data/postgres/
+
+# ============================================
 # IDE
+# ============================================
 .idea/
 *.iml
 .vscode/
 *.swp
 *.swo
+*~
 
+# ============================================
 # OS
+# ============================================
 .DS_Store
 Thumbs.db

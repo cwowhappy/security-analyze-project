@@ -1,5 +1,7 @@
 import logging
-from typing import List, Dict, Any
+import re
+import time
+from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +13,7 @@ class AkshareSource:
         try:
             import akshare as ak
             self._ak = ak
+            self._stock_list: List[Dict[str, Any]] = []
             logger.info("Akshare source initialized")
         except ImportError:
             logger.error("akshare not installed")
@@ -19,8 +22,66 @@ class AkshareSource:
     def get_stock_list(self) -> List[Dict[str, Any]]:
         """获取 A 股上市公司列表"""
         df = self._ak.stock_info_a_code_name()
-        return df.to_dict(orient="records")
+        self._stock_list = df.to_dict(orient="records")
+        return self._stock_list
 
-    def get_financial_report(self, stock_code: str) -> List[Dict[str, Any]]:
-        """获取个股财务报告，预留接口"""
-        raise NotImplementedError("TODO: implement financial report fetch")
+    def get_company_detail(self, stock_code: str) -> Optional[Dict[str, Any]]:
+        """获取单公司详细信息（使用 stock_profile_cninfo，字段更完整）"""
+        try:
+            df = self._ak.stock_profile_cninfo(symbol=stock_code)
+            if df.empty:
+                logger.warning(f"Empty profile for {stock_code}")
+                return None
+            # 返回第一行数据作为字典
+            return df.iloc[0].to_dict()
+        except Exception as e:
+            logger.warning(f"Failed to get company profile for {stock_code}: {e}")
+            return None
+
+    def get_company_info_em(self, stock_code: str) -> Optional[Dict[str, Any]]:
+        """备用：使用 stock_individual_info_em 获取基本信息"""
+        try:
+            df = self._ak.stock_individual_info_em(symbol=stock_code)
+            info = dict(zip(df['item'].tolist(), df['value'].tolist()))
+            return info
+        except Exception as e:
+            logger.warning(f"Failed to get company info EM for {stock_code}: {e}")
+            return None
+
+    def search_by_name(self, query: str) -> List[Dict[str, Any]]:
+        """根据公司名称或股票代码搜索匹配的上市公司
+
+        Args:
+            query: 用户输入的关键词，可以是股票代码或公司名称（支持模糊匹配）
+
+        Returns:
+            匹配的公司列表，每个元素包含 code 和 name
+        """
+        query = query.strip()
+        if not query:
+            return []
+
+        # 如果是纯数字且为 6 位，直接当作股票代码返回，无需拉取全量列表
+        if re.match(r"^\d{6}$", query):
+            return [{"code": query, "name": ""}]
+
+        if not self._stock_list:
+            self.get_stock_list()
+
+        results = []
+        query_lower = query.lower()
+
+        for item in self._stock_list:
+            code = item.get("code", "")
+            name = item.get("name", "")
+
+            # 精确匹配股票代码
+            if query == code:
+                results.insert(0, item)  # 精确匹配放最前面
+                continue
+
+            # 模糊匹配公司名称（包含子串即可）
+            if query_lower in name.lower():
+                results.append(item)
+
+        return results
