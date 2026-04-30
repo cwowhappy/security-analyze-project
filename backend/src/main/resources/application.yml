@@ -1,0 +1,18 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: security-analyze
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:stock_analysis}
+    username: ${DB_USER:stock}
+    password: ${DB_PASSWORD:stock}
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: never
+
+logging:
+  level:
+    com.example.stock: DEBUG

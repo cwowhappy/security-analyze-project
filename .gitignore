@@ -1,0 +1,27 @@
+# Backend
+backend/.gradle/
+backend/build/
+backend/out/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.cache/
+
+# Python
+collector/__pycache__/
+collector/*.py[cod]
+collector/*$py.class
+.collector/venv/
+collector/.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
