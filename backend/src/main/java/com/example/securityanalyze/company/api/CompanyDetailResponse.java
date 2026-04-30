@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class CompanyDetailResponse {
@@ -23,4 +24,6 @@ public class CompanyDetailResponse {
     private LocalDate listingDate;
 
     private String market;
+
+    private List<SecurityItem> securities;
 }

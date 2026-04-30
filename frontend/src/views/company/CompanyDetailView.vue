@@ -85,14 +85,40 @@ onMounted(() => {
       </ElTabPane>
 
       <ElTabPane label="关联证券" name="securities">
-        <ElCard v-if="company">
-          <template #header>
-            <span>{{ company.stockName }} ({{ company.stockCode }})</span>
-          </template>
-          <div>市场板块：{{ company.market || '-' }}</div>
-          <div style="margin-top: 8px">上市日期：{{ company.listingDate || '-' }}</div>
-        </ElCard>
-        <div v-else class="empty-tip">暂无数据</div>
+        <div v-if="company?.securities && company.securities.length > 0" class="securities-grid">
+          <ElCard
+            v-for="sec in company.securities"
+            :key="sec.stockCode"
+            class="security-card"
+            shadow="hover"
+          >
+            <template #header>
+              <div class="security-header">
+                <span class="security-name">{{ sec.stockName }}</span>
+                <span class="security-code">({{ sec.stockCode }})</span>
+              </div>
+            </template>
+            <div class="security-info">
+              <div class="security-row">
+                <span class="security-label">市场板块</span>
+                <span class="security-value">{{ sec.market || '-' }}</span>
+              </div>
+              <div class="security-row">
+                <span class="security-label">证券类型</span>
+                <span class="security-value">{{ sec.securityType || '-' }}</span>
+              </div>
+              <div class="security-row">
+                <span class="security-label">上市日期</span>
+                <span class="security-value">{{ sec.listingDate || '-' }}</span>
+              </div>
+              <div class="security-row">
+                <span class="security-label">上市状态</span>
+                <span class="security-value">{{ sec.listingStatus || '-' }}</span>
+              </div>
+            </div>
+          </ElCard>
+        </div>
+        <div v-else class="empty-tip">暂无关联证券数据</div>
       </ElTabPane>
 
       <ElTabPane label="财务报告" name="finance">
@@ -137,6 +163,54 @@ onMounted(() => {
 
 .info-item .value {
   font-weight: 500;
+}
+
+.securities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.security-card {
+  cursor: default;
+}
+
+.security-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.security-name {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.security-code {
+  color: #666;
+  font-size: 14px;
+}
+
+.security-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.security-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.security-label {
+  color: #666;
+  font-size: 14px;
+}
+
+.security-value {
+  font-weight: 500;
+  font-size: 14px;
 }
 
 .empty-tip {

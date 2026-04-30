@@ -27,8 +27,23 @@ class PostgresDB:
                 cur.execute(sql, params)
                 conn.commit()
 
+    def execute_returning(self, sql: str, params=None):
+        """执行 INSERT/UPDATE 并返回结果（如 RETURNING id）"""
+        with self.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                result = cur.fetchone()
+                conn.commit()
+                return result
+
     def fetchall(self, sql: str, params=None):
         with self.get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(sql, params)
                 return cur.fetchall()
+
+    def fetchone(self, sql: str, params=None):
+        with self.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                return cur.fetchone()

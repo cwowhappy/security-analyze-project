@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class CompanyTask:
-    """采集公司基本信息任务"""
+    """采集公司基本信息任务（支持公司-证券分离模型）"""
 
     def __init__(self, db: PostgresDB, source: AkshareSource):
         self.db = db
@@ -19,21 +19,15 @@ class CompanyTask:
         """全量采集所有 A 股公司信息"""
         logger.info("Starting full company task...")
 
-        # 1. 获取 A 股列表
         stock_list = self.source.get_stock_list()
         logger.info(f"Fetched {len(stock_list)} stocks from source")
 
         self._process_stocks(stock_list)
 
     def run_by_name(self, query: str):
-        """按公司名称或股票代码采集指定公司信息
-
-        Args:
-            query: 用户输入的公司名称或股票代码
-        """
+        """按公司名称或股票代码采集指定公司信息"""
         logger.info(f"Starting company task by query: {query}")
 
-        # 1. 搜索匹配的公司
         matches = self.source.search_by_name(query)
 
         if not matches:
@@ -72,7 +66,6 @@ class CompanyTask:
             try:
                 detail = self.source.get_company_detail(stock_code)
 
-                # 如果主数据源失败，尝试备用数据源
                 em_detail = None
                 if not detail:
                     logger.warning(
@@ -80,7 +73,6 @@ class CompanyTask:
                     )
                     em_detail = self.source.get_company_info_em(stock_code)
 
-                # 如果 stock_name 为空（如直接传入代码场景），尝试从详情补全
                 if not stock_name:
                     if detail:
                         stock_name = detail.get("A股简称", "") or detail.get(
@@ -89,13 +81,16 @@ class CompanyTask:
                     elif em_detail:
                         stock_name = em_detail.get("股票简称", "")
 
-                company = self._parse_company(stock_code, stock_name, detail, em_detail)
-                result = self._upsert_company(company)
+                company_entity = self._parse_company_entity(stock_name, detail, em_detail)
+                securities = self._parse_securities(stock_code, stock_name, detail, em_detail)
 
-                if result == "insert":
-                    created += 1
-                elif result == "update":
-                    updated += 1
+                company_id = self._upsert_company(company_entity)
+                if company_id:
+                    result = self._upsert_securities(company_id, securities)
+                    if result == "insert":
+                        created += 1
+                    elif result == "update":
+                        updated += 1
 
             except Exception as e:
                 logger.error(f"Failed to process {stock_code} {stock_name}: {e}")
@@ -105,113 +100,234 @@ class CompanyTask:
             f"Company task finished. Total: {total}, Created: {created}, Updated: {updated}, Failed: {failed}"
         )
 
-    def _parse_company(
+    def _parse_company_entity(
+        self,
+        stock_name: str,
+        detail: Optional[Dict[str, Any]],
+        em_detail: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """解析公司法人实体信息（公司级属性）"""
+        if detail:
+            company_name = detail.get("公司名称", "") or stock_name
+            short_name = detail.get("A股简称", "") or stock_name
+            industry = detail.get("所属行业", "")
+            region = self._extract_region(detail.get("注册地址", ""))
+            establish_date = self._parse_date(detail.get("成立日期", ""))
+            registered_capital = self._parse_capital(detail.get("注册资金", ""))
+        elif em_detail:
+            company_name = em_detail.get("股票简称", "") or stock_name
+            short_name = em_detail.get("股票简称", "") or stock_name
+            industry = em_detail.get("行业", "")
+            region = None
+            establish_date = None
+            registered_capital = None
+        else:
+            company_name = stock_name
+            short_name = stock_name
+            industry = ""
+            region = None
+            establish_date = None
+            registered_capital = None
+
+        return {
+            "company_name": company_name or stock_name,
+            "short_name": short_name or stock_name,
+            "industry": industry or None,
+            "region": region,
+            "establish_date": establish_date,
+            "registered_capital": registered_capital,
+        }
+
+    def _parse_securities(
         self,
         stock_code: str,
         stock_name: str,
         detail: Optional[Dict[str, Any]],
         em_detail: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        """解析 akshare 数据为统一格式
+    ) -> List[Dict[str, Any]]:
+        """解析证券信息列表（支持多市场证券）
 
-        Args:
-            detail: stock_profile_cninfo 返回的数据（主数据源）
-            em_detail: stock_individual_info_em 返回的数据（备用数据源）
+        从 akshare stock_profile_cninfo 返回的多代码字段中提取：
+        A股代码、A股简称、B股代码、B股简称、H股代码、H股简称
         """
+        securities = []
+
         if detail:
             # 主数据源：stock_profile_cninfo
-            # 字段：公司名称, 英文名称, 曾用简称, A股代码, A股简称, B股代码, B股简称,
-            #       H股代码, H股简称, 入选指数, 所属市场, 所属行业, 法人代表, 注册资金,
-            #       成立日期, 上市日期, 官方网站, 电子邮箱, 联系电话, 传真,
-            #       注册地址, 办公地址, 邮政编码, 主营业务, 经营范围, 机构简介
-            industry = detail.get("所属行业", "")
-            region = self._extract_region(detail.get("注册地址", ""))
-            establish_date = self._parse_date(detail.get("成立日期", ""))
-            registered_capital = self._parse_capital(detail.get("注册资金", ""))
-            listing_date = self._parse_date(detail.get("上市日期", ""))
-            stock_name = stock_name or detail.get("A股简称", "") or detail.get("公司名称", "")
+            # 解析 A 股（主传入代码）
+            a_code = detail.get("A股代码", "") or stock_code
+            a_name = detail.get("A股简称", "") or stock_name
+            a_listing = self._parse_date(detail.get("上市日期", ""))
+            a_market = self._infer_market(a_code)
+            securities.append({
+                "stock_code": a_code,
+                "stock_name": a_name,
+                "market": a_market,
+                "security_type": "A股",
+                "listing_date": a_listing,
+                "listing_status": "listed",
+            })
+
+            # 解析 B 股
+            b_code = detail.get("B股代码", "")
+            b_name = detail.get("B股简称", "")
+            if b_code and str(b_code).strip():
+                securities.append({
+                    "stock_code": str(b_code).strip(),
+                    "stock_name": b_name or f"{stock_name}B",
+                    "market": self._infer_market(str(b_code).strip()),
+                    "security_type": "B股",
+                    "listing_date": a_listing,  # B股通常与A股同日上市
+                    "listing_status": "listed",
+                })
+
+            # 解析 H 股
+            h_code = detail.get("H股代码", "")
+            h_name = detail.get("H股简称", "")
+            if h_code and str(h_code).strip():
+                securities.append({
+                    "stock_code": str(h_code).strip(),
+                    "stock_name": h_name or f"{stock_name}H",
+                    "market": "HK",
+                    "security_type": "H股",
+                    "listing_date": None,  # H股上市日期可能不同
+                    "listing_status": "listed",
+                })
+
         elif em_detail:
             # 备用数据源：stock_individual_info_em
-            # 字段：股票代码, 股票简称, 总股本, 流通股, 行业, 总市值, 流通市值, 上市时间, 最新
-            industry = em_detail.get("行业", "")
-            region = None
-            establish_date = None
-            registered_capital = None
             listing_date = self._parse_date(em_detail.get("上市时间", ""))
-            stock_name = stock_name or em_detail.get("股票简称", "")
+            market = self._infer_market(stock_code)
+            securities.append({
+                "stock_code": stock_code,
+                "stock_name": stock_name or em_detail.get("股票简称", ""),
+                "market": market,
+                "security_type": "A股",
+                "listing_date": listing_date,
+                "listing_status": "listed",
+            })
         else:
-            industry = ""
-            region = None
-            establish_date = None
-            registered_capital = None
-            listing_date = None
+            # 无任何详情数据
+            market = self._infer_market(stock_code)
+            securities.append({
+                "stock_code": stock_code,
+                "stock_name": stock_name or stock_code,
+                "market": market,
+                "security_type": "A股",
+                "listing_date": None,
+                "listing_status": "listed",
+            })
 
-        market = self._infer_market(stock_code)
+        return securities
 
-        return {
-            "stock_code": stock_code,
-            "stock_name": stock_name or stock_code,
-            "industry": industry or None,
-            "region": region,
-            "establish_date": establish_date,
-            "registered_capital": registered_capital,
-            "listing_date": listing_date,
-            "market": market,
-        }
-
-    def _upsert_company(self, company: Dict[str, Any]) -> str:
-        """UPSERT 公司数据，返回 insert / update"""
-        # 先查询是否存在
-        existing = self.db.fetchall(
-            "SELECT id FROM company WHERE stock_code = %s",
-            (company["stock_code"],),
+    def _upsert_company(self, company: Dict[str, Any]) -> Optional[int]:
+        """UPSERT 公司数据，返回 company_id"""
+        # 先按 company_name 精确匹配查找
+        existing = self.db.fetchone(
+            "SELECT id FROM company WHERE company_name = %s",
+            (company["company_name"],),
         )
 
         if existing:
+            company_id = existing[0]
             # UPDATE
             sql = """
                 UPDATE company
-                SET stock_name = %s, industry = %s, region = %s,
-                    establish_date = %s, registered_capital = %s,
-                    listing_date = %s, market = %s, updated_at = NOW()
-                WHERE stock_code = %s
+                SET short_name = %s, industry = %s, region = %s,
+                    establish_date = %s, registered_capital = %s, updated_at = NOW()
+                WHERE id = %s
             """
             self.db.execute(
                 sql,
                 (
-                    company["stock_name"],
+                    company["short_name"],
                     company["industry"],
                     company["region"],
                     company["establish_date"],
                     company["registered_capital"],
-                    company["listing_date"],
-                    company["market"],
-                    company["stock_code"],
+                    company_id,
                 ),
             )
-            return "update"
+            return company_id
         else:
             # INSERT
             sql = """
                 INSERT INTO company
-                (stock_code, stock_name, industry, region, establish_date,
-                 registered_capital, listing_date, market, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                (company_name, short_name, industry, region, establish_date,
+                 registered_capital, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())
+                RETURNING id
             """
-            self.db.execute(
+            result = self.db.execute_returning(
                 sql,
                 (
-                    company["stock_code"],
-                    company["stock_name"],
+                    company["company_name"],
+                    company["short_name"],
                     company["industry"],
                     company["region"],
                     company["establish_date"],
                     company["registered_capital"],
-                    company["listing_date"],
-                    company["market"],
                 ),
             )
-            return "insert"
+            return result[0] if result else None
+
+    def _upsert_securities(self, company_id: int, securities: List[Dict[str, Any]]) -> str:
+        """UPSERT 证券数据，返回 insert / update / skip"""
+        if not securities:
+            return "skip"
+
+        total_result = "skip"
+        for sec in securities:
+            existing = self.db.fetchone(
+                "SELECT id FROM company_security WHERE stock_code = %s",
+                (sec["stock_code"],),
+            )
+
+            if existing:
+                # UPDATE
+                sql = """
+                    UPDATE company_security
+                    SET company_id = %s, stock_name = %s, market = %s,
+                        security_type = %s, listing_date = %s, listing_status = %s,
+                        updated_at = NOW()
+                    WHERE stock_code = %s
+                """
+                self.db.execute(
+                    sql,
+                    (
+                        company_id,
+                        sec["stock_name"],
+                        sec["market"],
+                        sec["security_type"],
+                        sec["listing_date"],
+                        sec["listing_status"],
+                        sec["stock_code"],
+                    ),
+                )
+                total_result = "update"
+            else:
+                # INSERT
+                sql = """
+                    INSERT INTO company_security
+                    (company_id, stock_code, stock_name, market, security_type,
+                     listing_date, listing_status, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                """
+                self.db.execute(
+                    sql,
+                    (
+                        company_id,
+                        sec["stock_code"],
+                        sec["stock_name"],
+                        sec["market"],
+                        sec["security_type"],
+                        sec["listing_date"],
+                        sec["listing_status"],
+                    ),
+                )
+                total_result = "insert"
+
+        return total_result
 
     @staticmethod
     def _extract_region(address: str) -> Optional[str]:
@@ -220,7 +336,6 @@ class CompanyTask:
             return None
         import re
 
-        # 匹配省级：省、自治区、直辖市
         match = re.search(r"^(.*?省|.*?自治区|北京|天津|上海|重庆)", address)
         if match:
             return match.group(1)
@@ -244,7 +359,6 @@ class CompanyTask:
             return None
         import re
 
-        # 提取数字部分
         match = re.search(r"([\d,.]+)", str(capital))
         if match:
             try:
@@ -256,13 +370,16 @@ class CompanyTask:
     @staticmethod
     def _infer_market(stock_code: str) -> Optional[str]:
         """根据股票代码推断市场板块"""
-        if not stock_code or len(stock_code) != 6:
+        if not stock_code:
             return None
-        first = stock_code[0]
-        if first in ("6",):
+        code = str(stock_code).strip()
+        if len(code) != 6:
+            return "HK" if len(code) == 5 else None
+        first = code[0]
+        if first in ("6", "9"):
             return "SH"
-        elif first in ("0", "3"):
+        elif first in ("0", "2", "3"):
             return "SZ"
-        elif first in ("4", "8", "9"):
+        elif first in ("4", "8"):
             return "BJ"
         return None

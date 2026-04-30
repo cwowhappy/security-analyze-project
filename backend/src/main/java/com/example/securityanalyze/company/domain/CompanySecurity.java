@@ -4,30 +4,29 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-@Table("company")
-public class Company {
+@Table("company_security")
+public class CompanySecurity {
 
     @Id
     private Long id;
 
-    private String unifiedCode;
+    private Long companyId;
 
-    private String companyName;
+    private String stockCode;
 
-    private String shortName;
+    private String stockName;
 
-    private String industry;
+    private String market;
 
-    private String region;
+    private String securityType;
 
-    private LocalDate establishDate;
+    private LocalDate listingDate;
 
-    private BigDecimal registeredCapital;
+    private String listingStatus;
 
     private LocalDateTime createdAt;
 

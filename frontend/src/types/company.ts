@@ -1,3 +1,12 @@
+export interface SecurityItem {
+  stockCode: string
+  stockName: string
+  market?: string
+  securityType?: string
+  listingDate?: string
+  listingStatus?: string
+}
+
 export interface Company {
   stockCode: string
   stockName: string
@@ -10,6 +19,7 @@ export interface Company {
 export interface CompanyDetail extends Company {
   establishDate?: string
   registeredCapital?: number
+  securities?: SecurityItem[]
 }
 
 export interface CompanyListParams {

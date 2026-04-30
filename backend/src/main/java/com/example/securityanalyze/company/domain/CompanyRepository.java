@@ -9,5 +9,7 @@ public interface CompanyRepository {
 
     long countByKeyword(String keyword);
 
+    Optional<Company> findById(Long id);
+
     Optional<Company> findByStockCode(String stockCode);
 }

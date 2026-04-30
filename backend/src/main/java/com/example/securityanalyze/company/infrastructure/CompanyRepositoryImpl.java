@@ -23,9 +23,8 @@ public class CompanyRepositoryImpl implements CompanyRepository {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     private static final String SELECT_SQL = """
-            SELECT id, stock_code, stock_name, industry, region,
-                   establish_date, registered_capital, listing_date, market,
-                   created_at, updated_at
+            SELECT id, unified_code, company_name, short_name, industry, region,
+                   establish_date, registered_capital, created_at, updated_at
             FROM company
             """;
 
@@ -34,8 +33,9 @@ public class CompanyRepositoryImpl implements CompanyRepository {
         public Company mapRow(ResultSet rs, int rowNum) throws SQLException {
             Company company = new Company();
             company.setId(rs.getLong("id"));
-            company.setStockCode(rs.getString("stock_code"));
-            company.setStockName(rs.getString("stock_name"));
+            company.setUnifiedCode(rs.getString("unified_code"));
+            company.setCompanyName(rs.getString("company_name"));
+            company.setShortName(rs.getString("short_name"));
             company.setIndustry(rs.getString("industry"));
             company.setRegion(rs.getString("region"));
 
@@ -46,13 +46,6 @@ public class CompanyRepositoryImpl implements CompanyRepository {
 
             BigDecimal capital = rs.getBigDecimal("registered_capital");
             company.setRegisteredCapital(capital);
-
-            java.sql.Date listingDate = rs.getDate("listing_date");
-            if (listingDate != null) {
-                company.setListingDate(listingDate.toLocalDate());
-            }
-
-            company.setMarket(rs.getString("market"));
 
             java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
             if (createdAt != null) {
@@ -76,11 +69,11 @@ public class CompanyRepositoryImpl implements CompanyRepository {
         params.addValue("limit", limit);
 
         if (keyword != null && !keyword.isBlank()) {
-            sql += " WHERE stock_code ILIKE :keyword OR stock_name ILIKE :keyword";
+            sql += " WHERE company_name ILIKE :keyword OR short_name ILIKE :keyword";
             params.addValue("keyword", "%" + keyword.trim() + "%");
         }
 
-        sql += " ORDER BY stock_code ASC LIMIT :limit OFFSET :offset";
+        sql += " ORDER BY id ASC LIMIT :limit OFFSET :offset";
 
         return jdbcTemplate.query(sql, params, ROW_MAPPER);
     }
@@ -91,7 +84,7 @@ public class CompanyRepositoryImpl implements CompanyRepository {
         MapSqlParameterSource params = new MapSqlParameterSource();
 
         if (keyword != null && !keyword.isBlank()) {
-            sql += " WHERE stock_code ILIKE :keyword OR stock_name ILIKE :keyword";
+            sql += " WHERE company_name ILIKE :keyword OR short_name ILIKE :keyword";
             params.addValue("keyword", "%" + keyword.trim() + "%");
         }
 
@@ -100,8 +93,23 @@ public class CompanyRepositoryImpl implements CompanyRepository {
     }
 
     @Override
+    public Optional<Company> findById(Long id) {
+        String sql = SELECT_SQL + " WHERE id = :id";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("id", id);
+
+        List<Company> results = jdbcTemplate.query(sql, params, ROW_MAPPER);
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+    }
+
+    @Override
     public Optional<Company> findByStockCode(String stockCode) {
-        String sql = SELECT_SQL + " WHERE stock_code = :stockCode";
+        // 通过 company_security 关联查询
+        String sql = SELECT_SQL + """
+                WHERE id = (
+                    SELECT company_id FROM company_security WHERE stock_code = :stockCode
+                )
+                """;
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("stockCode", stockCode);
 
