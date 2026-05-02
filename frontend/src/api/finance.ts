@@ -1,12 +1,5 @@
-import axios from 'axios'
+import { client } from './axios'
 import type { FinanceReportList, FinanceReportDetail, IndicatorResponse } from '@/types/finance'
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
-
-const client = axios.create({
-  baseURL: API_BASE,
-  timeout: 15000,
-})
 
 export async function getFinanceReports(stockCode: string): Promise<FinanceReportList> {
   const response = await client.get(`/finance/${stockCode}/reports`)

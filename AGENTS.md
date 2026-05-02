@@ -223,12 +223,12 @@ python main.py --company 600519
 
 ## 安全注意事项
 
-- **当前阶段**：Spring Security 配置为开发友好模式：CSRF 关闭、`/api/**` 全部放行、仅保留 CORS 限制（允许 `localhost:3000`）。
+- **当前阶段**：已启用 JWT + RBAC 认证。`/api/auth/**` 和 `/api/admin/auth/**` 公开，其余 `/api/**` 需认证，`/api/admin/**` 仅 ADMIN 可访问。CSRF 关闭，CORS 允许 `localhost:3000`。
 - 生产环境部署前必须：
-  - 启用认证与授权（计划使用 JWT + RBAC）。
-  - 关闭 `/api/**` 的匿名访问。
+  - 修改默认管理员密码 `admin123`。
   - 配置合理的 CORS 白名单，禁止通配符 `*`。
   - 数据库密码应使用强密码，并通过环境变量或密钥管理服务注入，禁止硬编码。
+  - JWT Secret 应使用强随机字符串，通过环境变量注入，禁止硬编码。
 - 采集模块直接操作数据库，不暴露 HTTP 服务，因此无接口攻击面，但需注意 akshare 数据源返回数据的异常处理，避免脏数据入库。
 
 ---
@@ -281,7 +281,7 @@ python main.py --company 600519
 
 ## 给 AI 助手的快速参考
 
-- 新增后端模块时，复制 `company/` 的 package 结构（api / application / domain / infrastructure）。
+- 新增后端模块时，复制 `company/` 或 `auth/` / `admin/` / `user/` 的 package 结构（api / application / domain / infrastructure）。
 - 新增前端页面时，在 `src/views/` 创建组件，在 `src/router/index.ts` 注册路由，在 `src/api/` 添加接口封装。
 - 新增采集任务时，在 `collector/tasks/` 创建 Task 类，在 `collector/sources/` 如需新增数据源则继承风格保持一致。
 - 修改数据库 schema 时，新建 `Vx__description.sql` 脚本，并同步更新 Java Entity 与 Python 的 upsert 逻辑。

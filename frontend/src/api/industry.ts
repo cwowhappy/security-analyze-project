@@ -1,16 +1,9 @@
-import axios from 'axios'
+import { client } from './axios'
 import type {
   IndustryListResponse,
   IndustryTrendResponse,
 } from '@/types/industry'
 import type { CompanyListResponse } from '@/types/company'
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
-
-const client = axios.create({
-  baseURL: API_BASE,
-  timeout: 15000,
-})
 
 export async function getIndustryList(): Promise<IndustryListResponse> {
   const response = await client.get('/industries')
