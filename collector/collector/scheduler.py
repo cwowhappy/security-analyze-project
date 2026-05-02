@@ -7,6 +7,7 @@ from typing import Optional
 from collector.db.postgres import PostgresDB
 from collector.sources.akshare_source import AkshareSource
 from collector.tasks.company_task import CompanyTask
+from collector.monitor import Monitor
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 class Scheduler:
     def __init__(self, db: PostgresDB):
         self.db = db
+        self.monitor = Monitor(db)
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._setup_jobs()
@@ -28,7 +30,7 @@ class Scheduler:
         logger.info("Running scheduled company task...")
         try:
             source = AkshareSource()
-            task = CompanyTask(db=self.db, source=source)
+            task = CompanyTask(db=self.db, source=source, monitor=self.monitor)
             task.run()
         except Exception as e:
             logger.error(f"Company task failed: {e}")
@@ -47,7 +49,7 @@ class Scheduler:
         logger.info(f"Manual trigger: company task by name '{query}'")
         try:
             source = AkshareSource()
-            task = CompanyTask(db=self.db, source=source)
+            task = CompanyTask(db=self.db, source=source, monitor=self.monitor)
             task.run_by_name(query)
         except Exception as e:
             logger.error(f"Company task by name failed: {e}")

@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { ElCard } from 'element-plus'
-import { OfficeBuilding } from '@element-plus/icons-vue'
+import { OfficeBuilding, DataLine } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
 function goToCompanies() {
   router.push('/companies')
+}
+
+function goToCollectorDashboard() {
+  router.push('/dashboard/collector')
 }
 </script>
 
@@ -19,6 +23,13 @@ function goToCompanies() {
           <OfficeBuilding class="icon" />
           <div class="title">公司信息</div>
           <div class="desc">查询上市公司基本信息、行业分类、上市资料</div>
+        </div>
+      </ElCard>
+      <ElCard class="entry-card" shadow="hover" @click="goToCollectorDashboard">
+        <div class="card-content">
+          <DataLine class="icon" />
+          <div class="title">采集监控</div>
+          <div class="desc">查看数据采集任务执行状态与数据量概览</div>
         </div>
       </ElCard>
     </div>

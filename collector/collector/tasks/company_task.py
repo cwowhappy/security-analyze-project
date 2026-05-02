@@ -4,6 +4,7 @@ from datetime import datetime
 
 from collector.db.postgres import PostgresDB
 from collector.sources.akshare_source import AkshareSource
+from collector.monitor import Monitor
 
 logger = logging.getLogger(__name__)
 
@@ -11,44 +12,76 @@ logger = logging.getLogger(__name__)
 class CompanyTask:
     """采集公司基本信息任务（支持公司-证券分离模型）"""
 
-    def __init__(self, db: PostgresDB, source: AkshareSource):
+    def __init__(self, db: PostgresDB, source: AkshareSource, monitor: Monitor = None):
         self.db = db
         self.source = source
+        self.monitor = monitor
 
     def run(self):
         """全量采集所有 A 股公司信息"""
         logger.info("Starting full company task...")
+        task_id = None
+        if self.monitor:
+            task_id = self.monitor.log_task_start("sync_company", "company")
 
-        stock_list = self.source.get_stock_list()
-        logger.info(f"Fetched {len(stock_list)} stocks from source")
+        try:
+            stock_list = self.source.get_stock_list()
+            logger.info(f"Fetched {len(stock_list)} stocks from source")
 
-        self._process_stocks(stock_list)
+            created, updated, failed = self._process_stocks(stock_list)
+            rows = created + updated
+
+            if self.monitor:
+                status = "success" if failed == 0 else "failed"
+                self.monitor.log_task_end(task_id, status, rows)
+                self.monitor.upsert_data_status("company", rows, task_id)
+        except Exception as e:
+            logger.error(f"Company task failed: {e}")
+            if self.monitor:
+                self.monitor.log_task_end(task_id, "failed", 0, str(e))
+            raise
 
     def run_by_name(self, query: str):
         """按公司名称或股票代码采集指定公司信息"""
         logger.info(f"Starting company task by query: {query}")
+        task_id = None
+        if self.monitor:
+            task_id = self.monitor.log_task_start("sync_company_by_name", "company")
 
-        matches = self.source.search_by_name(query)
+        try:
+            matches = self.source.search_by_name(query)
 
-        if not matches:
-            logger.warning(f"No company found matching '{query}'")
-            return
+            if not matches:
+                logger.warning(f"No company found matching '{query}'")
+                if self.monitor:
+                    self.monitor.log_task_end(task_id, "success", 0)
+                return
 
-        if len(matches) == 1:
-            match = matches[0]
-            logger.info(f"Found exact match: {match.get('name', '')} ({match['code']})")
-        else:
-            logger.info(f"Found {len(matches)} matches for '{query}':")
-            for i, m in enumerate(matches[:10], 1):
-                logger.info(f"  {i}. {m.get('name', '')} ({m['code']})")
-            if len(matches) > 10:
-                logger.info(f"  ... and {len(matches) - 10} more")
-            logger.info("Collecting all matched companies...")
+            if len(matches) == 1:
+                match = matches[0]
+                logger.info(f"Found exact match: {match.get('name', '')} ({match['code']})")
+            else:
+                logger.info(f"Found {len(matches)} matches for '{query}':")
+                for i, m in enumerate(matches[:10], 1):
+                    logger.info(f"  {i}. {m.get('name', '')} ({m['code']})")
+                if len(matches) > 10:
+                    logger.info(f"  ... and {len(matches) - 10} more")
+                logger.info("Collecting all matched companies...")
 
-        self._process_stocks(matches)
+            created, updated, failed = self._process_stocks(matches)
+            rows = created + updated
 
-    def _process_stocks(self, stock_list: List[Dict[str, Any]]):
-        """处理公司列表：采集详情并写入数据库"""
+            if self.monitor:
+                status = "success" if failed == 0 else "failed"
+                self.monitor.log_task_end(task_id, status, rows)
+        except Exception as e:
+            logger.error(f"Company task by name failed: {e}")
+            if self.monitor:
+                self.monitor.log_task_end(task_id, "failed", 0, str(e))
+            raise
+
+    def _process_stocks(self, stock_list: List[Dict[str, Any]]) -> tuple[int, int, int]:
+        """处理公司列表：采集详情并写入数据库，返回 (created, updated, failed)"""
         total = len(stock_list)
         created = 0
         updated = 0
@@ -99,6 +132,7 @@ class CompanyTask:
         logger.info(
             f"Company task finished. Total: {total}, Created: {created}, Updated: {updated}, Failed: {failed}"
         )
+        return created, updated, failed
 
     def _parse_company_entity(
         self,

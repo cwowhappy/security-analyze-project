@@ -18,6 +18,11 @@ const router = createRouter({
       name: 'company-detail',
       component: () => import('@/views/company/CompanyDetailView.vue'),
     },
+    {
+      path: '/dashboard/collector',
+      name: 'collector-dashboard',
+      component: () => import('@/views/collector/CollectorDashboardView.vue'),
+    },
   ],
 })
 

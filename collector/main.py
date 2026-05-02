@@ -16,6 +16,9 @@ from dotenv import load_dotenv
 
 from collector.scheduler import Scheduler
 from collector.db.postgres import PostgresDB
+from collector.sources.akshare_source import AkshareSource
+from collector.tasks.finance_task import FinanceTask
+from collector.monitor import Monitor
 
 load_dotenv()
 
@@ -68,6 +71,24 @@ def run_company_task_by_name(query: str):
     scheduler.run_company_task_by_name(query)
 
 
+def run_finance_task():
+    logger.info("Manual trigger: full finance task")
+    db = create_db()
+    source = AkshareSource()
+    monitor = Monitor(db)
+    task = FinanceTask(db=db, source=source, monitor=monitor)
+    task.run()
+
+
+def run_finance_task_by_stock(stock_code: str):
+    logger.info(f"Manual trigger: finance task by stock '{stock_code}'")
+    db = create_db()
+    source = AkshareSource()
+    monitor = Monitor(db)
+    task = FinanceTask(db=db, source=source, monitor=monitor)
+    task.run_by_stock_code(stock_code)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Security Analyze Collector")
     parser.add_argument(
@@ -81,9 +102,24 @@ def main():
         metavar="QUERY",
         help="按公司名称或股票代码采集指定公司（例如：--company 贵州茅台 或 --company 600519）",
     )
+    parser.add_argument(
+        "--run-finance",
+        action="store_true",
+        help="手动执行一次全量财务报告采集任务",
+    )
+    parser.add_argument(
+        "--finance",
+        type=str,
+        metavar="STOCK_CODE",
+        help="按股票代码采集指定公司财务报告（例如：--finance 600519）",
+    )
     args = parser.parse_args()
 
-    if args.company:
+    if args.finance:
+        run_finance_task_by_stock(args.finance)
+    elif args.run_finance:
+        run_finance_task()
+    elif args.company:
         run_company_task_by_name(args.company)
     elif args.run_company:
         run_company_task()

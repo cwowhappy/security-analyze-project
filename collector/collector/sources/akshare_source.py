@@ -3,6 +3,8 @@ import re
 import time
 from typing import List, Dict, Any, Optional
 
+import pandas as pd
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,6 +50,42 @@ class AkshareSource:
             logger.warning(f"Failed to get company info EM for {stock_code}: {e}")
             return None
 
+    def get_balance_sheet(self, symbol: str) -> Optional[pd.DataFrame]:
+        """获取资产负债表（东方财富，按报告期）"""
+        try:
+            df = self._ak.stock_balance_sheet_by_report_em(symbol=symbol)
+            if df is None or df.empty:
+                logger.warning(f"Empty balance sheet for {symbol}")
+                return None
+            return df
+        except Exception as e:
+            logger.warning(f"Failed to get balance sheet for {symbol}: {e}")
+            return None
+
+    def get_profit_sheet(self, symbol: str) -> Optional[pd.DataFrame]:
+        """获取利润表（东方财富，按报告期）"""
+        try:
+            df = self._ak.stock_profit_sheet_by_report_em(symbol=symbol)
+            if df is None or df.empty:
+                logger.warning(f"Empty profit sheet for {symbol}")
+                return None
+            return df
+        except Exception as e:
+            logger.warning(f"Failed to get profit sheet for {symbol}: {e}")
+            return None
+
+    def get_cash_flow_sheet(self, symbol: str) -> Optional[pd.DataFrame]:
+        """获取现金流量表（东方财富，按报告期）"""
+        try:
+            df = self._ak.stock_cash_flow_sheet_by_report_em(symbol=symbol)
+            if df is None or df.empty:
+                logger.warning(f"Empty cash flow sheet for {symbol}")
+                return None
+            return df
+        except Exception as e:
+            logger.warning(f"Failed to get cash flow sheet for {symbol}: {e}")
+            return None
+
     def search_by_name(self, query: str) -> List[Dict[str, Any]]:
         """根据公司名称或股票代码搜索匹配的上市公司
 
@@ -85,3 +123,20 @@ class AkshareSource:
                 results.append(item)
 
         return results
+
+    @staticmethod
+    def infer_market(stock_code: str) -> str:
+        """根据股票代码推断市场板块前缀（用于 akshare 接口）"""
+        if not stock_code:
+            return "SH"
+        code = str(stock_code).strip()
+        if len(code) != 6:
+            return "SH"
+        first = code[0]
+        if first in ("6", "9"):
+            return "SH"
+        elif first in ("0", "2", "3"):
+            return "SZ"
+        elif first in ("4", "8"):
+            return "BJ"
+        return "SH"

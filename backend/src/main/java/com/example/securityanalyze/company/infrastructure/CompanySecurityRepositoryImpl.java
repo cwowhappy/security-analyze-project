@@ -86,8 +86,9 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
         params.addValue("limit", limit);
 
         if (keyword != null && !keyword.isBlank()) {
-            sql += " WHERE stock_code ILIKE :keyword OR stock_name ILIKE :keyword";
-            params.addValue("keyword", "%" + keyword.trim() + "%");
+            sql += " WHERE stock_code = :keyword OR stock_name ILIKE :prefix";
+            params.addValue("keyword", keyword.trim());
+            params.addValue("prefix", keyword.trim() + "%");
         }
 
         sql += " ORDER BY stock_code ASC LIMIT :limit OFFSET :offset";
@@ -101,8 +102,9 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
         MapSqlParameterSource params = new MapSqlParameterSource();
 
         if (keyword != null && !keyword.isBlank()) {
-            sql += " WHERE stock_code ILIKE :keyword OR stock_name ILIKE :keyword";
-            params.addValue("keyword", "%" + keyword.trim() + "%");
+            sql += " WHERE stock_code = :keyword OR stock_name ILIKE :prefix";
+            params.addValue("keyword", keyword.trim());
+            params.addValue("prefix", keyword.trim() + "%");
         }
 
         Long count = jdbcTemplate.queryForObject(sql, params, Long.class);

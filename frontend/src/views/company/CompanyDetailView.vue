@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElTabs, ElTabPane, ElBreadcrumb, ElBreadcrumbItem, ElMessage, ElCard } from 'element-plus'
 import { getCompanyDetail } from '@/api/company'
 import type { CompanyDetail } from '@/types/company'
+import FinanceReportTab from './finance/FinanceReportTab.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -122,7 +123,7 @@ onMounted(() => {
       </ElTabPane>
 
       <ElTabPane label="财务报告" name="finance">
-        <div class="empty-tip">财务报告模块开发中</div>
+        <FinanceReportTab :stock-code="stockCode" />
       </ElTabPane>
 
       <ElTabPane label="历史变更" name="history">
