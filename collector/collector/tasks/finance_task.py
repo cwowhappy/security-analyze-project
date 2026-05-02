@@ -18,9 +18,16 @@ class FinanceTask:
         self.source = source
         self.monitor = monitor
 
-    def run(self, start_year: Optional[int] = None, end_year: Optional[int] = None, incremental: bool = False):
-        """全量采集所有 A 股公司的财务报告（从 company_security 表读取股票列表）"""
-        logger.info("Starting full finance task...")
+    def run(self, start_year: Optional[int] = None, end_year: Optional[int] = None, incremental: bool = False, batch_size: int = 100):
+        """全量采集所有 A 股公司的财务报告（从 company_security 表读取股票列表）
+
+        Args:
+            start_year: 起始年份
+            end_year: 结束年份
+            incremental: 是否增量采集
+            batch_size: 每批次处理的公司数量，默认100
+        """
+        logger.info(f"Starting full finance task with batch_size={batch_size}...")
         task_id = None
         if self.monitor:
             task_id = self.monitor.log_task_start("sync_finance_report", "finance_report")
@@ -32,16 +39,39 @@ class FinanceTask:
             updated = 0
             failed = 0
 
-            for stock_code in stock_codes:
-                if not stock_code:
-                    continue
-                try:
-                    c, u = self._collect_by_stock_code(stock_code, start_year=start_year, end_year=end_year, incremental=incremental)
-                    created += c
-                    updated += u
-                except Exception as e:
-                    logger.error(f"Failed to collect finance for {stock_code}: {e}")
-                    failed += 1
+            # 按批次处理
+            total_batches = (total + batch_size - 1) // batch_size
+            for batch_idx in range(total_batches):
+                start = batch_idx * batch_size
+                end = min(start + batch_size, total)
+                batch_codes = stock_codes[start:end]
+                batch_num = batch_idx + 1
+
+                logger.info(f"Processing batch {batch_num}/{total_batches} ({start + 1}-{end} / {total})")
+                batch_created = 0
+                batch_updated = 0
+                batch_failed = 0
+
+                for stock_code in batch_codes:
+                    if not stock_code:
+                        continue
+                    try:
+                        c, u = self._collect_by_stock_code(stock_code, start_year=start_year, end_year=end_year, incremental=incremental)
+                        batch_created += c
+                        batch_updated += u
+                    except Exception as e:
+                        logger.error(f"Failed to collect finance for {stock_code}: {e}")
+                        batch_failed += 1
+
+                created += batch_created
+                updated += batch_updated
+                failed += batch_failed
+
+                logger.info(
+                    f"Batch {batch_num}/{total_batches} finished. "
+                    f"Created: {batch_created}, Updated: {batch_updated}, Failed: {batch_failed}. "
+                    f"Total progress: {end}/{total}"
+                )
 
             rows = created + updated
             if self.monitor:

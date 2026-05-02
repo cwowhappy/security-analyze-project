@@ -7,7 +7,8 @@
     python main.py --run-company            # 手动执行一次全量公司信息采集
     python main.py --company 贵州茅台       # 按公司名称采集
     python main.py --company 600519         # 按股票代码采集
-    python main.py --run-finance            # 手动执行一次全量财务报告采集
+    python main.py --run-finance            # 手动执行一次全量财务报告采集（默认每批100家）
+    python main.py --run-finance --finance-batch-size 50   # 每批50家
     python main.py --finance 600519         # 按股票代码采集指定公司财务报告
     python main.py --finance 600519 --finance-start-year 2020 --finance-end-year 2024 --finance-incremental
                                             # 按股票代码+年份范围+增量模式采集
@@ -75,17 +76,18 @@ def run_company_task_by_name(query: str):
     scheduler.run_company_task_by_name(query)
 
 
-def run_finance_task(start_year=None, end_year=None, incremental=False):
+def run_finance_task(start_year=None, end_year=None, incremental=False, batch_size=100):
     logger.info("Manual trigger: full finance task")
     if start_year or end_year:
         logger.info(f"Year range: {start_year or 'all'} - {end_year or 'all'}")
     if incremental:
         logger.info("Incremental mode enabled")
+    logger.info(f"Batch size: {batch_size}")
     db = create_db()
     source = AkshareSource()
     monitor = Monitor(db)
     task = FinanceTask(db=db, source=source, monitor=monitor)
-    task.run(start_year=start_year, end_year=end_year, incremental=incremental)
+    task.run(start_year=start_year, end_year=end_year, incremental=incremental, batch_size=batch_size)
 
 
 def run_finance_task_by_stock(stock_code: str, start_year=None, end_year=None, incremental=False):
@@ -145,6 +147,13 @@ def main():
         action="store_true",
         help="增量模式：仅采集最新报告期之后的新增数据",
     )
+    parser.add_argument(
+        "--finance-batch-size",
+        type=int,
+        default=100,
+        metavar="N",
+        help="全量财务报告采集时的批次大小（默认100，仅与 --run-finance 配合使用）",
+    )
     args = parser.parse_args()
 
     if args.finance:
@@ -159,6 +168,7 @@ def main():
             start_year=args.finance_start_year,
             end_year=args.finance_end_year,
             incremental=args.finance_incremental,
+            batch_size=args.finance_batch_size,
         )
     elif args.company:
         run_company_task_by_name(args.company)
