@@ -22,6 +22,13 @@ function goToIndustries() {
   <div class="home">
     <h1>证券分析系统</h1>
     <div class="card-grid">
+      <ElCard class="entry-card" shadow="hover" @click="goToIndustries">
+        <div class="card-content">
+          <Grid class="icon" />
+          <div class="title">行业信息</div>
+          <div class="desc">按行业分类浏览上市公司，查看行业指数走势</div>
+        </div>
+      </ElCard>
       <ElCard class="entry-card" shadow="hover" @click="goToCompanies">
         <div class="card-content">
           <OfficeBuilding class="icon" />
@@ -34,13 +41,6 @@ function goToIndustries() {
           <DataLine class="icon" />
           <div class="title">采集监控</div>
           <div class="desc">查看数据采集任务执行状态与数据量概览</div>
-        </div>
-      </ElCard>
-      <ElCard class="entry-card" shadow="hover" @click="goToIndustries">
-        <div class="card-content">
-          <Grid class="icon" />
-          <div class="title">行业信息</div>
-          <div class="desc">按行业分类浏览上市公司，查看行业指数走势</div>
         </div>
       </ElCard>
     </div>
