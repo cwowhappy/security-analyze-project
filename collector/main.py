@@ -7,6 +7,10 @@
     python main.py --run-company            # 手动执行一次全量公司信息采集
     python main.py --company 贵州茅台       # 按公司名称采集
     python main.py --company 600519         # 按股票代码采集
+    python main.py --run-finance            # 手动执行一次全量财务报告采集
+    python main.py --finance 600519         # 按股票代码采集指定公司财务报告
+    python main.py --finance 600519 --finance-start-year 2020 --finance-end-year 2024 --finance-incremental
+                                            # 按股票代码+年份范围+增量模式采集
 """
 import argparse
 import os
@@ -71,22 +75,33 @@ def run_company_task_by_name(query: str):
     scheduler.run_company_task_by_name(query)
 
 
-def run_finance_task():
+def run_finance_task(start_year=None, end_year=None, incremental=False):
     logger.info("Manual trigger: full finance task")
+    if start_year or end_year:
+        logger.info(f"Year range: {start_year or 'all'} - {end_year or 'all'}")
+    if incremental:
+        logger.info("Incremental mode enabled")
     db = create_db()
     source = AkshareSource()
     monitor = Monitor(db)
     task = FinanceTask(db=db, source=source, monitor=monitor)
-    task.run()
+    task.run(start_year=start_year, end_year=end_year, incremental=incremental)
 
 
-def run_finance_task_by_stock(stock_code: str):
+def run_finance_task_by_stock(stock_code: str, start_year=None, end_year=None, incremental=False):
     logger.info(f"Manual trigger: finance task by stock '{stock_code}'")
+    if start_year or end_year:
+        logger.info(f"Year range: {start_year or 'all'} - {end_year or 'all'}")
+    if incremental:
+        logger.info("Incremental mode enabled")
     db = create_db()
     source = AkshareSource()
     monitor = Monitor(db)
     task = FinanceTask(db=db, source=source, monitor=monitor)
-    task.run_by_stock_code(stock_code)
+    if start_year is not None or end_year is not None:
+        task.run_by_stock_code_and_years(stock_code, start_year=start_year, end_year=end_year, incremental=incremental)
+    else:
+        task.run_by_stock_code(stock_code, incremental=incremental)
 
 
 def main():
@@ -113,12 +128,38 @@ def main():
         metavar="STOCK_CODE",
         help="按股票代码采集指定公司财务报告（例如：--finance 600519）",
     )
+    parser.add_argument(
+        "--finance-start-year",
+        type=int,
+        metavar="YEAR",
+        help="财务报告采集起始年份（与 --finance 或 --run-finance 配合使用）",
+    )
+    parser.add_argument(
+        "--finance-end-year",
+        type=int,
+        metavar="YEAR",
+        help="财务报告采集结束年份（与 --finance 或 --run-finance 配合使用）",
+    )
+    parser.add_argument(
+        "--finance-incremental",
+        action="store_true",
+        help="增量模式：仅采集最新报告期之后的新增数据",
+    )
     args = parser.parse_args()
 
     if args.finance:
-        run_finance_task_by_stock(args.finance)
+        run_finance_task_by_stock(
+            args.finance,
+            start_year=args.finance_start_year,
+            end_year=args.finance_end_year,
+            incremental=args.finance_incremental,
+        )
     elif args.run_finance:
-        run_finance_task()
+        run_finance_task(
+            start_year=args.finance_start_year,
+            end_year=args.finance_end_year,
+            incremental=args.finance_incremental,
+        )
     elif args.company:
         run_company_task_by_name(args.company)
     elif args.run_company:

@@ -23,6 +23,16 @@ const router = createRouter({
       name: 'collector-dashboard',
       component: () => import('@/views/collector/CollectorDashboardView.vue'),
     },
+    {
+      path: '/industries',
+      name: 'industry-list',
+      component: () => import('@/views/industry/IndustryListView.vue'),
+    },
+    {
+      path: '/industries/:industryName',
+      name: 'industry-detail',
+      component: () => import('@/views/industry/IndustryDetailView.vue'),
+    },
   ],
 })
 

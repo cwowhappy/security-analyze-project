@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElTabs, ElTabPane, ElBreadcrumb, ElBreadcrumbItem, ElMessage, ElCard } from 'element-plus'
+import { ElTabs, ElTabPane, ElBreadcrumb, ElBreadcrumbItem, ElMessage, ElCard, ElLink } from 'element-plus'
 import { getCompanyDetail } from '@/api/company'
 import type { CompanyDetail } from '@/types/company'
 import FinanceReportTab from './finance/FinanceReportTab.vue'
@@ -58,7 +58,14 @@ onMounted(() => {
           </div>
           <div class="info-item">
             <span class="label">所属行业</span>
-            <span class="value">{{ company.industry || '-' }}</span>
+            <ElLink
+              v-if="company.industry"
+              type="primary"
+              @click="router.push(`/industries/${encodeURIComponent(company.industry)}`)"
+            >
+              {{ company.industry }}
+            </ElLink>
+            <span v-else class="value">-</span>
           </div>
           <div class="info-item">
             <span class="label">地区</span>

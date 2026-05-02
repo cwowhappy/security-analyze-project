@@ -50,38 +50,38 @@ class AkshareSource:
             logger.warning(f"Failed to get company info EM for {stock_code}: {e}")
             return None
 
-    def get_balance_sheet(self, symbol: str) -> Optional[pd.DataFrame]:
+    def get_balance_sheet(self, symbol: str, start_year: Optional[int] = None, end_year: Optional[int] = None) -> Optional[pd.DataFrame]:
         """获取资产负债表（东方财富，按报告期）"""
         try:
             df = self._ak.stock_balance_sheet_by_report_em(symbol=symbol)
             if df is None or df.empty:
                 logger.warning(f"Empty balance sheet for {symbol}")
                 return None
-            return df
+            return self._filter_by_year(df, start_year, end_year)
         except Exception as e:
             logger.warning(f"Failed to get balance sheet for {symbol}: {e}")
             return None
 
-    def get_profit_sheet(self, symbol: str) -> Optional[pd.DataFrame]:
+    def get_profit_sheet(self, symbol: str, start_year: Optional[int] = None, end_year: Optional[int] = None) -> Optional[pd.DataFrame]:
         """获取利润表（东方财富，按报告期）"""
         try:
             df = self._ak.stock_profit_sheet_by_report_em(symbol=symbol)
             if df is None or df.empty:
                 logger.warning(f"Empty profit sheet for {symbol}")
                 return None
-            return df
+            return self._filter_by_year(df, start_year, end_year)
         except Exception as e:
             logger.warning(f"Failed to get profit sheet for {symbol}: {e}")
             return None
 
-    def get_cash_flow_sheet(self, symbol: str) -> Optional[pd.DataFrame]:
+    def get_cash_flow_sheet(self, symbol: str, start_year: Optional[int] = None, end_year: Optional[int] = None) -> Optional[pd.DataFrame]:
         """获取现金流量表（东方财富，按报告期）"""
         try:
             df = self._ak.stock_cash_flow_sheet_by_report_em(symbol=symbol)
             if df is None or df.empty:
                 logger.warning(f"Empty cash flow sheet for {symbol}")
                 return None
-            return df
+            return self._filter_by_year(df, start_year, end_year)
         except Exception as e:
             logger.warning(f"Failed to get cash flow sheet for {symbol}: {e}")
             return None
@@ -123,6 +123,36 @@ class AkshareSource:
                 results.append(item)
 
         return results
+
+    @staticmethod
+    def _filter_by_year(df: pd.DataFrame, start_year: Optional[int], end_year: Optional[int]) -> pd.DataFrame:
+        """根据 REPORT_DATE 的年份过滤 DataFrame"""
+        if df is None or df.empty:
+            return df
+        if start_year is None and end_year is None:
+            return df
+        if "REPORT_DATE" not in df.columns:
+            return df
+
+        # 提取年份：兼容 '2024-12-31' 和 '2024-12-31 00:00:00'
+        def _extract_year(val):
+            if val is None or pd.isna(val):
+                return None
+            try:
+                s = str(val).strip()
+                if ' ' in s:
+                    s = s.split(' ')[0]
+                return int(s[:4])
+            except (ValueError, TypeError):
+                return None
+
+        years = df["REPORT_DATE"].apply(_extract_year)
+        mask = pd.Series(True, index=df.index)
+        if start_year is not None:
+            mask = mask & (years >= start_year)
+        if end_year is not None:
+            mask = mask & (years <= end_year)
+        return df[mask].copy()
 
     @staticmethod
     def infer_market(stock_code: str) -> str:
