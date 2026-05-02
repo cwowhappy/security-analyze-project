@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { ElBreadcrumb, ElBreadcrumbItem, ElSelect, ElOption, ElButton, ElMessage } from 'element-plus'
 import { RefreshRight } from '@element-plus/icons-vue'
 import OverviewCards from './OverviewCards.vue'
@@ -90,19 +90,11 @@ const onRefreshIntervalChange = () => {
 const onCardSelect = (dataType: string) => {
   dataTypeFilter.value = dataType
   page.value = 0
-  loadTasks()
 }
 
-const onFilter = (dt?: string, st?: string) => {
-  dataTypeFilter.value = dt || ''
-  statusFilter.value = st || ''
-  page.value = 0
+watch([page, size, dataTypeFilter, statusFilter], () => {
   loadTasks()
-}
-
-watch([page, size], () => {
-  loadTasks()
-})
+}, { deep: true })
 
 onMounted(() => {
   refresh()
@@ -161,7 +153,6 @@ onUnmounted(() => {
         :loading="loading"
         @update:page="page = $event"
         @update:size="size = $event"
-        @filter="onFilter"
       />
     </div>
   </div>

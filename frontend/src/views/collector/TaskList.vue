@@ -23,7 +23,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:page', page: number): void
   (e: 'update:size', size: number): void
-  (e: 'filter', dataType?: string, status?: string): void
 }>()
 
 const dataTypeFilter = defineModel<string>('dataTypeFilter')
@@ -64,9 +63,7 @@ const onSizeChange = (size: number) => {
   emit('update:size', size)
 }
 
-const onFilterChange = () => {
-  emit('filter', dataTypeFilter.value, statusFilter.value)
-}
+
 </script>
 
 <template>
@@ -77,7 +74,7 @@ const onFilterChange = () => {
         placeholder="数据类型"
         clearable
         style="width: 160px"
-        @change="onFilterChange"
+
       >
         <ElOption
           v-for="(label, value) in DATA_TYPE_LABELS"
@@ -91,7 +88,7 @@ const onFilterChange = () => {
         placeholder="状态"
         clearable
         style="width: 120px"
-        @change="onFilterChange"
+
       >
         <ElOption
           v-for="(label, value) in STATUS_LABELS"
