@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElTabs, ElTabPane, ElBreadcrumb, ElBreadcrumbItem, ElMessage, ElCard, ElLink } from 'element-plus'
+import { ElTabs, ElTabPane, ElBreadcrumb, ElBreadcrumbItem, ElMessage, ElCard, ElLink, ElEmpty } from 'element-plus'
 import { getCompanyDetail } from '@/api/company'
 import type { CompanyDetail } from '@/types/company'
 import FinanceReportTab from './finance/FinanceReportTab.vue'
@@ -36,13 +36,13 @@ onMounted(() => {
   <div class="company-detail" v-loading="loading">
     <ElBreadcrumb separator="/">
       <ElBreadcrumbItem :to="{ path: '/' }">首页</ElBreadcrumbItem>
-      <ElBreadcrumbItem :to="{ path: '/companies' }">公司列表</ElBreadcrumbItem>
+      <ElBreadcrumbItem :to="{ path: '/companies' }">公司信息</ElBreadcrumbItem>
       <ElBreadcrumbItem>{{ company?.stockName || stockCode }}</ElBreadcrumbItem>
     </ElBreadcrumb>
 
-    <h2 style="margin-top: 16px">
+    <h2 class="page-title">
       {{ company?.stockName || stockCode }}
-      <span v-if="company?.stockCode" class="stock-code">({{ company.stockCode }})</span>
+      <span v-if="company?.stockCode" class="subtitle">({{ company.stockCode }})</span>
     </h2>
 
     <ElTabs v-model="activeTab" style="margin-top: 16px">
@@ -126,7 +126,7 @@ onMounted(() => {
             </div>
           </ElCard>
         </div>
-        <div v-else class="empty-tip">暂无关联证券数据</div>
+        <ElEmpty v-else description="暂无关联证券数据" />
       </ElTabPane>
 
       <ElTabPane label="财务报告" name="finance">
@@ -134,7 +134,7 @@ onMounted(() => {
       </ElTabPane>
 
       <ElTabPane label="历史变更" name="history">
-        <div class="empty-tip">历史变更记录开发中</div>
+        <ElEmpty description="历史变更记录开发中" />
       </ElTabPane>
     </ElTabs>
   </div>
@@ -145,10 +145,18 @@ onMounted(() => {
   padding: 24px;
 }
 
-.stock-code {
-  font-size: 16px;
-  color: #666;
+.page-title {
+  font-size: 24px;
+  font-weight: 500;
+  color: #303133;
+  margin: 16px 0 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #909399;
   font-weight: normal;
+  margin-left: 8px;
 }
 
 .info-grid {
@@ -219,11 +227,5 @@ onMounted(() => {
 .security-value {
   font-weight: 500;
   font-size: 14px;
-}
-
-.empty-tip {
-  color: #999;
-  padding: 40px 0;
-  text-align: center;
 }
 </style>

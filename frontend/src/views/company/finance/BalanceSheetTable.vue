@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ElTable, ElTableColumn } from 'element-plus'
+import { ElTable, ElTableColumn, ElEmpty } from 'element-plus'
 
 const props = defineProps<{
   data?: Record<string, any>
@@ -49,14 +49,6 @@ function formatValue(val: any): string {
         </template>
       </ElTableColumn>
     </ElTable>
-    <div v-else class="empty-tip">暂无资产负债表数据</div>
+    <ElEmpty v-else description="暂无资产负债表数据" />
   </div>
 </template>
-
-<style scoped>
-.empty-tip {
-  color: #999;
-  padding: 40px 0;
-  text-align: center;
-}
-</style>

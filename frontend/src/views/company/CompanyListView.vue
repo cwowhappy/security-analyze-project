@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import {
   ElAutocomplete,
   ElButton,
+  ElBreadcrumb,
+  ElBreadcrumbItem,
   ElTable,
   ElTableColumn,
   ElPagination,
@@ -105,34 +107,38 @@ function handleClear() {
 </script>
 
 <template>
-  <div class="company-search" :class="{ 'has-result': hasSearched }">
-    <div class="search-container">
-      <h2 v-if="!hasSearched" class="search-title">公司信息搜索</h2>
-      <div class="search-box">
-        <ElAutocomplete
-          v-model="keyword"
-          :fetch-suggestions="fetchSuggestions"
-          placeholder="输入股票代码或公司名称"
-          :prefix-icon="Search"
-          clearable
-          class="search-input"
-          :highlight-first-item="false"
-          @select="handleSelect"
-          @keyup.enter="handleKeyEnter"
-          @clear="handleClear"
-        >
-          <template #default="{ item }">
-            <div class="suggest-item">
-              <span class="suggest-code">{{ item.stockCode }}</span>
-              <span class="suggest-name">{{ item.stockName }}</span>
-              <span v-if="item.market" class="suggest-market">[{{ item.market }}]</span>
-            </div>
-          </template>
-        </ElAutocomplete>
-        <ElButton type="primary" :icon="Search" class="search-btn" @click="handleKeyEnter">
-          搜索
-        </ElButton>
-      </div>
+  <div class="company-search">
+    <ElBreadcrumb separator="/">
+      <ElBreadcrumbItem :to="{ path: '/' }">首页</ElBreadcrumbItem>
+      <ElBreadcrumbItem>公司信息</ElBreadcrumbItem>
+    </ElBreadcrumb>
+
+    <h2 class="page-title">公司信息搜索</h2>
+
+    <div class="search-box">
+      <ElAutocomplete
+        v-model="keyword"
+        :fetch-suggestions="fetchSuggestions"
+        placeholder="输入股票代码或公司名称"
+        :prefix-icon="Search"
+        clearable
+        class="search-input"
+        :highlight-first-item="false"
+        @select="handleSelect"
+        @keyup.enter="handleKeyEnter"
+        @clear="handleClear"
+      >
+        <template #default="{ item }">
+          <div class="suggest-item">
+            <span class="suggest-code">{{ item.stockCode }}</span>
+            <span class="suggest-name">{{ item.stockName }}</span>
+            <span v-if="item.market" class="suggest-market">[{{ item.market }}]</span>
+          </div>
+        </template>
+      </ElAutocomplete>
+      <ElButton type="primary" :icon="Search" class="search-btn" @click="handleKeyEnter">
+        搜索
+      </ElButton>
     </div>
 
     <div v-if="hasSearched" class="result-section">
@@ -170,49 +176,20 @@ function handleClear() {
 
 <style scoped>
 .company-search {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  padding: 40px;
-  transition: all 0.3s ease;
+  padding: 24px;
 }
 
-.company-search:not(.has-result) {
-  justify-content: center;
-  align-items: center;
-}
-
-.company-search.has-result {
-  justify-content: flex-start;
-  align-items: stretch;
-  padding-top: 24px;
-}
-
-.search-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 680px;
-  transition: all 0.3s ease;
-}
-
-.has-result .search-container {
-  align-items: flex-start;
-  max-width: 100%;
-}
-
-.search-title {
-  font-size: 28px;
+.page-title {
+  font-size: 24px;
   font-weight: 500;
-  color: #333;
-  margin-bottom: 24px;
+  color: #303133;
+  margin: 16px 0 20px;
 }
 
 .search-box {
   display: flex;
   gap: 12px;
-  width: 100%;
+  max-width: 680px;
 }
 
 .search-input {
@@ -261,7 +238,6 @@ function handleClear() {
 
 .result-section {
   margin-top: 24px;
-  width: 100%;
 }
 
 .pagination {

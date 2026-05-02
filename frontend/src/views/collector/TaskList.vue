@@ -102,7 +102,13 @@ const onFilterChange = () => {
       </ElSelect>
     </div>
 
-    <ElTable v-loading="loading" :data="tasks" style="width: 100%">
+    <ElTable
+      v-loading="loading"
+      :data="tasks"
+      stripe
+      highlight-current-row
+      style="width: 100%"
+    >
       <ElTableColumn prop="taskName" label="任务名称" min-width="180" />
       <ElTableColumn prop="taskType" label="数据类型" width="120">
         <template #default="{ row }">
@@ -147,6 +153,7 @@ const onFilterChange = () => {
       :total="total"
       :page-sizes="[10, 20, 50]"
       layout="total, sizes, prev, pager, next"
+      background
       @current-change="onPageChange"
       @size-change="onSizeChange"
       class="pagination"

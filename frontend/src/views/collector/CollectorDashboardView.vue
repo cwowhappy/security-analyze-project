@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { ElPageHeader, ElSelect, ElOption, ElMessage } from 'element-plus'
+import { ElBreadcrumb, ElBreadcrumbItem, ElSelect, ElOption, ElButton, ElMessage } from 'element-plus'
 import { RefreshRight } from '@element-plus/icons-vue'
 import OverviewCards from './OverviewCards.vue'
 import TaskList from './TaskList.vue'
@@ -116,8 +116,13 @@ onUnmounted(() => {
 
 <template>
   <div class="dashboard">
+    <ElBreadcrumb separator="/">
+      <ElBreadcrumbItem :to="{ path: '/' }">首页</ElBreadcrumbItem>
+      <ElBreadcrumbItem>采集监控</ElBreadcrumbItem>
+    </ElBreadcrumb>
+
     <div class="header">
-      <ElPageHeader title="数据采集监控" />
+      <h2 class="page-title">数据采集监控</h2>
       <div class="controls">
         <ElSelect
           v-model="refreshInterval"
@@ -129,7 +134,7 @@ onUnmounted(() => {
           <ElOption :value="300" label="5分钟刷新" />
           <ElOption :value="0" label="手动刷新" />
         </ElSelect>
-        <el-button
+        <ElButton
           v-if="refreshInterval === 0"
           :icon="RefreshRight"
           circle
@@ -166,11 +171,17 @@ onUnmounted(() => {
 .dashboard {
   padding: 24px;
 }
+.page-title {
+  font-size: 24px;
+  font-weight: 500;
+  color: #303133;
+  margin: 0;
+}
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin: 16px 0 24px;
 }
 .controls {
   display: flex;

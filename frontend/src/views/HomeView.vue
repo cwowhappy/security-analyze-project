@@ -49,7 +49,7 @@ function goToIndustries() {
 
 <style scoped>
 .home {
-  padding: 40px;
+  padding: 24px;
 }
 
 .card-grid {

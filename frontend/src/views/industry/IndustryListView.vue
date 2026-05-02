@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElCard, ElMessage } from 'element-plus'
+import { ElCard, ElBreadcrumb, ElBreadcrumbItem, ElMessage } from 'element-plus'
 import { Grid } from '@element-plus/icons-vue'
 import { getIndustryList } from '@/api/industry'
 import type { IndustryListItem } from '@/types/industry'
@@ -34,8 +34,15 @@ onMounted(() => {
 
 <template>
   <div class="industry-list" v-loading="loading">
-    <h2>行业信息</h2>
-    <p class="subtitle">共 {{ industries.length }} 个行业分类</p>
+    <ElBreadcrumb separator="/">
+      <ElBreadcrumbItem :to="{ path: '/' }">首页</ElBreadcrumbItem>
+      <ElBreadcrumbItem>行业信息</ElBreadcrumbItem>
+    </ElBreadcrumb>
+
+    <h2 class="page-title">
+      行业信息
+      <span class="subtitle">共 {{ industries.length }} 个行业分类</span>
+    </h2>
 
     <div class="card-grid">
       <ElCard
@@ -59,9 +66,17 @@ onMounted(() => {
 .industry-list {
   padding: 24px;
 }
+.page-title {
+  font-size: 24px;
+  font-weight: 500;
+  color: #303133;
+  margin: 16px 0 20px;
+}
 .subtitle {
-  color: #666;
-  margin-bottom: 20px;
+  font-size: 14px;
+  color: #909399;
+  font-weight: normal;
+  margin-left: 8px;
 }
 .card-grid {
   display: grid;
