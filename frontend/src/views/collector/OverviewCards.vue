@@ -8,6 +8,20 @@ const props = defineProps<{
   items: CollectorOverviewItem[]
 }>()
 
+const orderMap: Record<string, number> = {
+  company: 0,
+  security: 1,
+  finance_report: 2,
+}
+
+const sortedItems = computed(() => {
+  return [...props.items].sort((a, b) => {
+    const orderA = orderMap[a.dataType] ?? 999
+    const orderB = orderMap[b.dataType] ?? 999
+    return orderA - orderB
+  })
+})
+
 const emit = defineEmits<{
   (e: 'select', dataType: string): void
 }>()
@@ -48,7 +62,7 @@ const formatTime = (time?: string) => {
 
 <template>
   <ElRow :gutter="16">
-    <ElCol :xs="24" :sm="12" :md="8" v-for="item in items" :key="item.dataType">
+    <ElCol :xs="24" :sm="12" :md="8" v-for="item in sortedItems" :key="item.dataType">
       <ElCard
         class="overview-card"
         shadow="hover"
