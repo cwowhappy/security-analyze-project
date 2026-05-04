@@ -41,6 +41,9 @@ collector/**/.pytest_cache/
 collector/**/.mypy_cache/
 collector/**/.ruff_cache/
 
+# Logs
+collector/**/*.log
+
 # ============================================
 # Data (Docker volumes)
 # ============================================

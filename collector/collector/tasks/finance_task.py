@@ -1,5 +1,7 @@
+import json
 import logging
-from typing import List, Dict, Any, Optional
+import uuid
+from typing import List, Dict, Any, Optional, Set
 from datetime import datetime
 import pandas as pd
 
@@ -11,14 +13,21 @@ logger = logging.getLogger(__name__)
 
 
 class FinanceTask:
-    """采集财务报告数据任务"""
+    """采集财务报告数据任务（支持 Session 级故障恢复）"""
 
     def __init__(self, db: PostgresDB, source: AkshareSource, monitor: Monitor = None):
         self.db = db
         self.source = source
         self.monitor = monitor
 
-    def run(self, start_year: Optional[int] = None, end_year: Optional[int] = None, incremental: bool = False, batch_size: int = 100):
+    def run(
+        self,
+        start_year: Optional[int] = None,
+        end_year: Optional[int] = None,
+        incremental: bool = False,
+        batch_size: int = 100,
+        session_id: Optional[str] = None,
+    ):
         """全量采集所有 A 股公司的财务报告（从 company_security 表读取股票列表）
 
         Args:
@@ -26,70 +35,139 @@ class FinanceTask:
             end_year: 结束年份
             incremental: 是否增量采集
             batch_size: 每批次处理的公司数量，默认100
+            session_id: 恢复用的 Session ID。为 None 时创建新 Session；不为 None 时从断点恢复
         """
-        logger.info(f"Starting full finance task with batch_size={batch_size}...")
-        task_id = None
-        if self.monitor:
-            task_id = self.monitor.log_task_start("sync_finance_report", "finance_report")
+        # 恢复模式必须提供 monitor
+        if session_id is not None and self.monitor is None:
+            raise ValueError("恢复 session 需要提供 monitor 实例")
 
-        try:
+        task_id = None
+        stock_codes: List[str] = []
+        success_codes: Set[str] = set()
+
+        if session_id is None:
+            # 新 Session：生成 UUID，保存参数快照
+            session_id = str(uuid.uuid4())
             stock_codes = self._get_stock_codes_from_db()
             total = len(stock_codes)
-            created = 0
-            updated = 0
-            failed = 0
-
-            # 按批次处理
-            total_batches = (total + batch_size - 1) // batch_size
-            for batch_idx in range(total_batches):
-                start = batch_idx * batch_size
-                end = min(start + batch_size, total)
-                batch_codes = stock_codes[start:end]
-                batch_num = batch_idx + 1
-
-                logger.info(f"Processing batch {batch_num}/{total_batches} ({start + 1}-{end} / {total})")
-                batch_created = 0
-                batch_updated = 0
-                batch_failed = 0
-
-                for stock_code in batch_codes:
-                    if not stock_code:
-                        continue
-                    try:
-                        c, u = self._collect_by_stock_code(stock_code, start_year=start_year, end_year=end_year, incremental=incremental)
-                        batch_created += c
-                        batch_updated += u
-                    except Exception as e:
-                        logger.error(f"Failed to collect finance for {stock_code}: {e}")
-                        batch_failed += 1
-
-                created += batch_created
-                updated += batch_updated
-                failed += batch_failed
-
-                logger.info(
-                    f"Batch {batch_num}/{total_batches} finished. "
-                    f"Created: {batch_created}, Updated: {batch_updated}, Failed: {batch_failed}. "
-                    f"Total progress: {end}/{total}"
-                )
-
-            rows = created + updated
+            params = {
+                "stock_codes": stock_codes,
+                "start_year": start_year,
+                "end_year": end_year,
+                "incremental": incremental,
+                "batch_size": batch_size,
+            }
+            logger.info(f"创建新 Session {session_id}，共 {total} 只股票，batch_size={batch_size}")
             if self.monitor:
-                status = "success" if failed == 0 else "failed"
-                self.monitor.log_task_end(task_id, status, rows)
-                self.monitor.upsert_data_status("finance_report", rows, task_id)
+                task_id = self.monitor.log_task_start("sync_finance_report", "finance_report", session_id=session_id, params=params)
+        else:
+            # 恢复 Session：读取参数和已完成的进度
+            params = self.monitor.get_session_params(session_id)
+            if params is None:
+                raise ValueError(f"Session {session_id} 不存在或已被清理")
+            stock_codes = params.get("stock_codes")
+            if not stock_codes:
+                stock_codes = self._get_stock_codes_from_db()
+            # 恢复原始参数（用户无需在恢复时重新传入）
+            start_year = params.get("start_year")
+            end_year = params.get("end_year")
+            incremental = params.get("incremental", False)
+            batch_size = params.get("batch_size", 100)
+
+            success_codes = self.monitor.get_session_progress(session_id)
+            total = len(stock_codes)
+            pending_count = total - len(success_codes)
+            logger.info(
+                f"恢复 Session {session_id}，总股票数 {total}，已成功 {len(success_codes)} 家，"
+                f"剩余 {pending_count} 家，batch_size={batch_size}"
+            )
+
+            task_id = self.monitor.get_task_id_by_session(session_id)
+            if task_id:
+                self.monitor.update_task_status(task_id, "running")
+            else:
+                # 若找不到 task_log（理论上不应发生），新建一条
+                task_id = self.monitor.log_task_start("sync_finance_report", "finance_report", session_id=session_id, params=params)
+
+        # 过滤已成功的股票
+        pending_codes = [code for code in stock_codes if code not in success_codes]
+        if not pending_codes:
+            logger.info(f"Session {session_id} 所有股票已处理完成，无需继续")
+            if self.monitor and task_id:
+                self.monitor.log_task_end(task_id, "success", 0)
+            return
+
+        created = 0
+        updated = 0
+        failed = 0
+        total_pending = len(pending_codes)
+
+        # 按批次处理
+        total_batches = (total_pending + batch_size - 1) // batch_size
+        for batch_idx in range(total_batches):
+            start = batch_idx * batch_size
+            end = min(start + batch_size, total_pending)
+            batch_codes = pending_codes[start:end]
+            batch_num = batch_idx + 1
+
+            logger.info(f"Processing batch {batch_num}/{total_batches} ({start + 1}-{end} / {total_pending})")
+            batch_created = 0
+            batch_updated = 0
+            batch_failed = 0
+
+            for stock_code in batch_codes:
+                if not stock_code:
+                    continue
+                stock_created = 0
+                stock_updated = 0
+                stock_status = "success"
+                stock_error = None
+                try:
+                    stock_created, stock_updated = self._collect_by_stock_code(
+                        stock_code, start_year=start_year, end_year=end_year, incremental=incremental
+                    )
+                    batch_created += stock_created
+                    batch_updated += stock_updated
+                except Exception as e:
+                    logger.error(f"Failed to collect finance for {stock_code}: {e}")
+                    batch_failed += 1
+                    stock_status = "failed"
+                    stock_error = str(e)
+
+                # 逐只记录进度
+                if self.monitor:
+                    self.monitor.log_task_progress(
+                        session_id=session_id,
+                        stock_code=stock_code,
+                        status=stock_status,
+                        rows_created=stock_created,
+                        rows_updated=stock_updated,
+                        error_message=stock_error,
+                    )
+
+            created += batch_created
+            updated += batch_updated
+            failed += batch_failed
 
             logger.info(
-                f"Finance task finished. Total stocks: {total}, Created: {created}, Updated: {updated}, Failed: {failed}"
+                f"Batch {batch_num}/{total_batches} finished. "
+                f"Created: {batch_created}, Updated: {batch_updated}, Failed: {batch_failed}. "
+                f"Total progress: {end}/{total_pending}"
             )
-        except Exception as e:
-            logger.error(f"Finance task failed: {e}")
-            if self.monitor:
-                self.monitor.log_task_end(task_id, "failed", 0, str(e))
-            raise
 
-    def run_by_stock_code(self, stock_code: str, incremental: bool = False):
-        """按股票代码采集指定公司的全部财务报告"""
+        rows = created + updated
+        if self.monitor:
+            status = "success" if failed == 0 else "failed"
+            self.monitor.log_task_end(task_id, status, rows)
+            self.monitor.upsert_data_status("finance_report", rows, task_id)
+
+        logger.info(
+            f"Finance task finished. Session: {session_id}, "
+            f"Total stocks: {total_pending}, Created: {created}, Updated: {updated}, Failed: {failed}"
+        )
+
+    def run_by_stock_code(self, stock_code: str, incremental: bool = False) -> tuple[int, int]:
+        """按股票代码采集指定公司的全部财务报告，返回 (created, updated)"""
         logger.info(f"Starting finance task for {stock_code}")
         task_id = None
         if self.monitor:
@@ -101,14 +179,15 @@ class FinanceTask:
             if self.monitor:
                 self.monitor.log_task_end(task_id, "success", rows)
             logger.info(f"Finance task for {stock_code} finished. Created: {created}, Updated: {updated}")
+            return created, updated
         except Exception as e:
             logger.error(f"Failed to collect finance for {stock_code}: {e}")
             if self.monitor:
                 self.monitor.log_task_end(task_id, "failed", 0, str(e))
             raise
 
-    def run_by_stock_code_and_years(self, stock_code: str, start_year: int, end_year: int, incremental: bool = False):
-        """按股票代码和年份范围采集指定公司的财务报告"""
+    def run_by_stock_code_and_years(self, stock_code: str, start_year: int, end_year: int, incremental: bool = False) -> tuple[int, int]:
+        """按股票代码和年份范围采集指定公司的财务报告，返回 (created, updated)"""
         logger.info(f"Starting finance task for {stock_code}, years: {start_year}-{end_year}")
         task_id = None
         if self.monitor:
@@ -120,6 +199,7 @@ class FinanceTask:
             if self.monitor:
                 self.monitor.log_task_end(task_id, "success", rows)
             logger.info(f"Finance task for {stock_code} finished. Created: {created}, Updated: {updated}")
+            return created, updated
         except Exception as e:
             logger.error(f"Failed to collect finance for {stock_code}: {e}")
             if self.monitor:
@@ -177,15 +257,25 @@ class FinanceTask:
         cashflow_df = self.source.get_cash_flow_sheet(symbol, start_year=start_year, end_year=end_year)
 
         if balance_df is None or profit_df is None or cashflow_df is None:
-            logger.warning(f"Incomplete data for {stock_code}, skipping")
+            logger.warning(f"[{stock_code}] 数据不完整（三张表任一返回 None），跳过采集")
+            return 0, 0
+
+        if balance_df.empty or profit_df.empty or cashflow_df.empty:
+            logger.warning(
+                f"[{stock_code}] 某张报表过滤后为空 "
+                f"（balance={len(balance_df)}, profit={len(profit_df)}, cashflow={len(cashflow_df)}），跳过采集"
+            )
             return 0, 0
 
         # 按 report_date 对齐三张表的数据
         reports = self._merge_reports(stock_code, balance_df, profit_df, cashflow_df)
 
         if not reports:
-            logger.info(f"No reports to process for {stock_code}")
+            logger.info(f"[{stock_code}] 无财务报告可处理")
             return 0, 0
+
+        report_dates = [r["report_date"] for r in reports if r.get("report_date")]
+        logger.info(f"[{stock_code}] 从数据源获取 {len(reports)} 条财务报告，报告期: {report_dates}")
 
         # 增量过滤：只保留最新报告期之后的数据
         if incremental:
@@ -195,14 +285,19 @@ class FinanceTask:
                 reports = [r for r in reports if r.get("report_date") and r["report_date"] > latest_date]
                 filtered_count = original_count - len(reports)
                 if filtered_count > 0:
-                    logger.info(f"Incremental mode: filtered {filtered_count} existing reports for {stock_code}, remaining {len(reports)}")
+                    remaining_dates = [r["report_date"] for r in reports if r.get("report_date")]
+                    logger.info(
+                        f"[{stock_code}] 增量模式过滤 {filtered_count} 条已存在报告（latest={latest_date}），"
+                        f"剩余待处理 {len(reports)} 条，报告期: {remaining_dates}"
+                    )
                 if not reports:
-                    logger.info(f"Incremental mode: no new reports for {stock_code}, latest={latest_date}")
+                    logger.info(f"[{stock_code}] 增量模式无新报告，最新报告期={latest_date}")
                     return 0, 0
 
         created = 0
         updated = 0
         max_report_date = None
+        processed_dates = []
         for report in reports:
             try:
                 if incremental:
@@ -217,10 +312,17 @@ class FinanceTask:
 
                 # 记录最大报告日期用于更新同步状态
                 rd = report.get("report_date")
-                if rd and (max_report_date is None or rd > max_report_date):
-                    max_report_date = rd
+                if rd:
+                    processed_dates.append(rd)
+                    if max_report_date is None or rd > max_report_date:
+                        max_report_date = rd
             except Exception as e:
-                logger.error(f"Failed to upsert report {stock_code} {report.get('report_date')}: {e}")
+                logger.error(f"[{stock_code}] 写入财务报告失败，报告期 {report.get('report_date')}: {e}")
+
+        logger.info(
+            f"[{stock_code}] 财务报告采集完成，报告期: {processed_dates}，"
+            f"新建: {created}, 更新: {updated}"
+        )
 
         # 更新同步状态表（以当前数据库中该股票的实际最大报告日期为准）
         if max_report_date:
@@ -247,6 +349,13 @@ class FinanceTask:
         cashflow_df: pd.DataFrame,
     ) -> List[Dict[str, Any]]:
         """将三张报表按 report_date 合并为统一的报告列表"""
+        # 检查必需列
+        required_cols = ["REPORT_DATE", "REPORT_TYPE", "NOTICE_DATE", "CURRENCY"]
+        missing = [c for c in required_cols if c not in balance_df.columns]
+        if missing:
+            logger.warning(f"[{stock_code}] 资产负债表缺少必需列 {missing}，无法合并")
+            return []
+
         # 以资产负债表为基准，按 REPORT_DATE 关联
         merged = balance_df[["REPORT_DATE", "REPORT_TYPE", "NOTICE_DATE", "CURRENCY"]].copy()
         merged["stock_code"] = stock_code
@@ -267,7 +376,14 @@ class FinanceTask:
             cashflow_row = self._find_row_by_date(cashflow_df, row["REPORT_DATE"])
 
             if balance_row is None:
+                logger.warning(f"[{stock_code}] 报告期 {report_date} 在资产负债表中找不到对应行，跳过")
                 continue
+
+            if profit_row is None:
+                logger.warning(f"[{stock_code}] 报告期 {report_date} 在利润表中找不到对应行，利润表相关字段将留空")
+
+            if cashflow_row is None:
+                logger.warning(f"[{stock_code}] 报告期 {report_date} 在现金流量表中找不到对应行，现金流量表相关字段将留空")
 
             report = {
                 "stock_code": stock_code,
@@ -318,7 +434,11 @@ class FinanceTask:
         """在 DataFrame 中查找指定 REPORT_DATE 的行"""
         if df is None or df.empty:
             return None
-        mask = df["REPORT_DATE"] == report_date
+        # 统一转换为标准化日期字符串比较，避免 Timestamp / str / datetime64 类型不一致导致匹配失败
+        target = str(report_date)[:10] if report_date is not None else None
+        if target is None:
+            return None
+        mask = df["REPORT_DATE"].astype(str).str[:10] == target
         rows = df[mask]
         if rows.empty:
             return None
@@ -326,7 +446,9 @@ class FinanceTask:
 
     def _insert_report(self, report: Dict[str, Any]) -> str:
         """直接插入财务报告（跳过查重，用于增量模式），返回 insert"""
-        import json
+        stock_code = report.get("stock_code")
+        report_date = report.get("report_date")
+        logger.debug(f"[{stock_code}] INSERT 财务报告，报告期: {report_date}")
 
         balance_sheet_json = json.dumps(report["balance_sheet"], ensure_ascii=False, default=str) if report.get("balance_sheet") else None
         profit_sheet_json = json.dumps(report["profit_sheet"], ensure_ascii=False, default=str) if report.get("profit_sheet") else None
@@ -373,12 +495,13 @@ class FinanceTask:
 
     def _upsert_report(self, report: Dict[str, Any]) -> str:
         """插入或更新财务报告，返回 insert / update / skip"""
+        stock_code = report.get("stock_code")
+        report_date = report.get("report_date")
+
         existing = self.db.fetchone(
             "SELECT id FROM financial_report WHERE stock_code = %s AND report_date = %s",
-            (report["stock_code"], report["report_date"]),
+            (stock_code, report_date),
         )
-
-        import json
 
         balance_sheet_json = json.dumps(report["balance_sheet"], ensure_ascii=False, default=str) if report.get("balance_sheet") else None
         profit_sheet_json = json.dumps(report["profit_sheet"], ensure_ascii=False, default=str) if report.get("profit_sheet") else None
@@ -386,6 +509,7 @@ class FinanceTask:
 
         if existing:
             # UPDATE
+            logger.debug(f"[{stock_code}] UPDATE 财务报告，报告期: {report_date}")
             sql = """
                 UPDATE financial_report SET
                     report_type = %s, report_year = %s, notice_date = %s, currency = %s,
@@ -421,6 +545,7 @@ class FinanceTask:
             return "update"
         else:
             # INSERT
+            logger.debug(f"[{stock_code}] INSERT 财务报告，报告期: {report_date}")
             sql = """
                 INSERT INTO financial_report (
                     stock_code, report_date, report_type, report_year, notice_date, currency,

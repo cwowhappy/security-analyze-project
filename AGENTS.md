@@ -61,7 +61,7 @@ security-analyze-project/
 │       ├── sources/akshare_source.py   # akshare 数据源封装
 │       └── tasks/               # 采集任务
 │           ├── company_task.py  # 公司信息采集（已实现）
-│           └── finance_task.py  # 财务报告采集（TODO）
+│           └── finance_task.py  # 财务报告采集（已实现，支持 Session 断点续传）
 │
 ├── frontend/                    # Vue 3 前端
 │   ├── package.json
@@ -172,6 +172,15 @@ python main.py --run-company
 # 按公司名称或股票代码采集
 python main.py --company 贵州茅台
 python main.py --company 600519
+
+# 手动执行一次全量财务报告采集（默认每批100家）
+python main.py --run-finance
+
+# 恢复中断的财务报告采集（从断点继续，跳过已成功的股票）
+python main.py --run-finance --finance-session-id <uuid>
+
+# 按股票代码采集指定公司财务报告
+python main.py --finance 600519
 ```
 
 采集模块通过 `.env` 文件或环境变量读取数据库配置，模板见 `collector/.env.example`。
@@ -206,14 +215,15 @@ python main.py --company 600519
 - 使用 `logging` 模块记录日志，格式包含时间、logger 名、级别、消息。
 - 数据源封装在 `sources/` 中，预留多数据源扩展接口（当前仅实现 `AkshareSource`）。
 - 数据库操作封装在 `db/postgres.py`，使用 `psycopg`（版本 3）连接 PostgreSQL。
-- 任务类（如 `CompanyTask`）负责：拉取数据 → 解析清洗 → upsert 到数据库。
+- 任务类（如 `CompanyTask`、`FinanceTask`）负责：拉取数据 → 解析清洗 → upsert 到数据库。
+- `FinanceTask` 支持 **Session 级故障恢复**：全量采集任务启动时自动生成 `session_id`（UUID），逐只股票将处理状态写入 `collector_task_progress`；中断后可通过 `--finance-session-id` 恢复，自动跳过已成功的股票并重试失败的。
 - 日期格式统一为 `YYYY-MM-DD`，注册资本单位为 **万元**。
 
 ---
 
 ## 测试策略
 
-> **当前状态**：测试基础设施已配置，但尚无实际测试代码。新增功能时应补充测试。
+> **当前状态**：测试基础设施已配置，采集模块已补充 `test_finance_task_recovery.py` 验证 Session 断点续传逻辑。新增功能时应补充测试。
 
 - **后端**：Gradle 已配置 `spring-boot-starter-test`、`spring-security-test`、JUnit Platform。请在 `backend/src/test/` 下按 package 镜像结构编写单元测试与集成测试。
 - **前端**：尚未配置测试框架。如需添加，建议引入 Vitest + Vue Test Utils。
