@@ -5,9 +5,9 @@ spring:
   application:
     name: security-analyze
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:security_analyze}
-    username: ${DB_USER:stock}
-    password: ${DB_PASSWORD:stock}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:db-security-analyze}
+    username: ${DB_USER:user_security_analyze}
+    password: ${DB_PASSWORD:Admin@2026#}
     driver-class-name: org.postgresql.Driver
   sql:
     init:

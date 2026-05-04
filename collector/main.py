@@ -39,9 +39,9 @@ def create_db() -> PostgresDB:
     db = PostgresDB(
         host=os.getenv("DB_HOST", "localhost"),
         port=int(os.getenv("DB_PORT", "5432")),
-        database=os.getenv("DB_NAME", "security_analyze"),
-        user=os.getenv("DB_USER", "stock"),
-        password=os.getenv("DB_PASSWORD", "stock"),
+        database=os.getenv("DB_NAME", "db-security-analyze"),
+        user=os.getenv("DB_USER", "user_security_analyze"),
+        password=os.getenv("DB_PASSWORD", "Admin@2026#"),
     )
     return db
 

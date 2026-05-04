@@ -25,7 +25,7 @@
 | 前端 UI | Element Plus + ECharts | Element Plus 2.9, ECharts 5.6 |
 | 前端状态 | Pinia + Vue Router | Pinia 3.0, Vue Router 4.5 |
 | 后端 | Java 21 + Spring Boot 3.5.x + Gradle 9.4 | 使用 Spring Data JDBC（非 JPA） |
-| 数据库 | PostgreSQL 16 | 通过 Docker Compose 启动 |
+| 数据库 | PostgreSQL 16+ | 独立安装部署（不通过 Docker） |
 | 数据采集 | Python 3.11+ + Poetry | 使用 akshare、psycopg、schedule |
 | 安全 | Spring Security | 当前开发阶段对 `/api/**` 全部放行，仅保留 CORS 配置 |
 
@@ -79,8 +79,6 @@ security-analyze-project/
 │               ├── CompanyListView.vue
 │               └── CompanyDetailView.vue
 │
-├── docker-compose.yml           # 仅启动 PostgreSQL 容器
-├── data/postgres/               # PostgreSQL 数据卷（gitignored）
 └── docs/                        # 设计文档与接口契约
     ├── plans/                   # 系统设计文档
     └── wiki/                    # 模块设计、API 契约
@@ -103,12 +101,29 @@ security-analyze-project/
 
 ### 1. 启动数据库（必需）
 
+PostgreSQL 采用**独立部署**，需在宿主机安装并运行 PostgreSQL 服务。
+
 ```bash
-docker-compose up -d postgres
+# macOS (Homebrew)
+brew install postgresql@16
+brew services start postgresql@16
+
+# Linux (systemd)
+sudo systemctl start postgresql
 ```
 
-PostgreSQL 将运行在 `localhost:5432`，数据库 `security_analyze`，用户名/密码 `stock`/`stock`。
-初始化脚本会自动挂载 `backend/src/main/resources/db/migration/` 到容器入口执行。
+数据库运行在 `localhost:5432`。首次部署需手动创建数据库和用户，并按顺序执行初始化脚本：
+
+```bash
+# 创建用户和数据库
+psql -U postgres -c "CREATE USER stock WITH PASSWORD 'stock';"
+psql -U postgres -c "CREATE DATABASE security_analyze OWNER stock;"
+
+# 按顺序执行初始化脚本
+for f in backend/src/main/resources/db/migration/V*.sql; do
+    psql -h localhost -p 5432 -U stock -d security_analyze -f "$f"
+done
+```
 
 ### 2. 后端（backend/）
 
@@ -246,7 +261,7 @@ python main.py --finance 600519
 ## 数据库与迁移
 
 - 初始化脚本位于 `backend/src/main/resources/db/migration/V1__create_company_table.sql`。
-- 当前采用 **手动管理 SQL 脚本** 的方式（Flyway 风格命名），由 Docker Compose 的 `initdb.d` 在容器首次启动时执行。
+- 当前采用 **手动管理 SQL 脚本** 的方式（Flyway 风格命名），需按版本顺序手动执行。
 - 后续如需正式引入 Flyway 或 Liquibase，请在 `build.gradle` 中添加对应依赖。
 
 ### company 表核心字段
@@ -267,15 +282,15 @@ python main.py --finance 600519
 ## 部署说明
 
 - 当前为 **开发阶段单体部署**：
-  - PostgreSQL 通过 Docker Compose 运行。
+  - PostgreSQL 独立安装部署（Homebrew / 系统包管理器）。
   - 前端开发时使用 `npm run dev`。
   - 后端开发时使用 `./gradlew bootRun`。
   - 采集模块按需手动执行或常驻调度器。
 - 生产部署建议：
   - 前端：`npm run build` 产出 `dist/`，通过 Nginx 托管静态资源。
   - 后端：`./gradlew bootJar` 产出可执行 JAR，通过 `java -jar` 运行。
-  - 采集模块：作为独立容器或 cron job 运行。
-  - 数据库：使用托管 PostgreSQL 或独立容器，做好数据卷备份。
+  - 采集模块：作为 cron job 或 systemd 服务运行。
+  - 数据库：使用独立部署的 PostgreSQL 或托管云数据库，做好备份策略。
 
 ---
 
