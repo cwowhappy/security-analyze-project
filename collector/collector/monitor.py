@@ -173,10 +173,4 @@ class Monitor:
             logger.error(f"Failed to update task status for log_id={task_id}: {e}")
 
 
-def _get_task_type(task_name: str) -> str:
-    """根据任务名推断数据类型"""
-    if "company" in task_name.lower():
-        return "company"
-    if "finance" in task_name.lower():
-        return "finance_report"
-    return "unknown"
+

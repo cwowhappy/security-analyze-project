@@ -1,0 +1,6 @@
+Collecting psycopg-pool
+  Downloading psycopg_pool-3.3.1-py3-none-any.whl.metadata (2.8 kB)
+Requirement already satisfied: typing-extensions>=4.6 in /Users/lixiaoyi/.pyenv/versions/ai-agent/lib/python3.11/site-packages (from psycopg-pool) (4.15.0)
+Downloading psycopg_pool-3.3.1-py3-none-any.whl (40 kB)
+Installing collected packages: psycopg-pool
+Successfully installed psycopg-pool-3.3.1

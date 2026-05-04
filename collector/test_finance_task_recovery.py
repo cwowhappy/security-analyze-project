@@ -12,6 +12,7 @@ load_dotenv()
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from collector.config import CollectorConfig
 from collector.db.postgres import PostgresDB
 from collector.tasks.finance_task import FinanceTask
 from collector.monitor import Monitor
@@ -28,15 +29,20 @@ class FinanceTaskRecoveryTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cfg = CollectorConfig.from_env()
+        db_cfg = cfg.db
         cls.db = PostgresDB(
-            host=os.getenv("DB_HOST", "localhost"),
-            port=int(os.getenv("DB_PORT", "5432")),
-            database=os.getenv("DB_NAME", "db-security-analyze"),
-            user=os.getenv("DB_USER", "user_security_analyze"),
-            password=os.getenv("DB_PASSWORD", "Admin@2026#"),
+            host=db_cfg.host,
+            port=db_cfg.port,
+            database=db_cfg.database,
+            user=db_cfg.user,
+            password=db_cfg.password,
+            pool_min_size=cfg.db_pool_min_size,
+            pool_max_size=cfg.db_pool_max_size,
+            pool_max_idle=cfg.db_pool_max_idle,
+            pool_max_lifetime=cfg.db_pool_max_lifetime,
         )
         cls.monitor = Monitor(cls.db)
-        # 清理测试数据
         cls.db.execute("DELETE FROM collector_task_progress WHERE session_id LIKE 'test-%'")
         cls.db.execute("DELETE FROM collector_task_log WHERE session_id LIKE 'test-%'")
 
@@ -51,33 +57,29 @@ class FinanceTaskRecoveryTest(unittest.TestCase):
         source.get_balance_sheet = MagicMock(return_value=None)
         source.get_profit_sheet = MagicMock(return_value=None)
         source.get_cash_flow_sheet = MagicMock(return_value=None)
-        return FinanceTask(db=self.db, source=source, monitor=self.monitor)
+        return FinanceTask(db=self.db, source=source, monitor=self.monitor, batch_concurrent_workers=1)
 
     def test_01_create_session_and_record_progress(self):
         """测试新 Session 创建，并记录逐只股票进度"""
         task = self._create_task()
 
-        # Mock _get_stock_codes_from_db 返回固定列表
         with patch.object(task, '_get_stock_codes_from_db', return_value=['600001', '600002', '600003']):
-            # Mock _collect_by_stock_code：前两只成功，第三只失败
             def mock_collect(stock_code, **kwargs):
                 if stock_code == '600003':
                     raise ValueError("模拟采集失败")
-                return 2, 1  # created, updated
+                return 2, 1
 
             with patch.object(task, '_collect_by_stock_code', side_effect=mock_collect):
                 task.run(batch_size=2)
 
-        # 验证 task_log 中应有 session_id
         row = self.db.fetchone(
             "SELECT session_id, status FROM collector_task_log WHERE task_name = 'sync_finance_report' ORDER BY id DESC"
         )
         self.assertIsNotNone(row)
         session_id = row[0]
         self.assertIsNotNone(session_id)
-        self.assertEqual(row[1], 'failed')  # 因为 600003 失败
+        self.assertEqual(row[1], 'failed')
 
-        # 验证 progress 表
         progress_rows = self.db.fetchall(
             "SELECT stock_code, status, rows_created, rows_updated FROM collector_task_progress WHERE session_id = %s ORDER BY stock_code",
             (session_id,),
@@ -105,18 +107,16 @@ class FinanceTaskRecoveryTest(unittest.TestCase):
             def mock_collect(stock_code, **kwargs):
                 collected_codes.append(stock_code)
                 if stock_code == '600003':
-                    return 1, 0  # 这次成功了
+                    return 1, 0
                 return 2, 1
 
             with patch.object(task, '_collect_by_stock_code', side_effect=mock_collect):
                 task.run(session_id=session_id)
 
-        # 已成功的 600001、600002 不应被再次采集
         self.assertNotIn('600001', collected_codes)
         self.assertNotIn('600002', collected_codes)
         self.assertIn('600003', collected_codes)
 
-        # 验证最终 progress 状态
         progress_rows = self.db.fetchall(
             "SELECT stock_code, status FROM collector_task_progress WHERE session_id = %s ORDER BY stock_code",
             (session_id,),

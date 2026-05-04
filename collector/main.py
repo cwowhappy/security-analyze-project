@@ -13,6 +13,8 @@
     python main.py --finance 600519         # 按股票代码采集指定公司财务报告
     python main.py --finance 600519 --finance-start-year 2020 --finance-end-year 2024 --finance-incremental
                                             # 按股票代码+年份范围+增量模式采集
+    python main.py --scheduler-cron-company "0 9 * * *"   # 启动调度器并注册每日09:00公司采集
+    python main.py --scheduler-cron-finance "0 2 * * 0"   # 启动调度器并注册每周日02:00财务采集
 """
 import argparse
 import os
@@ -20,6 +22,7 @@ import time
 import logging
 from dotenv import load_dotenv
 
+from collector.config import CollectorConfig
 from collector.scheduler import Scheduler
 from collector.db.postgres import PostgresDB
 from collector.sources.akshare_source import AkshareSource
@@ -35,22 +38,34 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def create_db() -> PostgresDB:
-    db = PostgresDB(
-        host=os.getenv("DB_HOST", "localhost"),
-        port=int(os.getenv("DB_PORT", "5432")),
-        database=os.getenv("DB_NAME", "db-security-analyze"),
-        user=os.getenv("DB_USER", "user_security_analyze"),
-        password=os.getenv("DB_PASSWORD", "Admin@2026#"),
+def create_db(cfg=None) -> PostgresDB:
+    if cfg is None:
+        cfg = CollectorConfig.from_env()
+    db_cfg = cfg.db
+    return PostgresDB(
+        host=db_cfg.host,
+        port=db_cfg.port,
+        database=db_cfg.database,
+        user=db_cfg.user,
+        password=db_cfg.password,
+        pool_min_size=cfg.db_pool_min_size,
+        pool_max_size=cfg.db_pool_max_size,
+        pool_max_idle=cfg.db_pool_max_idle,
+        pool_max_lifetime=cfg.db_pool_max_lifetime,
     )
-    return db
 
 
-def run_scheduler():
+def run_scheduler(cron_company: str = None, cron_finance: str = None):
     logger.info("Starting security analyze collector scheduler...")
+    cfg = CollectorConfig.from_env()
+    db = create_db(cfg)
+    scheduler = Scheduler(db=db, db_cfg=cfg.db)
 
-    db = create_db()
-    scheduler = Scheduler(db=db)
+    if cron_company:
+        scheduler.add_company_job(cron_company)
+    if cron_finance:
+        scheduler.add_finance_job(cron_finance)
+
     scheduler.start()
 
     try:
@@ -63,7 +78,6 @@ def run_scheduler():
 
 def run_company_task():
     logger.info("Manual trigger: full company task")
-
     db = create_db()
     scheduler = Scheduler(db=db)
     scheduler.run_company_task_now()
@@ -71,13 +85,13 @@ def run_company_task():
 
 def run_company_task_by_name(query: str):
     logger.info(f"Manual trigger: company task by query '{query}'")
-
     db = create_db()
     scheduler = Scheduler(db=db)
     scheduler.run_company_task_by_name(query)
 
 
 def run_finance_task(start_year=None, end_year=None, incremental=False, batch_size=100, session_id=None):
+    cfg = CollectorConfig.from_env()
     if session_id:
         logger.info(f"Manual trigger: resume finance task with session_id={session_id}")
     else:
@@ -87,23 +101,40 @@ def run_finance_task(start_year=None, end_year=None, incremental=False, batch_si
         if incremental:
             logger.info("Incremental mode enabled")
         logger.info(f"Batch size: {batch_size}")
-    db = create_db()
-    source = AkshareSource()
+    db = create_db(cfg)
+    source = AkshareSource(
+        max_retries=cfg.source_max_retries,
+        retry_delay=cfg.source_retry_delay,
+        retry_backoff=cfg.source_retry_backoff,
+    )
     monitor = Monitor(db)
-    task = FinanceTask(db=db, source=source, monitor=monitor)
+    task = FinanceTask(
+        db=db, source=source, monitor=monitor,
+        max_workers=cfg.finance_max_workers,
+        batch_concurrent_workers=cfg.finance_batch_concurrent_workers,
+    )
     task.run(start_year=start_year, end_year=end_year, incremental=incremental, batch_size=batch_size, session_id=session_id)
 
 
 def run_finance_task_by_stock(stock_code: str, start_year=None, end_year=None, incremental=False):
+    cfg = CollectorConfig.from_env()
     logger.info(f"Manual trigger: finance task by stock '{stock_code}'")
     if start_year or end_year:
         logger.info(f"Year range: {start_year or 'all'} - {end_year or 'all'}")
     if incremental:
         logger.info("Incremental mode enabled")
-    db = create_db()
-    source = AkshareSource()
+    db = create_db(cfg)
+    source = AkshareSource(
+        max_retries=cfg.source_max_retries,
+        retry_delay=cfg.source_retry_delay,
+        retry_backoff=cfg.source_retry_backoff,
+    )
     monitor = Monitor(db)
-    task = FinanceTask(db=db, source=source, monitor=monitor)
+    task = FinanceTask(
+        db=db, source=source, monitor=monitor,
+        max_workers=cfg.finance_max_workers,
+        batch_concurrent_workers=cfg.finance_batch_concurrent_workers,
+    )
     if start_year is not None or end_year is not None:
         task.run_by_stock_code_and_years(stock_code, start_year=start_year, end_year=end_year, incremental=incremental)
     else:
@@ -164,6 +195,18 @@ def main():
         metavar="UUID",
         help="恢复指定的财务报告采集 Session（例如：--finance-session-id a1b2c3d4...）",
     )
+    parser.add_argument(
+        "--scheduler-cron-company",
+        type=str,
+        metavar="CRON",
+        help="启动调度器并注册公司采集定时任务（cron 表达式，例如 '0 9 * * *'）",
+    )
+    parser.add_argument(
+        "--scheduler-cron-finance",
+        type=str,
+        metavar="CRON",
+        help="启动调度器并注册财务采集定时任务（cron 表达式，例如 '0 2 * * 0'）",
+    )
     args = parser.parse_args()
 
     if args.finance:
@@ -188,7 +231,10 @@ def main():
     elif args.run_company:
         run_company_task()
     else:
-        run_scheduler()
+        run_scheduler(
+            cron_company=args.scheduler_cron_company,
+            cron_finance=args.scheduler_cron_finance,
+        )
 
 
 if __name__ == "__main__":

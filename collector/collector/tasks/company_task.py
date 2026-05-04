@@ -1,10 +1,11 @@
 import logging
 from typing import List, Dict, Any, Optional
-from datetime import datetime
 
 from collector.db.postgres import PostgresDB
 from collector.sources.akshare_source import AkshareSource
 from collector.monitor import Monitor
+from collector.utils import parse_date, parse_capital, extract_region, infer_market
+from collector.models import CompanyEntity, SecurityEntity
 
 logger = logging.getLogger(__name__)
 
@@ -139,38 +140,31 @@ class CompanyTask:
         stock_name: str,
         detail: Optional[Dict[str, Any]],
         em_detail: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        """解析公司法人实体信息（公司级属性）"""
+    ) -> CompanyEntity:
+        """解析公司法人实体信息"""
         if detail:
-            company_name = detail.get("公司名称", "") or stock_name
-            short_name = detail.get("A股简称", "") or stock_name
-            industry = detail.get("所属行业", "")
-            region = self._extract_region(detail.get("注册地址", ""))
-            establish_date = self._parse_date(detail.get("成立日期", ""))
-            registered_capital = self._parse_capital(detail.get("注册资金", ""))
+            return CompanyEntity(
+                company_name=detail.get("公司名称", "") or stock_name,
+                short_name=detail.get("A股简称", "") or stock_name,
+                industry=detail.get("所属行业", None),
+                region=extract_region(detail.get("注册地址", "")),
+                establish_date=parse_date(detail.get("成立日期", "")),
+                registered_capital=parse_capital(detail.get("注册资金", "")),
+            )
         elif em_detail:
-            company_name = em_detail.get("股票简称", "") or stock_name
-            short_name = em_detail.get("股票简称", "") or stock_name
-            industry = em_detail.get("行业", "")
-            region = None
-            establish_date = None
-            registered_capital = None
+            return CompanyEntity(
+                company_name=em_detail.get("股票简称", "") or stock_name,
+                short_name=em_detail.get("股票简称", "") or stock_name,
+                industry=em_detail.get("行业", None),
+                region=None,
+                establish_date=None,
+                registered_capital=None,
+            )
         else:
-            company_name = stock_name
-            short_name = stock_name
-            industry = ""
-            region = None
-            establish_date = None
-            registered_capital = None
-
-        return {
-            "company_name": company_name or stock_name,
-            "short_name": short_name or stock_name,
-            "industry": industry or None,
-            "region": region,
-            "establish_date": establish_date,
-            "registered_capital": registered_capital,
-        }
+            return CompanyEntity(
+                company_name=stock_name,
+                short_name=stock_name,
+            )
 
     def _parse_securities(
         self,
@@ -178,113 +172,88 @@ class CompanyTask:
         stock_name: str,
         detail: Optional[Dict[str, Any]],
         em_detail: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
-        """解析证券信息列表（支持多市场证券）
-
-        从 akshare stock_profile_cninfo 返回的多代码字段中提取：
-        A股代码、A股简称、B股代码、B股简称、H股代码、H股简称
-        """
-        securities = []
+    ) -> List[SecurityEntity]:
+        """解析证券信息列表（支持多市场证券）"""
+        securities: List[SecurityEntity] = []
 
         if detail:
-            # 主数据源：stock_profile_cninfo
-            # 解析 A 股（主传入代码）
             a_code = detail.get("A股代码", "") or stock_code
             a_name = detail.get("A股简称", "") or stock_name
-            a_listing = self._parse_date(detail.get("上市日期", ""))
-            a_market = self._infer_market(a_code)
-            securities.append({
-                "stock_code": a_code,
-                "stock_name": a_name,
-                "market": a_market,
-                "security_type": "A股",
-                "listing_date": a_listing,
-                "listing_status": "listed",
-            })
+            a_listing = parse_date(detail.get("上市日期", ""))
+            a_market = infer_market(a_code) or "SH"
+            securities.append(SecurityEntity(
+                stock_code=a_code,
+                stock_name=a_name,
+                market=a_market,
+                security_type="A股",
+                listing_date=a_listing,
+                listing_status="listed",
+            ))
 
-            # 解析 B 股
             b_code = detail.get("B股代码", "")
             b_name = detail.get("B股简称", "")
             if b_code and str(b_code).strip():
-                securities.append({
-                    "stock_code": str(b_code).strip(),
-                    "stock_name": b_name or f"{stock_name}B",
-                    "market": self._infer_market(str(b_code).strip()),
-                    "security_type": "B股",
-                    "listing_date": a_listing,  # B股通常与A股同日上市
-                    "listing_status": "listed",
-                })
+                securities.append(SecurityEntity(
+                    stock_code=str(b_code).strip(),
+                    stock_name=b_name or f"{stock_name}B",
+                    market=infer_market(str(b_code).strip()) or "SZ",
+                    security_type="B股",
+                    listing_date=a_listing,
+                    listing_status="listed",
+                ))
 
-            # 解析 H 股
             h_code = detail.get("H股代码", "")
             h_name = detail.get("H股简称", "")
             if h_code and str(h_code).strip():
-                securities.append({
-                    "stock_code": str(h_code).strip(),
-                    "stock_name": h_name or f"{stock_name}H",
-                    "market": "HK",
-                    "security_type": "H股",
-                    "listing_date": None,  # H股上市日期可能不同
-                    "listing_status": "listed",
-                })
+                securities.append(SecurityEntity(
+                    stock_code=str(h_code).strip(),
+                    stock_name=h_name or f"{stock_name}H",
+                    market="HK",
+                    security_type="H股",
+                    listing_status="listed",
+                ))
 
         elif em_detail:
-            # 备用数据源：stock_individual_info_em
-            listing_date = self._parse_date(em_detail.get("上市时间", ""))
-            market = self._infer_market(stock_code)
-            securities.append({
-                "stock_code": stock_code,
-                "stock_name": stock_name or em_detail.get("股票简称", ""),
-                "market": market,
-                "security_type": "A股",
-                "listing_date": listing_date,
-                "listing_status": "listed",
-            })
+            listing_date = parse_date(em_detail.get("上市时间", ""))
+            market = infer_market(stock_code) or "SH"
+            securities.append(SecurityEntity(
+                stock_code=stock_code,
+                stock_name=stock_name or em_detail.get("股票简称", ""),
+                market=market,
+                security_type="A股",
+                listing_date=listing_date,
+                listing_status="listed",
+            ))
         else:
-            # 无任何详情数据
-            market = self._infer_market(stock_code)
-            securities.append({
-                "stock_code": stock_code,
-                "stock_name": stock_name or stock_code,
-                "market": market,
-                "security_type": "A股",
-                "listing_date": None,
-                "listing_status": "listed",
-            })
+            market = infer_market(stock_code) or "SH"
+            securities.append(SecurityEntity(
+                stock_code=stock_code,
+                stock_name=stock_name or stock_code,
+                market=market,
+                security_type="A股",
+                listing_status="listed",
+            ))
 
         return securities
 
-    def _upsert_company(self, company: Dict[str, Any]) -> Optional[int]:
+    def _upsert_company(self, company: CompanyEntity) -> Optional[int]:
         """UPSERT 公司数据，返回 company_id"""
-        # 先按 company_name 精确匹配查找
         existing = self.db.fetchone(
             "SELECT id FROM company WHERE company_name = %s",
-            (company["company_name"],),
+            (company.company_name,),
         )
 
         if existing:
             company_id = existing[0]
-            # UPDATE
             sql = """
                 UPDATE company
                 SET short_name = %s, industry = %s, region = %s,
                     establish_date = %s, registered_capital = %s, updated_at = NOW()
                 WHERE id = %s
             """
-            self.db.execute(
-                sql,
-                (
-                    company["short_name"],
-                    company["industry"],
-                    company["region"],
-                    company["establish_date"],
-                    company["registered_capital"],
-                    company_id,
-                ),
-            )
+            self.db.execute(sql, (*company.to_update_tuple(), company_id))
             return company_id
         else:
-            # INSERT
             sql = """
                 INSERT INTO company
                 (company_name, short_name, industry, region, establish_date,
@@ -292,20 +261,10 @@ class CompanyTask:
                 VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())
                 RETURNING id
             """
-            result = self.db.execute_returning(
-                sql,
-                (
-                    company["company_name"],
-                    company["short_name"],
-                    company["industry"],
-                    company["region"],
-                    company["establish_date"],
-                    company["registered_capital"],
-                ),
-            )
+            result = self.db.execute_returning(sql, company.to_insert_tuple())
             return result[0] if result else None
 
-    def _upsert_securities(self, company_id: int, securities: List[Dict[str, Any]]) -> str:
+    def _upsert_securities(self, company_id: int, securities: List[SecurityEntity]) -> str:
         """UPSERT 证券数据，返回 insert / update / skip"""
         if not securities:
             return "skip"
@@ -314,11 +273,10 @@ class CompanyTask:
         for sec in securities:
             existing = self.db.fetchone(
                 "SELECT id FROM company_security WHERE stock_code = %s",
-                (sec["stock_code"],),
+                (sec.stock_code,),
             )
 
             if existing:
-                # UPDATE
                 sql = """
                     UPDATE company_security
                     SET company_id = %s, stock_name = %s, market = %s,
@@ -326,94 +284,16 @@ class CompanyTask:
                         updated_at = NOW()
                     WHERE stock_code = %s
                 """
-                self.db.execute(
-                    sql,
-                    (
-                        company_id,
-                        sec["stock_name"],
-                        sec["market"],
-                        sec["security_type"],
-                        sec["listing_date"],
-                        sec["listing_status"],
-                        sec["stock_code"],
-                    ),
-                )
+                self.db.execute(sql, sec.to_update_tuple(company_id))
                 total_result = "update"
             else:
-                # INSERT
                 sql = """
                     INSERT INTO company_security
                     (company_id, stock_code, stock_name, market, security_type,
                      listing_date, listing_status, created_at, updated_at)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
                 """
-                self.db.execute(
-                    sql,
-                    (
-                        company_id,
-                        sec["stock_code"],
-                        sec["stock_name"],
-                        sec["market"],
-                        sec["security_type"],
-                        sec["listing_date"],
-                        sec["listing_status"],
-                    ),
-                )
+                self.db.execute(sql, sec.to_insert_tuple(company_id))
                 total_result = "insert"
 
         return total_result
-
-    @staticmethod
-    def _extract_region(address: str) -> Optional[str]:
-        """从注册地址提取省份/城市"""
-        if not address:
-            return None
-        import re
-
-        match = re.search(r"^(.*?省|.*?自治区|北京|天津|上海|重庆)", address)
-        if match:
-            return match.group(1)
-        return None
-
-    @staticmethod
-    def _parse_date(date_str) -> Optional[str]:
-        """解析日期字符串为 YYYY-MM-DD"""
-        if not date_str:
-            return None
-        try:
-            dt = datetime.strptime(str(date_str), "%Y-%m-%d")
-            return dt.strftime("%Y-%m-%d")
-        except (ValueError, TypeError):
-            return None
-
-    @staticmethod
-    def _parse_capital(capital) -> Optional[float]:
-        """解析注册资本/注册资金为数字（万元）"""
-        if capital is None:
-            return None
-        import re
-
-        match = re.search(r"([\d,.]+)", str(capital))
-        if match:
-            try:
-                return float(match.group(1).replace(",", ""))
-            except (ValueError, TypeError):
-                return None
-        return None
-
-    @staticmethod
-    def _infer_market(stock_code: str) -> Optional[str]:
-        """根据股票代码推断市场板块"""
-        if not stock_code:
-            return None
-        code = str(stock_code).strip()
-        if len(code) != 6:
-            return "HK" if len(code) == 5 else None
-        first = code[0]
-        if first in ("6", "9"):
-            return "SH"
-        elif first in ("0", "2", "3"):
-            return "SZ"
-        elif first in ("4", "8"):
-            return "BJ"
-        return None
