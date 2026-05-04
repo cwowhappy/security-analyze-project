@@ -31,6 +31,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
 
     runtimeOnly 'org.postgresql:postgresql'
+    implementation 'org.flywaydb:flyway-core'
+    runtimeOnly 'org.flywaydb:flyway-database-postgresql'
 
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
@@ -41,11 +43,18 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.testcontainers:junit-jupiter:1.20.6'
+    testImplementation 'org.testcontainers:postgresql:1.20.6'
+    testImplementation 'com.github.docker-java:docker-java-api:3.7.1'
+    testImplementation 'com.github.docker-java:docker-java-transport-zerodep:3.7.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+    environment 'DOCKER_HOST', 'unix:///Users/lixiaoyi/.colima/default/docker.sock'
+    environment 'TESTCONTAINERS_RYUK_DISABLED', 'true'
+    systemProperty 'api.version', '1.53'
     finalizedBy jacocoTestReport
 }
 

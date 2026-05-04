@@ -240,7 +240,14 @@ python main.py --finance 600519
 
 > **当前状态**：测试基础设施已配置，采集模块已补充 `test_finance_task_recovery.py` 验证 Session 断点续传逻辑。新增功能时应补充测试。
 
-- **后端**：Gradle 已配置 `spring-boot-starter-test`、`spring-security-test`、JUnit Platform。请在 `backend/src/test/` 下按 package 镜像结构编写单元测试与集成测试。
+- **后端**：
+  - Gradle 已配置 `spring-boot-starter-test`、`spring-security-test`、JUnit Platform。
+  - **Repository 层集成测试**已基于 **Testcontainers + PostgreSQL** 跑通。使用 **Colima** 替代 Docker Desktop 提供 Docker 运行时，`backend/build.gradle` 的 `test` 任务已内置以下环境变量与系统属性：
+    - `DOCKER_HOST=unix:///Users/$USER/.colima/default/docker.sock`
+    - `TESTCONTAINERS_RYUK_DISABLED=true`
+    - `api.version=1.53`
+  - 测试环境通过 **Flyway** 自动执行 `db/migration/` 下的 SQL 脚本初始化 schema（`application-test.yml` 中启用）；生产环境仍保持手动执行脚本，`application.yml` 中 `flyway.enabled=false`。
+  - 请在 `backend/src/test/` 下按 package 镜像结构编写单元测试与集成测试。Repository 测试继承 `RepositoryTestBase`，并通过 `@Import(...)` 显式注入被测 Repository 实现。
 - **前端**：尚未配置测试框架。如需添加，建议引入 Vitest + Vue Test Utils。
 - **数据采集**：尚未配置测试框架。建议对 `sources/` 和 `tasks/` 中的核心逻辑编写 pytest 单元测试，数据源侧使用 mock 避免实际调用 akshare。
 
@@ -260,9 +267,9 @@ python main.py --finance 600519
 
 ## 数据库与迁移
 
-- 初始化脚本位于 `backend/src/main/resources/db/migration/V1__create_company_table.sql`。
-- 当前采用 **手动管理 SQL 脚本** 的方式（Flyway 风格命名），需按版本顺序手动执行。
-- 后续如需正式引入 Flyway 或 Liquibase，请在 `build.gradle` 中添加对应依赖。
+- **生产环境**仍采用 **手动管理 SQL 脚本** 的方式（Flyway 风格命名），需按版本顺序手动执行。
+- **测试环境**已引入 **Flyway** 自动迁移，并将历史增量脚本合并为单一的 **`V1__baseline.sql`**（位于 `db/migration/`），旧脚本归档至 `db/migration-archive/`。`backend/build.gradle` 中已添加 `flyway-core` 与 `flyway-database-postgresql` 依赖；`application-test.yml` 启用 `spring.flyway.enabled=true`。
+- 新增 schema 变更时，创建新的 `Vx__description.sql` 放入 `db/migration/` 即可在测试中被自动应用。
 
 ### company 表核心字段
 

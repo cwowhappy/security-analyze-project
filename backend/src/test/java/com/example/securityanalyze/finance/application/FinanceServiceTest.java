@@ -121,6 +121,104 @@ class FinanceServiceTest {
         assertEquals("totalRevenue", response.getMetrics().get(0).getMetric());
     }
 
+    @Test
+    void shouldReturnNullForUnknownMetric() {
+        FinancialReport r1 = createReport("600519", LocalDate.of(2024, 3, 31));
+        when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
+
+        List<String> metrics = List.of("unknownMetric");
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+
+        assertTrue(response.getMetrics().isEmpty(), "未知 metric 应返回空列表");
+    }
+
+    @Test
+    void shouldHandleNullValuesInMetrics() {
+        FinancialReport r1 = createReport("600519", LocalDate.of(2024, 3, 31));
+        r1.setTotalRevenue(null);
+        r1.setNetProfit(null);
+
+        when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
+
+        List<String> metrics = List.of("totalRevenue", "netProfit");
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+
+        assertEquals(2, response.getMetrics().size());
+        assertTrue(response.getMetrics().get(0).getData().isEmpty(), "value 为 null 时不应添加数据点");
+        assertTrue(response.getMetrics().get(1).getData().isEmpty(), "value 为 null 时不应添加数据点");
+    }
+
+    @Test
+    void shouldHandleZeroRevenueInGrossMargin() {
+        FinancialReport r1 = createReport("600519", LocalDate.of(2024, 3, 31));
+        r1.setOperateIncome(BigDecimal.ZERO);
+        r1.setOperateCost(BigDecimal.valueOf(600));
+
+        when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
+
+        List<String> metrics = List.of("grossMargin");
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+
+        assertEquals(1, response.getMetrics().size());
+        assertTrue(response.getMetrics().get(0).getData().isEmpty(), "营业收入为 0 时不应计算毛利率");
+    }
+
+    @Test
+    void shouldHandleNullCostInGrossMargin() {
+        FinancialReport r1 = createReport("600519", LocalDate.of(2024, 3, 31));
+        r1.setOperateIncome(BigDecimal.valueOf(1000));
+        r1.setOperateCost(null);
+
+        when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
+
+        List<String> metrics = List.of("grossMargin");
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+
+        assertTrue(response.getMetrics().get(0).getData().isEmpty(), "营业成本为 null 时不应计算毛利率");
+    }
+
+    @Test
+    void shouldHandleNullRevenueInNetMargin() {
+        FinancialReport r1 = createReport("600519", LocalDate.of(2024, 3, 31));
+        r1.setOperateIncome(null);
+        r1.setNetProfit(BigDecimal.valueOf(200));
+
+        when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
+
+        List<String> metrics = List.of("netMargin");
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+
+        assertTrue(response.getMetrics().get(0).getData().isEmpty(), "营业收入为 null 时不应计算净利率");
+    }
+
+    @Test
+    void shouldHandleZeroAssetsInDebtRatio() {
+        FinancialReport r1 = createReport("600519", LocalDate.of(2024, 3, 31));
+        r1.setTotalAssets(BigDecimal.ZERO);
+        r1.setTotalLiabilities(BigDecimal.valueOf(2000));
+
+        when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
+
+        List<String> metrics = List.of("debtRatio");
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+
+        assertTrue(response.getMetrics().get(0).getData().isEmpty(), "总资产为 0 时不应计算资产负债率");
+    }
+
+    @Test
+    void shouldHandleNullLiabilitiesInDebtRatio() {
+        FinancialReport r1 = createReport("600519", LocalDate.of(2024, 3, 31));
+        r1.setTotalAssets(BigDecimal.valueOf(5000));
+        r1.setTotalLiabilities(null);
+
+        when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
+
+        List<String> metrics = List.of("debtRatio");
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+
+        assertTrue(response.getMetrics().get(0).getData().isEmpty(), "总负债为 null 时不应计算资产负债率");
+    }
+
     private FinancialReport createReport(String stockCode, LocalDate reportDate) {
         FinancialReport r = new FinancialReport();
         r.setStockCode(stockCode);

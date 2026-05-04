@@ -122,7 +122,7 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public List<User> findByStatus(UserStatus status) {
         log.debug("根据状态查询用户, status={}", status);
-        String sql = "SELECT * FROM sys_user WHERE status = :status ORDER BY created_at DESC";
+        String sql = "SELECT * FROM sys_user WHERE status = :status::user_status ORDER BY created_at DESC";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("status", status.name());
         return jdbcTemplate.query(sql, params, ROW_MAPPER);

@@ -135,4 +135,32 @@ class AuthServiceTest {
                 () -> authService.login(request));
         assertEquals("账号已禁用，请联系管理员", ex.getMessage());
     }
+
+    @Test
+    void shouldGetCurrentUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("current");
+        user.setRealName("当前用户");
+        user.setStatus(UserStatus.APPROVED);
+        user.setRole(Role.USER);
+
+        when(userRepository.findByUsername("current")).thenReturn(Optional.of(user));
+
+        var response = authService.getCurrentUser("current");
+        assertEquals("current", response.getUsername());
+        assertEquals("当前用户", response.getRealName());
+        assertEquals("APPROVED", response.getStatus());
+        assertEquals("USER", response.getRole());
+    }
+
+    @Test
+    void shouldThrowWhenCurrentUserNotFound() {
+        when(userRepository.findByUsername("notfound")).thenReturn(Optional.empty());
+
+        org.springframework.security.authentication.BadCredentialsException ex =
+                assertThrows(org.springframework.security.authentication.BadCredentialsException.class,
+                        () -> authService.getCurrentUser("notfound"));
+        assertEquals("用户不存在", ex.getMessage());
+    }
 }
