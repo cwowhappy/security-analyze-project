@@ -2,11 +2,11 @@ package com.example.securityanalyze.admin.application;
 
 import com.example.securityanalyze.admin.api.AdminLoginRequest;
 import com.example.securityanalyze.admin.api.AdminRegisterRequest;
+import com.example.securityanalyze.user.application.AuthenticationService;
 import com.example.securityanalyze.user.domain.Role;
 import com.example.securityanalyze.user.domain.User;
 import com.example.securityanalyze.user.domain.UserRepository;
 import com.example.securityanalyze.user.domain.UserStatus;
-import com.example.securityanalyze.user.infrastructure.JwtTokenProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,7 +31,7 @@ class AdminAuthServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private JwtTokenProvider jwtTokenProvider;
+    private AuthenticationService authenticationService;
 
     @InjectMocks
     private AdminAuthService adminAuthService;
@@ -47,9 +47,8 @@ class AdminAuthServiceTest {
         admin.setPasswordHash("hashed");
         admin.setRole(Role.ADMIN);
 
-        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
-        when(passwordEncoder.matches("admin123", "hashed")).thenReturn(true);
-        when(jwtTokenProvider.generateToken("admin", "ADMIN")).thenReturn("admintoken");
+        when(authenticationService.authenticate("admin", "admin123")).thenReturn(admin);
+        when(authenticationService.generateToken(admin)).thenReturn("admintoken");
 
         var response = adminAuthService.login(request);
         assertEquals("admintoken", response.getToken());
@@ -66,8 +65,7 @@ class AdminAuthServiceTest {
         user.setPasswordHash("hashed");
         user.setRole(Role.USER);
 
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("pass", "hashed")).thenReturn(true);
+        when(authenticationService.authenticate("user", "pass")).thenReturn(user);
 
         BadCredentialsException ex = assertThrows(BadCredentialsException.class,
                 () -> adminAuthService.login(request));

@@ -1,4 +1,4 @@
-package com.example.securityanalyze.user.application;
+package com.example.securityanalyze.user.infrastructure;
 
 import com.example.securityanalyze.user.domain.User;
 import com.example.securityanalyze.user.domain.UserRepository;

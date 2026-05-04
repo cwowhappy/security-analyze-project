@@ -9,11 +9,15 @@ import com.example.securityanalyze.company.domain.CompanyRepository;
 import com.example.securityanalyze.company.domain.CompanySecurity;
 import com.example.securityanalyze.company.domain.CompanySecurityRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CompanyService {
@@ -22,13 +26,22 @@ public class CompanyService {
     private final CompanySecurityRepository companySecurityRepository;
 
     public CompanyListResponse listCompanies(String keyword, int page, int size) {
+        log.debug("查询公司列表, keyword={}, page={}, size={}", keyword, page, size);
         int offset = page * size;
 
         List<CompanySecurity> securities = companySecurityRepository.findByKeyword(keyword, offset, size);
         long total = companySecurityRepository.countByKeyword(keyword);
 
+        // 批量获取公司信息，避免 N+1 查询
+        List<Long> companyIds = securities.stream()
+                .map(CompanySecurity::getCompanyId)
+                .distinct()
+                .toList();
+        Map<Long, Company> companyMap = companyRepository.findAllById(companyIds).stream()
+                .collect(Collectors.toMap(Company::getId, c -> c));
+
         List<CompanyListItem> items = securities.stream()
-                .map(this::toListItem)
+                .map(s -> toListItem(s, companyMap.get(s.getCompanyId())))
                 .toList();
 
         CompanyListResponse response = new CompanyListResponse();
@@ -36,44 +49,44 @@ public class CompanyService {
         response.setTotal(total);
         response.setPage(page);
         response.setSize(size);
+        log.info("查询公司列表完成, keyword={}, 返回{}条记录", keyword, items.size());
         return response;
     }
 
     public Optional<CompanyDetailResponse> getCompanyDetail(String stockCode) {
-        // 1. 先查证券获取 company_id
+        log.debug("查询公司详情, stockCode={}", stockCode);
         Optional<CompanySecurity> securityOpt = companySecurityRepository.findByStockCode(stockCode);
         if (securityOpt.isEmpty()) {
+            log.warn("证券不存在, stockCode={}", stockCode);
             return Optional.empty();
         }
 
         CompanySecurity primarySecurity = securityOpt.get();
 
-        // 2. 查公司信息
         Optional<Company> companyOpt = companyRepository.findById(primarySecurity.getCompanyId());
         if (companyOpt.isEmpty()) {
+            log.warn("公司不存在, companyId={}", primarySecurity.getCompanyId());
             return Optional.empty();
         }
 
         Company company = companyOpt.get();
-
-        // 3. 查该公司下的所有证券
         List<CompanySecurity> securities = companySecurityRepository.findByCompanyId(company.getId());
 
+        log.info("查询公司详情成功, stockCode={}, companyId={}", stockCode, company.getId());
         return Optional.of(toDetailResponse(company, primarySecurity, securities));
     }
 
-    private CompanyListItem toListItem(CompanySecurity security) {
+    private CompanyListItem toListItem(CompanySecurity security, Company company) {
         CompanyListItem item = new CompanyListItem();
         item.setStockCode(security.getStockCode());
         item.setStockName(security.getStockName());
         item.setListingDate(security.getListingDate());
         item.setMarket(security.getMarket());
 
-        // 补充公司级信息
-        companyRepository.findById(security.getCompanyId()).ifPresent(company -> {
+        if (company != null) {
             item.setIndustry(company.getIndustry());
             item.setRegion(company.getRegion());
-        });
+        }
 
         return item;
     }

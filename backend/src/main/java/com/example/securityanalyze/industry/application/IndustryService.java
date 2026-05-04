@@ -6,23 +6,18 @@ import com.example.securityanalyze.industry.api.IndustryListItem;
 import com.example.securityanalyze.industry.api.IndustryListResponse;
 import com.example.securityanalyze.industry.api.IndustryTrendResponse;
 import com.example.securityanalyze.industry.api.TrendDataPoint;
+import com.example.securityanalyze.industry.domain.IndustryTrendGateway;
 import com.example.securityanalyze.industry.infrastructure.IndustryRepository;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -30,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class IndustryService {
 
     private final IndustryRepository industryRepository;
-    private final ObjectMapper objectMapper;
+    private final IndustryTrendGateway industryTrendGateway;
 
     public IndustryListResponse listIndustries() {
         List<IndustryListItem> items = industryRepository.findIndustries();
@@ -60,7 +55,7 @@ public class IndustryService {
         response.setPeriod(period);
 
         // 尝试调用 akshare 获取真实数据
-        List<TrendDataPoint> realData = fetchTrendFromAkshare(industryName, period);
+        List<TrendDataPoint> realData = industryTrendGateway.fetchTrend(industryName, period);
         if (!realData.isEmpty()) {
             response.setData(realData);
             response.setFallback(false);
@@ -68,48 +63,10 @@ public class IndustryService {
         }
 
         // 失败则返回模拟数据用于 UI 展示
-        log.warn("Failed to fetch real trend data for {}, returning fallback data", industryName);
+        log.warn("无法获取真实趋势数据, 返回模拟数据, industry={}, period={}", industryName, period);
         response.setData(generateFallbackTrend(period));
         response.setFallback(true);
         return response;
-    }
-
-    private List<TrendDataPoint> fetchTrendFromAkshare(String industryName, String period) {
-        try {
-            String projectRoot = System.getProperty("user.dir");
-            ProcessBuilder pb = new ProcessBuilder(
-                    "python3",
-                    projectRoot + "/collector/scripts/industry_trend.py",
-                    industryName,
-                    period
-            );
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-
-            boolean finished = process.waitFor(8, TimeUnit.SECONDS);
-            if (!finished) {
-                process.destroyForcibly();
-                log.warn("Python script timed out for industry trend: {}", industryName);
-                return List.of();
-            }
-
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                StringBuilder output = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line);
-                }
-                String json = output.toString().trim();
-                if (json.isBlank() || !json.startsWith("[") && !json.startsWith("{")) {
-                    return List.of();
-                }
-                return objectMapper.readValue(json, new TypeReference<List<TrendDataPoint>>() {});
-            }
-        } catch (Exception e) {
-            log.warn("Failed to execute python script for industry trend: {}", e.getMessage());
-            return List.of();
-        }
     }
 
     private List<TrendDataPoint> generateFallbackTrend(String period) {

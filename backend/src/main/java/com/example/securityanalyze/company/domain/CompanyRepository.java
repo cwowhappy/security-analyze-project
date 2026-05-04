@@ -11,5 +11,7 @@ public interface CompanyRepository {
 
     Optional<Company> findById(Long id);
 
+    List<Company> findAllById(List<Long> ids);
+
     Optional<Company> findByStockCode(String stockCode);
 }

@@ -3,6 +3,7 @@ package com.example.securityanalyze.collector.infrastructure;
 import com.example.securityanalyze.collector.api.CollectorOverviewItem;
 import com.example.securityanalyze.collector.api.CollectorTaskItem;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -14,6 +15,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class CollectorDashboardRepository {
@@ -65,6 +67,7 @@ public class CollectorDashboardRepository {
     };
 
     public List<CollectorOverviewItem> findOverview() {
+        log.debug("查询采集概览");
         String sql = """
                 WITH table_stats AS (
                     SELECT 'company' AS data_type, COUNT(*) AS total_rows, MAX(updated_at) AS last_updated_at FROM company
@@ -93,6 +96,7 @@ public class CollectorDashboardRepository {
     }
 
     public List<CollectorTaskItem> findTasks(String dataType, String status, int offset, int limit) {
+        log.debug("查询采集任务, dataType={}, status={}, offset={}, limit={}", dataType, status, offset, limit);
         StringBuilder sql = new StringBuilder("""
                 SELECT id, task_name, task_type, started_at, ended_at, status, rows_affected,
                     EXTRACT(EPOCH FROM (ended_at - started_at))::bigint AS duration_seconds
@@ -119,6 +123,7 @@ public class CollectorDashboardRepository {
     }
 
     public long countTasks(String dataType, String status) {
+        log.debug("统计采集任务数量, dataType={}, status={}", dataType, status);
         StringBuilder sql = new StringBuilder("""
                 SELECT COUNT(*) FROM collector_task_log
                 WHERE started_at >= NOW() - INTERVAL '7 days'

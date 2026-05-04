@@ -5,6 +5,7 @@ import com.example.securityanalyze.finance.domain.FinancialReportRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class FinancialReportRepositoryImpl implements FinancialReportRepository {
@@ -123,6 +125,7 @@ public class FinancialReportRepositoryImpl implements FinancialReportRepository 
             return objectMapper.readValue(json, new TypeReference<>() {
             });
         } catch (JsonProcessingException e) {
+            log.warn("JSONB 解析失败, column={}, content={}", column, json, e);
             return null;
         }
     }
@@ -184,8 +187,23 @@ public class FinancialReportRepositoryImpl implements FinancialReportRepository 
 
     @Override
     public void saveAll(List<FinancialReport> reports) {
+        if (reports == null || reports.isEmpty()) {
+            return;
+        }
+        List<FinancialReport> toInsert = new java.util.ArrayList<>();
+        List<FinancialReport> toUpdate = new java.util.ArrayList<>();
         for (FinancialReport report : reports) {
-            save(report);
+            if (report.getId() != null && existsById(report.getId())) {
+                toUpdate.add(report);
+            } else {
+                toInsert.add(report);
+            }
+        }
+        if (!toInsert.isEmpty()) {
+            batchInsert(toInsert);
+        }
+        if (!toUpdate.isEmpty()) {
+            batchUpdate(toUpdate);
         }
     }
 
@@ -205,6 +223,85 @@ public class FinancialReportRepositoryImpl implements FinancialReportRepository 
         params.addValue("id", id);
         Long count = jdbcTemplate.queryForObject(sql, params, Long.class);
         return count != null && count > 0;
+    }
+
+    private void batchInsert(List<FinancialReport> reports) {
+        String sql = """
+                INSERT INTO financial_report (
+                    stock_code, report_date, report_type, report_year, notice_date, currency,
+                    total_assets, total_liabilities, total_equity, monetary_funds, accounts_receivable,
+                    inventory, total_current_assets, total_noncurrent_assets, total_current_liabilities,
+                    total_noncurrent_liabilities, total_revenue, operate_income, operate_cost,
+                    sale_expense, manage_expense, research_expense, finance_expense, operate_profit,
+                    total_profit, net_profit, parent_net_profit, operating_cash_flow, investing_cash_flow,
+                    financing_cash_flow, cce_add, end_cce, balance_sheet, profit_sheet, cash_flow_sheet,
+                    created_at, updated_at
+                ) VALUES (
+                    :stockCode, :reportDate, :reportType, :reportYear, :noticeDate, :currency,
+                    :totalAssets, :totalLiabilities, :totalEquity, :monetaryFunds, :accountsReceivable,
+                    :inventory, :totalCurrentAssets, :totalNoncurrentAssets, :totalCurrentLiabilities,
+                    :totalNoncurrentLiabilities, :totalRevenue, :operateIncome, :operateCost,
+                    :saleExpense, :manageExpense, :researchExpense, :financeExpense, :operateProfit,
+                    :totalProfit, :netProfit, :parentNetProfit, :operatingCashFlow, :investingCashFlow,
+                    :financingCashFlow, :cceAdd, :endCce, :balanceSheet::jsonb, :profitSheet::jsonb, :cashFlowSheet::jsonb,
+                    NOW(), NOW()
+                )
+                """;
+        MapSqlParameterSource[] batch = reports.stream()
+                .map(this::toParams)
+                .toArray(MapSqlParameterSource[]::new);
+        jdbcTemplate.batchUpdate(sql, batch);
+        log.debug("批量插入财务报告 {} 条", reports.size());
+    }
+
+    private void batchUpdate(List<FinancialReport> reports) {
+        String sql = """
+                UPDATE financial_report SET
+                    report_type = :reportType,
+                    report_year = :reportYear,
+                    notice_date = :noticeDate,
+                    currency = :currency,
+                    total_assets = :totalAssets,
+                    total_liabilities = :totalLiabilities,
+                    total_equity = :totalEquity,
+                    monetary_funds = :monetaryFunds,
+                    accounts_receivable = :accountsReceivable,
+                    inventory = :inventory,
+                    total_current_assets = :totalCurrentAssets,
+                    total_noncurrent_assets = :totalNoncurrentAssets,
+                    total_current_liabilities = :totalCurrentLiabilities,
+                    total_noncurrent_liabilities = :totalNoncurrentLiabilities,
+                    total_revenue = :totalRevenue,
+                    operate_income = :operateIncome,
+                    operate_cost = :operateCost,
+                    sale_expense = :saleExpense,
+                    manage_expense = :manageExpense,
+                    research_expense = :researchExpense,
+                    finance_expense = :financeExpense,
+                    operate_profit = :operateProfit,
+                    total_profit = :totalProfit,
+                    net_profit = :netProfit,
+                    parent_net_profit = :parentNetProfit,
+                    operating_cash_flow = :operatingCashFlow,
+                    investing_cash_flow = :investingCashFlow,
+                    financing_cash_flow = :financingCashFlow,
+                    cce_add = :cceAdd,
+                    end_cce = :endCce,
+                    balance_sheet = :balanceSheet::jsonb,
+                    profit_sheet = :profitSheet::jsonb,
+                    cash_flow_sheet = :cashFlowSheet::jsonb,
+                    updated_at = NOW()
+                WHERE id = :id
+                """;
+        MapSqlParameterSource[] batch = reports.stream()
+                .map(report -> {
+                    MapSqlParameterSource params = toParams(report);
+                    params.addValue("id", report.getId());
+                    return params;
+                })
+                .toArray(MapSqlParameterSource[]::new);
+        jdbcTemplate.batchUpdate(sql, batch);
+        log.debug("批量更新财务报告 {} 条", reports.size());
     }
 
     private void insert(FinancialReport report) {

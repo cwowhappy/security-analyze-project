@@ -9,6 +9,7 @@ import com.example.securityanalyze.finance.domain.FinancialReportRepository;
 import com.example.securityanalyze.company.domain.CompanySecurity;
 import com.example.securityanalyze.company.domain.CompanySecurityRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FinanceService {
@@ -26,6 +28,7 @@ public class FinanceService {
     private final CompanySecurityRepository companySecurityRepository;
 
     public FinanceReportListResponse listReports(String stockCode) {
+        log.info("查询财务报告列表, stockCode={}", stockCode);
         List<FinancialReport> reports = reportRepository.findByStockCode(stockCode);
 
         String stockName = companySecurityRepository.findByStockCode(stockCode)
@@ -40,16 +43,20 @@ public class FinanceService {
         response.setStockCode(stockCode);
         response.setStockName(stockName);
         response.setItems(items);
+        log.info("查询财务报告列表完成, stockCode={}, 返回{}条记录", stockCode, items.size());
         return response;
     }
 
     public Optional<FinanceReportResponse> getReportDetail(Long reportId) {
+        log.info("查询财务报告详情, reportId={}", reportId);
         return reportRepository.findById(reportId)
                 .map(this::toDetailResponse);
     }
 
     public FinanceIndicatorResponse getIndicators(String stockCode, List<String> metrics,
                                                    LocalDate startDate, LocalDate endDate) {
+        log.info("计算财务指标, stockCode={}, metrics={}, startDate={}, endDate={}",
+                stockCode, metrics, startDate, endDate);
         List<FinancialReport> reports;
         if (startDate != null && endDate != null) {
             reports = reportRepository.findByStockCodeAndDateRange(stockCode, startDate, endDate);

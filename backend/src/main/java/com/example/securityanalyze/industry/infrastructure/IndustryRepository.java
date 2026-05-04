@@ -5,6 +5,7 @@ import com.example.securityanalyze.company.api.CompanyListItem;
 import com.example.securityanalyze.industry.api.IndustryListItem;
 import com.example.securityanalyze.industry.api.TrendDataPoint;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -17,6 +18,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class IndustryRepository {
@@ -53,6 +55,7 @@ public class IndustryRepository {
     };
 
     public List<IndustryListItem> findIndustries() {
+        log.debug("查询行业列表");
         String sql = """
                 SELECT industry, COUNT(*) AS cnt
                 FROM company
@@ -64,6 +67,7 @@ public class IndustryRepository {
     }
 
     public List<CompanyListItem> findCompaniesByIndustry(String industry, int offset, int limit) {
+        log.debug("根据行业查询公司, industry={}, offset={}, limit={}", industry, offset, limit);
         String sql = """
                 SELECT cs.stock_code, cs.stock_name, c.industry, c.region, cs.listing_date, cs.market
                 FROM company c
@@ -80,6 +84,7 @@ public class IndustryRepository {
     }
 
     public long countCompaniesByIndustry(String industry) {
+        log.debug("统计行业公司数量, industry={}", industry);
         String sql = """
                 SELECT COUNT(*) FROM company
                 WHERE industry = :industry

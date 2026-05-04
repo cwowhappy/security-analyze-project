@@ -15,4 +15,4 @@ spring:
 
 logging:
   level:
-    com.example.stock: DEBUG
+    com.example.securityanalyze: DEBUG

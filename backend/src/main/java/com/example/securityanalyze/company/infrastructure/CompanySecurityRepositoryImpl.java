@@ -3,6 +3,7 @@ package com.example.securityanalyze.company.infrastructure;
 import com.example.securityanalyze.company.domain.CompanySecurity;
 import com.example.securityanalyze.company.domain.CompanySecurityRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class CompanySecurityRepositoryImpl implements CompanySecurityRepository {
@@ -61,6 +63,7 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
 
     @Override
     public List<CompanySecurity> findByCompanyId(Long companyId) {
+        log.debug("根据公司ID查询证券, companyId={}", companyId);
         String sql = SELECT_SQL + " WHERE company_id = :companyId ORDER BY stock_code ASC";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("companyId", companyId);
@@ -70,6 +73,7 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
 
     @Override
     public Optional<CompanySecurity> findByStockCode(String stockCode) {
+        log.debug("根据股票代码查询证券, stockCode={}", stockCode);
         String sql = SELECT_SQL + " WHERE stock_code = :stockCode";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("stockCode", stockCode);
@@ -80,6 +84,7 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
 
     @Override
     public List<CompanySecurity> findByKeyword(String keyword, int offset, int limit) {
+        log.debug("搜索证券, keyword={}, offset={}, limit={}", keyword, offset, limit);
         String sql = SELECT_SQL;
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("offset", offset);
@@ -98,6 +103,7 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
 
     @Override
     public long countByKeyword(String keyword) {
+        log.debug("统计证券数量, keyword={}", keyword);
         String sql = "SELECT COUNT(*) FROM company_security";
         MapSqlParameterSource params = new MapSqlParameterSource();
 

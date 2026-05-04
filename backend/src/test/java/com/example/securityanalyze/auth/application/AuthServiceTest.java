@@ -2,11 +2,11 @@ package com.example.securityanalyze.auth.application;
 
 import com.example.securityanalyze.auth.api.LoginRequest;
 import com.example.securityanalyze.auth.api.RegisterRequest;
+import com.example.securityanalyze.user.application.AuthenticationService;
 import com.example.securityanalyze.user.domain.Role;
 import com.example.securityanalyze.user.domain.User;
 import com.example.securityanalyze.user.domain.UserRepository;
 import com.example.securityanalyze.user.domain.UserStatus;
-import com.example.securityanalyze.user.infrastructure.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +32,7 @@ class AuthServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private JwtTokenProvider jwtTokenProvider;
+    private AuthenticationService authenticationService;
 
     @InjectMocks
     private AuthService authService;
@@ -91,9 +91,8 @@ class AuthServiceTest {
         user.setStatus(UserStatus.APPROVED);
         user.setRole(Role.USER);
 
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("pass", "hashed")).thenReturn(true);
-        when(jwtTokenProvider.generateToken("user", "USER")).thenReturn("token123");
+        when(authenticationService.authenticate("user", "pass")).thenReturn(user);
+        when(authenticationService.generateToken(user)).thenReturn("token123");
 
         var response = authService.login(request);
         assertEquals("token123", response.getToken());
@@ -111,8 +110,7 @@ class AuthServiceTest {
         user.setStatus(UserStatus.PENDING);
         user.setRole(Role.USER);
 
-        when(userRepository.findByUsername("pending")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("pass", "hashed")).thenReturn(true);
+        when(authenticationService.authenticate("pending", "pass")).thenReturn(user);
 
         PendingApprovalException ex = assertThrows(PendingApprovalException.class,
                 () -> authService.login(request));
@@ -131,8 +129,7 @@ class AuthServiceTest {
         user.setStatus(UserStatus.DISABLED);
         user.setRole(Role.USER);
 
-        when(userRepository.findByUsername("disabled")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("pass", "hashed")).thenReturn(true);
+        when(authenticationService.authenticate("disabled", "pass")).thenReturn(user);
 
         AccountDisabledException ex = assertThrows(AccountDisabledException.class,
                 () -> authService.login(request));

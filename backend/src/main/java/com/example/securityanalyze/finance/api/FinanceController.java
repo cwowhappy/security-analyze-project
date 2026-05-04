@@ -2,6 +2,7 @@ package com.example.securityanalyze.finance.api;
 
 import com.example.securityanalyze.finance.application.FinanceService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/finance")
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class FinanceController {
     @GetMapping("/{stockCode}/reports")
     public ResponseEntity<FinanceReportListResponse> listReports(
             @PathVariable String stockCode) {
+        log.info("查询财务报告列表, stockCode={}", stockCode);
         FinanceReportListResponse response = financeService.listReports(stockCode);
         return ResponseEntity.ok(response);
     }
@@ -31,6 +34,7 @@ public class FinanceController {
     @GetMapping("/reports/{reportId}")
     public ResponseEntity<FinanceReportResponse> getReportDetail(
             @PathVariable Long reportId) {
+        log.info("查询财务报告详情, reportId={}", reportId);
         Optional<FinanceReportResponse> detail = financeService.getReportDetail(reportId);
         return detail.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -42,6 +46,7 @@ public class FinanceController {
             @RequestParam(defaultValue = "totalRevenue,netProfit,grossMargin,netMargin,debtRatio") String metrics,
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate) {
+        log.info("查询财务指标, stockCode={}, metrics={}", stockCode, metrics);
         List<String> metricList = Arrays.asList(metrics.split(","));
         FinanceIndicatorResponse response = financeService.getIndicators(stockCode, metricList, startDate, endDate);
         return ResponseEntity.ok(response);

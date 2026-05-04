@@ -3,6 +3,7 @@ package com.example.securityanalyze.company.infrastructure;
 import com.example.securityanalyze.company.domain.Company;
 import com.example.securityanalyze.company.domain.CompanyRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -14,8 +15,11 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class CompanyRepositoryImpl implements CompanyRepository {
@@ -63,6 +67,7 @@ public class CompanyRepositoryImpl implements CompanyRepository {
 
     @Override
     public List<Company> findByKeyword(String keyword, int offset, int limit) {
+        log.debug("查询公司, keyword={}, offset={}, limit={}", keyword, offset, limit);
         String sql = SELECT_SQL;
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("offset", offset);
@@ -80,6 +85,7 @@ public class CompanyRepositoryImpl implements CompanyRepository {
 
     @Override
     public long countByKeyword(String keyword) {
+        log.debug("统计公司数量, keyword={}", keyword);
         String sql = "SELECT COUNT(*) FROM company";
         MapSqlParameterSource params = new MapSqlParameterSource();
 
@@ -94,6 +100,7 @@ public class CompanyRepositoryImpl implements CompanyRepository {
 
     @Override
     public Optional<Company> findById(Long id) {
+        log.debug("根据ID查询公司, id={}", id);
         String sql = SELECT_SQL + " WHERE id = :id";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("id", id);
@@ -103,7 +110,21 @@ public class CompanyRepositoryImpl implements CompanyRepository {
     }
 
     @Override
+    public List<Company> findAllById(List<Long> ids) {
+        log.debug("批量查询公司, ids={}", ids);
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        String sql = SELECT_SQL + " WHERE id IN (:ids)";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("ids", ids);
+
+        return jdbcTemplate.query(sql, params, ROW_MAPPER);
+    }
+
+    @Override
     public Optional<Company> findByStockCode(String stockCode) {
+        log.debug("根据股票代码查询公司, stockCode={}", stockCode);
         // 通过 company_security 关联查询
         String sql = SELECT_SQL + """
                 WHERE id = (
