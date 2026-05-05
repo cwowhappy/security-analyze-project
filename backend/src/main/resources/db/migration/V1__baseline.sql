@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS company (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_company_unified_code ON company(unified_code);
 CREATE INDEX idx_company_name ON company(company_name);
 CREATE INDEX idx_company_industry ON company(industry);
 CREATE INDEX idx_company_region ON company(region);
@@ -40,7 +39,6 @@ CREATE TABLE IF NOT EXISTS company_security (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_cs_stock_code ON company_security(stock_code);
 CREATE INDEX idx_cs_company_id ON company_security(company_id);
 CREATE INDEX idx_cs_market ON company_security(market);
 CREATE INDEX idx_cs_security_type ON company_security(security_type);
@@ -64,7 +62,6 @@ CREATE TABLE IF NOT EXISTS collector_task_log (
 CREATE INDEX idx_task_log_started_at ON collector_task_log(started_at);
 CREATE INDEX idx_task_log_task_type ON collector_task_log(task_type);
 CREATE INDEX idx_task_log_status ON collector_task_log(status);
-CREATE INDEX idx_task_log_session_id ON collector_task_log(session_id);
 
 -- 4. 采集数据状态表
 CREATE TABLE IF NOT EXISTS collector_data_status (
@@ -77,7 +74,7 @@ CREATE TABLE IF NOT EXISTS collector_data_status (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_data_status_type ON collector_data_status(data_type);
+
 
 -- 5. 采集任务进度表（Session 故障恢复）
 CREATE TABLE IF NOT EXISTS collector_task_progress (
@@ -103,7 +100,7 @@ CREATE TABLE IF NOT EXISTS financial_report (
     stock_code VARCHAR(20) NOT NULL,
     report_date DATE NOT NULL,
     report_type VARCHAR(10) NOT NULL,
-    report_year INTEGER NOT NULL,
+    report_year INT NOT NULL,
     notice_date DATE,
     currency VARCHAR(10) DEFAULT 'CNY',
 
@@ -160,7 +157,7 @@ CREATE INDEX idx_fin_report_notice ON financial_report(notice_date);
 CREATE TABLE IF NOT EXISTS collector_stock_sync_status (
     stock_code VARCHAR(20) PRIMARY KEY,
     latest_report_date DATE,              -- 该股票已采集的最新报告期
-    report_count INTEGER DEFAULT 0,       -- 累计采集报告数
+    report_count INT DEFAULT 0,           -- 累计采集报告数
     last_sync_at TIMESTAMP,               -- 最后同步时间
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP

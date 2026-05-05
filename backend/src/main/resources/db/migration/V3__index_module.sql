@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS index_info (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_index_code ON index_info(index_code);
 CREATE INDEX idx_index_type ON index_info(index_type);
 CREATE INDEX idx_index_market ON index_info(market);
 
@@ -64,7 +63,6 @@ CREATE TABLE IF NOT EXISTS etf_info (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_etf_code ON etf_info(etf_code);
 CREATE INDEX idx_etf_tracking ON etf_info(tracking_index_code);
 
 -- 4. 指数-ETF 关联映射表（支持多对多）

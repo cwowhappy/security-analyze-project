@@ -268,21 +268,33 @@ python main.py --finance 600519
 ## 数据库与迁移
 
 - **生产环境**仍采用 **手动管理 SQL 脚本** 的方式（Flyway 风格命名），需按版本顺序手动执行。
-- **测试环境**已引入 **Flyway** 自动迁移，并将历史增量脚本合并为单一的 **`V1__baseline.sql`**（位于 `db/migration/`），旧脚本归档至 `db/migration-archive/`。`backend/build.gradle` 中已添加 `flyway-core` 与 `flyway-database-postgresql` 依赖；`application-test.yml` 启用 `spring.flyway.enabled=true`。
-- 新增 schema 变更时，创建新的 `Vx__description.sql` 放入 `db/migration/` 即可在测试中被自动应用。
+- **测试环境**已引入 **Flyway** 自动迁移，增量脚本按版本号存放于 `db/migration/`，旧脚本归档至 `db/migration-archive/`。`backend/build.gradle` 中已添加 `flyway-core` 与 `flyway-database-postgresql` 依赖；`application-test.yml` 启用 `spring.flyway.enabled=true`。
+- **全新环境一键初始化**：使用 `db/release/v1.1.0__full_schema.sql`（当前最新快照），无需逐条执行增量脚本。
+- **采集模块表结构引用**：`collector/sql/schema_reference.sql` 汇总了 collector 直接操作的所有表，供查阅对照；实际建表仍由后端 migration 统一管理。
+- 新增 schema 变更时：
+  1. 创建新的 `Vx__description.sql` 放入 `db/migration/`（测试自动应用）；
+  2. 同步更新 `db/release/v1.1.0__full_schema.sql` 快照；
+  3. 同步更新 `collector/sql/schema_reference.sql`。
 
-### company 表核心字段
+### company / company_security 核心字段
 
-| 字段 | 说明 |
-|------|------|
-| stock_code | 股票代码，唯一索引 |
-| stock_name | 公司简称 |
-| industry | 所属行业 |
-| region | 地区（省份/直辖市） |
-| establish_date | 成立日期 |
-| registered_capital | 注册资本（万元） |
-| listing_date | 上市日期 |
-| market | 市场板块：SH / SZ / BJ |
+`company` 表存储公司法人实体，`company_security` 表存储上市证券（支持一家多券）：
+
+| 表 | 字段 | 说明 |
+|------|------|------|
+| company | unified_code | 统一社会信用代码（预留） |
+| company | company_name | 公司全称 |
+| company | short_name | 公司简称 |
+| company | industry | 所属行业 |
+| company | region | 地区（省份/直辖市） |
+| company | establish_date | 成立日期 |
+| company | registered_capital | 注册资本（万元） |
+| company_security | stock_code | 股票代码，全局唯一 |
+| company_security | stock_name | 证券简称 |
+| company_security | market | 市场板块：SH / SZ / BJ / HK |
+| company_security | security_type | 证券类型：A股 / B股 / H股 |
+| company_security | listing_date | 上市日期 |
+| company_security | listing_status | 上市状态：listed / suspended / delisted |
 
 ---
 
@@ -317,5 +329,8 @@ python main.py --finance 600519
 - 新增后端模块时，复制 `company/` 或 `auth/` / `admin/` / `user/` 的 package 结构（api / application / domain / infrastructure）。
 - 新增前端页面时，在 `src/views/` 创建组件，在 `src/router/index.ts` 注册路由，在 `src/api/` 添加接口封装。
 - 新增采集任务时，在 `collector/tasks/` 创建 Task 类，在 `collector/sources/` 如需新增数据源则继承风格保持一致。
-- 修改数据库 schema 时，新建 `Vx__description.sql` 脚本，并同步更新 Java Entity 与 Python 的 upsert 逻辑。
-- 修改数据库 schema 时，新建 `Vx__description.sql` 脚本，并同步更新 Java Entity 与 Python 的 upsert 逻辑。
+- 修改数据库 schema 时：
+  1. 新建 `Vx__description.sql` 增量脚本；
+  2. 同步更新 `db/release/v1.1.0__full_schema.sql` 完整快照；
+  3. 同步更新 `collector/sql/schema_reference.sql`；
+  4. 同步更新 Java Entity 与 Python 的 upsert 逻辑。
