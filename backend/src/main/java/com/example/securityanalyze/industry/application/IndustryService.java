@@ -4,6 +4,8 @@ import com.example.securityanalyze.company.api.CompanyListItem;
 import com.example.securityanalyze.company.api.CompanyListResponse;
 import com.example.securityanalyze.company.domain.Company;
 import com.example.securityanalyze.company.domain.CompanyRepository;
+import com.example.securityanalyze.company.domain.CompanySecurity;
+import com.example.securityanalyze.company.domain.CompanySecurityRepository;
 import com.example.securityanalyze.industry.api.IndustryCategoryDto;
 import com.example.securityanalyze.industry.api.IndustryListResponse;
 import com.example.securityanalyze.industry.api.IndustryTrendResponse;
@@ -30,6 +32,7 @@ public class IndustryService {
     private final IndustryCategoryRepository industryCategoryRepository;
     private final CompanyIndustryMappingRepository companyIndustryMappingRepository;
     private final CompanyRepository companyRepository;
+    private final CompanySecurityRepository companySecurityRepository;
     private final IndustryTrendGateway industryTrendGateway;
 
     public IndustryListResponse listIndustries(String standardCode, Integer level, String parentCode) {
@@ -86,8 +89,11 @@ public class IndustryService {
         List<CompanyListItem> items = new ArrayList<>();
         if (!pageIds.isEmpty()) {
             List<Company> companies = companyRepository.findAllById(pageIds);
+            List<CompanySecurity> securities = companySecurityRepository.findByCompanyIds(pageIds);
+            var securityMap = securities.stream()
+                    .collect(java.util.stream.Collectors.toMap(CompanySecurity::getCompanyId, s -> s, (a, b) -> a));
             for (Company company : companies) {
-                items.add(toListItem(company));
+                items.add(toListItem(company, securityMap.get(company.getId())));
             }
         }
 
@@ -137,10 +143,17 @@ public class IndustryService {
         return dto;
     }
 
-    private CompanyListItem toListItem(Company company) {
+    private CompanyListItem toListItem(Company company, CompanySecurity security) {
         CompanyListItem item = new CompanyListItem();
-        item.setStockCode(company.getUnifiedCode()); // 注意：这里可能需要从 security 关联获取
-        item.setStockName(company.getShortName());
+        if (security != null) {
+            item.setStockCode(security.getStockCode());
+            item.setStockName(security.getStockName());
+            item.setMarket(security.getMarket());
+            item.setListingDate(security.getListingDate());
+        } else {
+            item.setStockCode(company.getUnifiedCode());
+            item.setStockName(company.getShortName());
+        }
         item.setIndustry(company.getIndustry());
         item.setRegion(company.getRegion());
         return item;

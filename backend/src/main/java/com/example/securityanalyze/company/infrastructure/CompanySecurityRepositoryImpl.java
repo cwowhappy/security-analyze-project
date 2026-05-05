@@ -72,6 +72,19 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
     }
 
     @Override
+    public List<CompanySecurity> findByCompanyIds(List<Long> companyIds) {
+        log.debug("根据公司ID列表批量查询证券, companyIds={}", companyIds);
+        if (companyIds == null || companyIds.isEmpty()) {
+            return List.of();
+        }
+        String sql = SELECT_SQL + " WHERE company_id IN (:companyIds) ORDER BY stock_code ASC";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("companyIds", companyIds);
+
+        return jdbcTemplate.query(sql, params, ROW_MAPPER);
+    }
+
+    @Override
     public Optional<CompanySecurity> findByStockCode(String stockCode) {
         log.debug("根据股票代码查询证券, stockCode={}", stockCode);
         String sql = SELECT_SQL + " WHERE stock_code = :stockCode";

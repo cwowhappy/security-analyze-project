@@ -4,6 +4,7 @@
 backend/.gradle/
 backend/build/
 backend/out/
+backend/logs/
 backend/*.jar
 !backend/gradle/wrapper/gradle-wrapper.jar
 backend/gradle-app.setting

@@ -11,6 +11,7 @@ use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, Legen
 
 const props = defineProps<{
   metrics: IndicatorMetric[]
+  xAxisLabels?: string[]
 }>()
 
 const chartOption = computed(() => {
@@ -18,9 +19,8 @@ const chartOption = computed(() => {
     return {}
   }
 
-  // 使用第一个指标的数据作为 x 轴
-  const firstMetric = props.metrics[0]
-  const xData = firstMetric.data.map((d) => d.reportDate)
+  // 使用自定义 x 轴标签，或取第一个指标的数据日期作为 x 轴
+  const xData = props.xAxisLabels ?? props.metrics[0]?.data.map((d) => d.reportDate) ?? []
 
   const series = props.metrics.map((m) => {
     const isPercentage = m.unit === '%'

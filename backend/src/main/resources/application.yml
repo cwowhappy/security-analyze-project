@@ -16,5 +16,7 @@ spring:
       mode: never
 
 logging:
+  file:
+    name: logs/security-analyze
   level:
     com.example.securityanalyze: DEBUG

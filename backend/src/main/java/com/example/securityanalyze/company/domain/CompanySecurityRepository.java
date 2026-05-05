@@ -7,6 +7,8 @@ public interface CompanySecurityRepository {
 
     List<CompanySecurity> findByCompanyId(Long companyId);
 
+    List<CompanySecurity> findByCompanyIds(List<Long> companyIds);
+
     Optional<CompanySecurity> findByStockCode(String stockCode);
 
     List<CompanySecurity> findByKeyword(String keyword, int offset, int limit);

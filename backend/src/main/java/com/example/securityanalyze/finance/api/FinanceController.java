@@ -45,10 +45,20 @@ public class FinanceController {
             @PathVariable String stockCode,
             @RequestParam(defaultValue = "totalRevenue,netProfit,grossMargin,netMargin,debtRatio") String metrics,
             @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate) {
-        log.info("查询财务指标, stockCode={}, metrics={}", stockCode, metrics);
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) String reportType) {
+        log.info("查询财务指标, stockCode={}, metrics={}, reportType={}", stockCode, metrics, reportType);
         List<String> metricList = Arrays.asList(metrics.split(","));
-        FinanceIndicatorResponse response = financeService.getIndicators(stockCode, metricList, startDate, endDate);
+        FinanceIndicatorResponse response = financeService.getIndicators(stockCode, metricList, startDate, endDate, reportType);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{stockCode}/indicators/yearly")
+    public ResponseEntity<FinanceIndicatorResponse> getYearlyIndicators(
+            @PathVariable String stockCode,
+            @RequestParam int year) {
+        log.info("查询年度财务指标对比, stockCode={}, year={}", stockCode, year);
+        FinanceIndicatorResponse response = financeService.getYearlyIndicators(stockCode, year);
         return ResponseEntity.ok(response);
     }
 }

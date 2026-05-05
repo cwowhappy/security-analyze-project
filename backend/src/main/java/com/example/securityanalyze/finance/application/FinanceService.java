@@ -54,9 +54,10 @@ public class FinanceService {
     }
 
     public FinanceIndicatorResponse getIndicators(String stockCode, List<String> metrics,
-                                                   LocalDate startDate, LocalDate endDate) {
-        log.info("计算财务指标, stockCode={}, metrics={}, startDate={}, endDate={}",
-                stockCode, metrics, startDate, endDate);
+                                                   LocalDate startDate, LocalDate endDate,
+                                                   String reportType) {
+        log.info("计算财务指标, stockCode={}, metrics={}, startDate={}, endDate={}, reportType={}",
+                stockCode, metrics, startDate, endDate, reportType);
         List<FinancialReport> reports;
         if (startDate != null && endDate != null) {
             reports = reportRepository.findByStockCodeAndDateRange(stockCode, startDate, endDate);
@@ -66,12 +67,42 @@ public class FinanceService {
         // 正序排列，便于趋势展示
         List<FinancialReport> sorted = reports.reversed();
 
+        // 按报告类型过滤
+        if (reportType != null && !reportType.isBlank() && !"all".equalsIgnoreCase(reportType)) {
+            sorted = sorted.stream()
+                    .filter(r -> reportType.equals(r.getReportType()))
+                    .toList();
+        }
+
+        return buildIndicatorResponse(stockCode, metrics, sorted);
+    }
+
+    public FinanceIndicatorResponse getYearlyIndicators(String stockCode, int year) {
+        log.info("计算年度财务指标对比, stockCode={}, year={}", stockCode, year);
+        List<FinancialReport> reports = reportRepository.findByStockCodeAndYear(stockCode, year);
+
+        // 固定顺序：一季报 → 中报 → 三季报 → 年报
+        List<String> typeOrder = List.of("一季报", "中报", "三季报", "年报");
+        List<FinancialReport> sorted = typeOrder.stream()
+                .map(type -> reports.stream()
+                        .filter(r -> type.equals(r.getReportType()))
+                        .findFirst()
+                        .orElse(null))
+                .filter(java.util.Objects::nonNull)
+                .toList();
+
+        List<String> defaultMetrics = List.of("totalRevenue", "netProfit", "grossMargin", "netMargin", "debtRatio");
+        return buildIndicatorResponse(stockCode, defaultMetrics, sorted);
+    }
+
+    private FinanceIndicatorResponse buildIndicatorResponse(String stockCode, List<String> metrics,
+                                                             List<FinancialReport> reports) {
         FinanceIndicatorResponse response = new FinanceIndicatorResponse();
         response.setStockCode(stockCode);
         response.setMetrics(new ArrayList<>());
 
         for (String metric : metrics) {
-            FinanceIndicatorResponse.IndicatorMetric im = buildMetric(metric, sorted);
+            FinanceIndicatorResponse.IndicatorMetric im = buildMetric(metric, reports);
             if (im != null) {
                 response.getMetrics().add(im);
             }

@@ -15,7 +15,8 @@ export async function getFinanceIndicators(
   stockCode: string,
   metrics?: string[],
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  reportType?: string
 ): Promise<IndicatorResponse> {
   const params: Record<string, string> = {}
   if (metrics && metrics.length > 0) {
@@ -27,6 +28,19 @@ export async function getFinanceIndicators(
   if (endDate) {
     params.endDate = endDate
   }
+  if (reportType && reportType !== 'all') {
+    params.reportType = reportType
+  }
   const response = await client.get(`/finance/${stockCode}/indicators`, { params })
+  return response.data
+}
+
+export async function getYearlyIndicators(
+  stockCode: string,
+  year: number
+): Promise<IndicatorResponse> {
+  const response = await client.get(`/finance/${stockCode}/indicators/yearly`, {
+    params: { year: String(year) },
+  })
   return response.data
 }

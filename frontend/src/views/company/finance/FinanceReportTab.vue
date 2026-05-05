@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { ElTabs, ElTabPane, ElSelect, ElOption, ElMessage } from 'element-plus'
-import { getFinanceReports, getFinanceReportDetail, getFinanceIndicators } from '@/api/finance'
+import { getFinanceReports, getFinanceReportDetail, getFinanceIndicators, getYearlyIndicators } from '@/api/finance'
 import type { FinanceReportItem, FinanceReportDetail, IndicatorMetric } from '@/types/finance'
 import IndicatorChart from './IndicatorChart.vue'
 import ReportSummaryCards from './ReportSummaryCards.vue'
@@ -19,7 +19,17 @@ const reports = ref<FinanceReportItem[]>([])
 // ========== 趋势分析区域 ==========
 const trendStartDate = ref<string>('')
 const trendEndDate = ref<string>('')
+const trendReportType = ref<string>('all')
 const indicators = ref<IndicatorMetric[]>([])
+
+// 报告类型选项
+const reportTypeOptions = [
+  { value: 'all', label: '全部' },
+  { value: '一季报', label: '一季度' },
+  { value: '中报', label: '半年度' },
+  { value: '三季报', label: '三季度' },
+  { value: '年报', label: '年度' },
+]
 
 // 可用的报告期选项（倒序，最新的在前）
 const reportDateOptions = computed(() => {
@@ -29,25 +39,40 @@ const reportDateOptions = computed(() => {
   }))
 })
 
-// 校验：endDate 不能早于 startDate
-const endDateDisabled = computed(() => {
-  return (date: string) => {
-    if (!trendStartDate.value) return false
-    return date < trendStartDate.value
-  }
-})
-
 async function fetchIndicators() {
   try {
     const res = await getFinanceIndicators(
       props.stockCode,
       ['totalRevenue', 'netProfit', 'grossMargin', 'netMargin', 'debtRatio'],
       trendStartDate.value || undefined,
-      trendEndDate.value || undefined
+      trendEndDate.value || undefined,
+      trendReportType.value
     )
     indicators.value = res.metrics
   } catch (err) {
     console.error('加载指标趋势失败', err)
+  }
+}
+
+// ========== 年度报告期对比区域 ==========
+const comparisonYear = ref<number | null>(null)
+const yearlyIndicators = ref<IndicatorMetric[]>([])
+
+const yearOptions = computed(() => {
+  const years = new Set(reports.value.map((r) => r.reportYear))
+  return Array.from(years).sort((a, b) => b - a)
+})
+
+async function fetchYearlyIndicators() {
+  if (!comparisonYear.value) {
+    yearlyIndicators.value = []
+    return
+  }
+  try {
+    const res = await getYearlyIndicators(props.stockCode, comparisonYear.value)
+    yearlyIndicators.value = res.metrics
+  } catch (err) {
+    console.error('加载年度指标对比失败', err)
   }
 }
 
@@ -77,6 +102,11 @@ async function fetchReports() {
     if (reports.value.length > 0 && !selectedReportId.value) {
       selectedReportId.value = reports.value[0].id
     }
+
+    // 默认选中最近有数据的年份
+    if (yearOptions.value.length > 0 && !comparisonYear.value) {
+      comparisonYear.value = yearOptions.value[0]
+    }
   } catch (err) {
     ElMessage.error('加载财务报告列表失败')
     console.error(err)
@@ -91,13 +121,18 @@ watch(selectedReportId, (id) => {
   }
 })
 
-watch([trendStartDate, trendEndDate], () => {
+watch([trendStartDate, trendEndDate, trendReportType], () => {
   fetchIndicators()
+})
+
+watch(comparisonYear, () => {
+  fetchYearlyIndicators()
 })
 
 onMounted(() => {
   fetchReports().then(() => {
     fetchIndicators()
+    fetchYearlyIndicators()
   })
 })
 </script>
@@ -109,6 +144,18 @@ onMounted(() => {
       <div class="section-header">
         <h4 class="section-title">核心指标趋势分析</h4>
         <div class="date-range-selector">
+          <ElSelect
+            v-model="trendReportType"
+            placeholder="报告类型"
+            style="width: 120px"
+          >
+            <ElOption
+              v-for="opt in reportTypeOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </ElSelect>
           <ElSelect
             v-model="trendStartDate"
             placeholder="起始报告期"
@@ -140,6 +187,34 @@ onMounted(() => {
         </div>
       </div>
       <IndicatorChart :metrics="indicators" />
+    </div>
+
+    <!-- ========== 年度报告期对比区域 ========== -->
+    <div class="section comparison-section">
+      <div class="section-header">
+        <h4 class="section-title">年度报告期对比</h4>
+        <div class="year-selector">
+          <ElSelect
+            v-model="comparisonYear"
+            placeholder="选择年份"
+            clearable
+            style="width: 140px"
+          >
+            <ElOption
+              v-for="year in yearOptions"
+              :key="year"
+              :label="`${year}年`"
+              :value="year"
+            />
+          </ElSelect>
+        </div>
+      </div>
+      <IndicatorChart
+        v-if="comparisonYear"
+        :metrics="yearlyIndicators"
+        :x-axis-labels="['一季报', '中报', '三季报', '年报']"
+      />
+      <div v-else class="empty-tip">请选择年份查看对比</div>
     </div>
 
     <!-- ========== 选定报告期详情区域 ========== -->
@@ -217,6 +292,12 @@ onMounted(() => {
 .range-separator {
   color: #999;
   font-size: 14px;
+}
+
+.year-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .report-selector {
