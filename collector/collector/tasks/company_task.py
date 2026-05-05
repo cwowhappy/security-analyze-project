@@ -190,9 +190,16 @@ class CompanyTask:
         updated = 0
         failed = 0
 
-        for item in stock_list:
+        for idx, item in enumerate(stock_list):
             stock_code = item.get("code", "")
             stock_name = item.get("name", "")
+
+            # 每 500 条打印进度
+            if idx > 0 and idx % 500 == 0:
+                logger.info(
+                    f"Progress: {idx}/{total} ({idx * 100 // total}%), "
+                    f"Created: {created}, Updated: {updated}, Failed: {failed}"
+                )
 
             if not stock_code:
                 logger.warning("Skip empty stock code")

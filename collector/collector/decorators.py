@@ -35,15 +35,11 @@ def retry(
                     return func(*args, **kwargs)
                 except exceptions as e:
                     attempt += 1
-                    if attempt > max_retries:
-                        func_name = getattr(func, "__name__", repr(func))
-                        logger.error(
-                            f"{func_name} failed after {max_retries} retries: {e}"
-                        )
-                        raise
                     func_name = getattr(func, "__name__", repr(func))
+                    if attempt > max_retries:
+                        raise
                     logger.warning(
-                        f"{func_name} attempt {attempt} failed: {e}, retrying in {current_delay:.1f}s..."
+                        f"{func_name} attempt {attempt}/{max_retries} failed: {e}, retrying in {current_delay:.1f}s..."
                     )
                     time.sleep(current_delay)
                     current_delay *= backoff

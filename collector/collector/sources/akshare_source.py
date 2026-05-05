@@ -52,7 +52,7 @@ class AkshareSource:
                 return None
             return df.iloc[0].to_dict()
         except Exception as e:
-            logger.warning(f"Failed to get company profile for {stock_code}: {e}")
+            logger.debug(f"Failed to get company profile for {stock_code}: {e}")
             return None
 
     @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
@@ -63,7 +63,7 @@ class AkshareSource:
             info = dict(zip(df["item"].tolist(), df["value"].tolist()))
             return info
         except Exception as e:
-            logger.warning(f"Failed to get company info EM for {stock_code}: {e}")
+            logger.debug(f"Failed to get company info EM for {stock_code}: {e}")
             return None
 
     # ------------------------------------------------------------------
@@ -81,7 +81,7 @@ class AkshareSource:
                 return None
             return self._filter_by_year(df, start_year, end_year)
         except Exception as e:
-            logger.warning(f"Failed to get balance sheet for {symbol}: {e}")
+            logger.debug(f"Failed to get balance sheet for {symbol}: {e}")
             return None
 
     @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
@@ -96,7 +96,7 @@ class AkshareSource:
                 return None
             return self._filter_by_year(df, start_year, end_year)
         except Exception as e:
-            logger.warning(f"Failed to get profit sheet for {symbol}: {e}")
+            logger.debug(f"Failed to get profit sheet for {symbol}: {e}")
             return None
 
     @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
@@ -111,7 +111,7 @@ class AkshareSource:
                 return None
             return self._filter_by_year(df, start_year, end_year)
         except Exception as e:
-            logger.warning(f"Failed to get cash flow sheet for {symbol}: {e}")
+            logger.debug(f"Failed to get cash flow sheet for {symbol}: {e}")
             return None
 
     # ------------------------------------------------------------------

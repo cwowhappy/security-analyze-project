@@ -424,7 +424,8 @@ class FinanceTask:
             return 0, 0
 
         report_dates = [r.report_date for r in reports if r.report_date]
-        logger.info(f"[{stock_code}] 从数据源获取 {len(reports)} 条财务报告，报告期: {report_dates}")
+        date_range = f"{min(report_dates)} ~ {max(report_dates)}" if report_dates else "N/A"
+        logger.info(f"[{stock_code}] 从数据源获取 {len(reports)} 条财务报告，日期范围: {date_range}")
 
         # 增量过滤
         if incremental:
@@ -434,10 +435,9 @@ class FinanceTask:
                 reports = [r for r in reports if r.report_date and r.report_date > latest_date]
                 filtered_count = original_count - len(reports)
                 if filtered_count > 0:
-                    remaining_dates = [r.report_date for r in reports if r.report_date]
                     logger.info(
                         f"[{stock_code}] 增量模式过滤 {filtered_count} 条已存在报告（latest={latest_date}），"
-                        f"剩余待处理 {len(reports)} 条，报告期: {remaining_dates}"
+                        f"剩余待处理 {len(reports)} 条"
                     )
                 if not reports:
                     logger.info(f"[{stock_code}] 增量模式无新报告，最新报告期={latest_date}")
@@ -450,7 +450,7 @@ class FinanceTask:
         max_report_date = max(processed_dates) if processed_dates else None
 
         logger.info(
-            f"[{stock_code}] 财务报告采集完成，报告期: {processed_dates}，"
+            f"[{stock_code}] 财务报告采集完成，报告期数量: {len(processed_dates)}，"
             f"新建: {created}, 更新: {updated}"
         )
 
@@ -524,11 +524,11 @@ class FinanceTask:
                 continue
 
             if profit_row is None:
-                logger.warning(
+                logger.debug(
                     f"[{stock_code}] 报告期 {report_date} 在利润表中找不到对应行，利润表相关字段将留空"
                 )
             if cashflow_row is None:
-                logger.warning(
+                logger.debug(
                     f"[{stock_code}] 报告期 {report_date} 在现金流量表中找不到对应行，现金流量表相关字段将留空"
                 )
 
