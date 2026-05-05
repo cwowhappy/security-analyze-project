@@ -17,6 +17,13 @@
     python main.py --scheduler-cron-finance "0 2 * * 0"   # 启动调度器并注册每周日02:00财务采集
     python main.py --sync-industry                        # 手动执行一次行业分类同步
     python main.py --scheduler-cron-industry "0 3 * * 1"  # 启动调度器并注册每周一03:00行业同步
+    python main.py --run-index-basic                      # 手动执行一次全量指数基本信息采集
+    python main.py --run-index-history                    # 手动执行一次全量指数历史行情采集
+    python main.py --run-index-history --index-history-session-id <uuid>  # 恢复指定的 Session 继续采集
+    python main.py --run-etf-basic                        # 手动执行一次全量 ETF 基本信息采集
+    python main.py --scheduler-cron-index-basic "0 4 * * 1"   # 启动调度器并注册每周一04:00指数基本信息采集
+    python main.py --scheduler-cron-index-history "0 5 * * 1" # 启动调度器并注册每周一05:00指数历史行情采集
+    python main.py --scheduler-cron-etf-basic "0 6 * * 1"     # 启动调度器并注册每周一06:00 ETF 基本信息采集
 """
 import argparse
 import os
@@ -59,7 +66,8 @@ def create_db(cfg=None) -> PostgresDB:
     )
 
 
-def run_scheduler(cron_company: str = None, cron_finance: str = None, cron_industry: str = None):
+def run_scheduler(cron_company: str = None, cron_finance: str = None, cron_industry: str = None,
+                  cron_index_basic: str = None, cron_index_history: str = None, cron_etf_basic: str = None):
     logger.info("Starting security analyze collector scheduler...")
     cfg = CollectorConfig.from_env()
     db = create_db(cfg)
@@ -71,6 +79,12 @@ def run_scheduler(cron_company: str = None, cron_finance: str = None, cron_indus
         scheduler.add_finance_job(cron_finance)
     if cron_industry:
         scheduler.add_industry_sync_job(cron_industry)
+    if cron_index_basic:
+        scheduler.add_index_basic_job(cron_index_basic)
+    if cron_index_history:
+        scheduler.add_index_history_job(cron_index_history)
+    if cron_etf_basic:
+        scheduler.add_etf_basic_job(cron_etf_basic)
 
     scheduler.start()
 
@@ -94,6 +108,42 @@ def run_company_task_by_name(query: str):
     db = create_db()
     scheduler = Scheduler(db=db)
     scheduler.run_company_task_by_name(query)
+
+
+def run_index_basic_task():
+    logger.info("Manual trigger: full index basic task")
+    db = create_db()
+    scheduler = Scheduler(db=db)
+    scheduler.run_index_basic_task_now()
+
+
+def run_index_history_task(session_id=None):
+    logger.info("Manual trigger: full index history task")
+    if session_id:
+        logger.info(f"Resume with session_id={session_id}")
+    db = create_db()
+    source = AkshareSource()
+    monitor = Monitor(db)
+    from collector.tasks.index_history_task import IndexHistoryTask
+    task = IndexHistoryTask(db=db, source=source, monitor=monitor)
+    task.run(session_id=session_id)
+
+
+def run_index_history_task_incremental():
+    logger.info("Manual trigger: incremental index history task")
+    db = create_db()
+    source = AkshareSource()
+    monitor = Monitor(db)
+    from collector.tasks.index_history_task import IndexHistoryTask
+    task = IndexHistoryTask(db=db, source=source, monitor=monitor)
+    task.run(incremental=True)
+
+
+def run_etf_basic_task():
+    logger.info("Manual trigger: full ETF basic task")
+    db = create_db()
+    scheduler = Scheduler(db=db)
+    scheduler.run_etf_basic_task_now()
 
 
 def run_industry_sync_task():
@@ -230,6 +280,50 @@ def main():
         metavar="CRON",
         help="启动调度器并注册行业分类同步定时任务（cron 表达式，例如 '0 3 * * 1'）",
     )
+    parser.add_argument(
+        "--run-index-basic",
+        action="store_true",
+        help="手动执行一次全量指数基本信息采集任务",
+    )
+    parser.add_argument(
+        "--run-index-history",
+        action="store_true",
+        help="手动执行一次全量指数历史行情采集任务",
+    )
+    parser.add_argument(
+        "--run-index-history-incremental",
+        action="store_true",
+        help="手动执行一次增量指数历史行情采集任务（基于已有数据的最大日期自动推断起始日期）",
+    )
+    parser.add_argument(
+        "--index-history-session-id",
+        type=str,
+        metavar="UUID",
+        help="恢复指定的指数历史行情采集 Session（例如：--index-history-session-id a1b2c3d4...）",
+    )
+    parser.add_argument(
+        "--run-etf-basic",
+        action="store_true",
+        help="手动执行一次全量 ETF 基本信息采集任务",
+    )
+    parser.add_argument(
+        "--scheduler-cron-index-basic",
+        type=str,
+        metavar="CRON",
+        help="启动调度器并注册指数基本信息采集定时任务（cron 表达式）",
+    )
+    parser.add_argument(
+        "--scheduler-cron-index-history",
+        type=str,
+        metavar="CRON",
+        help="启动调度器并注册指数历史行情采集定时任务（cron 表达式）",
+    )
+    parser.add_argument(
+        "--scheduler-cron-etf-basic",
+        type=str,
+        metavar="CRON",
+        help="启动调度器并注册 ETF 基本信息采集定时任务（cron 表达式）",
+    )
     args = parser.parse_args()
 
     if args.finance:
@@ -255,11 +349,22 @@ def main():
         run_company_task()
     elif args.sync_industry:
         run_industry_sync_task()
+    elif args.run_index_basic:
+        run_index_basic_task()
+    elif args.run_index_history:
+        run_index_history_task(session_id=args.index_history_session_id)
+    elif args.run_index_history_incremental:
+        run_index_history_task_incremental()
+    elif args.run_etf_basic:
+        run_etf_basic_task()
     else:
         run_scheduler(
             cron_company=args.scheduler_cron_company,
             cron_finance=args.scheduler_cron_finance,
             cron_industry=args.scheduler_cron_industry,
+            cron_index_basic=args.scheduler_cron_index_basic,
+            cron_index_history=args.scheduler_cron_index_history,
+            cron_etf_basic=args.scheduler_cron_etf_basic,
         )
 
 

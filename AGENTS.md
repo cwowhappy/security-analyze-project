@@ -308,6 +308,7 @@ python main.py --finance 600519
 | 系统设计 | `docs/plans/2026-04-30-stock-analysis-system-design.md` | 技术选型、模块划分、数据流、部署形态 |
 | 模块设计 | `docs/wiki/module-design.md` | 7 大功能模块的职责边界与分层归属 |
 | API 契约 | `docs/wiki/api-company.md` | 公司列表、公司详情接口的字段定义与约束 |
+| API 契约 | `docs/wiki/api-index.md` | 指数列表、详情、趋势、关联 ETF 接口的字段定义与约束 |
 
 ---
 
@@ -316,4 +317,5 @@ python main.py --finance 600519
 - 新增后端模块时，复制 `company/` 或 `auth/` / `admin/` / `user/` 的 package 结构（api / application / domain / infrastructure）。
 - 新增前端页面时，在 `src/views/` 创建组件，在 `src/router/index.ts` 注册路由，在 `src/api/` 添加接口封装。
 - 新增采集任务时，在 `collector/tasks/` 创建 Task 类，在 `collector/sources/` 如需新增数据源则继承风格保持一致。
+- 修改数据库 schema 时，新建 `Vx__description.sql` 脚本，并同步更新 Java Entity 与 Python 的 upsert 逻辑。
 - 修改数据库 schema 时，新建 `Vx__description.sql` 脚本，并同步更新 Java Entity 与 Python 的 upsert 逻辑。

@@ -138,6 +138,145 @@ class SecurityEntity(BaseModel):
         )
 
 
+class IndexInfoEntity(BaseModel):
+    """指数基本信息"""
+
+    index_code: str
+    index_name: str
+    index_type: Optional[str] = None
+    market: str = "CN"
+    base_date: Optional[str] = None
+    base_point: Optional[float] = None
+    component_count: Optional[int] = None
+    publish_date: Optional[str] = None
+    source: str = "akshare"
+
+    def to_upsert_tuple(self) -> tuple:
+        return (
+            self.index_code,
+            self.index_name,
+            self.index_type,
+            self.market,
+            self.base_date,
+            self.base_point,
+            self.component_count,
+            self.publish_date,
+            self.source,
+        )
+
+    @classmethod
+    def upsert_sql(cls) -> str:
+        return """
+            INSERT INTO index_info (index_code, index_name, index_type, market, base_date, base_point, component_count, publish_date, source, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            ON CONFLICT (index_code) DO UPDATE SET
+                index_name = EXCLUDED.index_name,
+                index_type = EXCLUDED.index_type,
+                market = EXCLUDED.market,
+                base_date = EXCLUDED.base_date,
+                base_point = EXCLUDED.base_point,
+                component_count = EXCLUDED.component_count,
+                publish_date = EXCLUDED.publish_date,
+                source = EXCLUDED.source,
+                updated_at = NOW()
+        """
+
+
+class IndexHistoryEntity(BaseModel):
+    """指数历史行情"""
+
+    index_code: str
+    trade_date: str
+    granularity: str = "day"
+    open_price: Optional[float] = None
+    high_price: Optional[float] = None
+    low_price: Optional[float] = None
+    close_price: Optional[float] = None
+    volume: Optional[int] = None
+    amount: Optional[float] = None
+    amplitude: Optional[float] = None
+    change_pct: Optional[float] = None
+    change_amount: Optional[float] = None
+    turnover_rate: Optional[float] = None
+
+    def to_upsert_tuple(self) -> tuple:
+        return (
+            self.index_code,
+            self.trade_date,
+            self.granularity,
+            self.open_price,
+            self.high_price,
+            self.low_price,
+            self.close_price,
+            self.volume,
+            self.amount,
+            self.amplitude,
+            self.change_pct,
+            self.change_amount,
+            self.turnover_rate,
+        )
+
+    @classmethod
+    def upsert_sql(cls) -> str:
+        return """
+            INSERT INTO index_history (index_code, trade_date, granularity, open_price, high_price, low_price, close_price, volume, amount, amplitude, change_pct, change_amount, turnover_rate, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            ON CONFLICT (index_code, trade_date, granularity) DO UPDATE SET
+                open_price = EXCLUDED.open_price,
+                high_price = EXCLUDED.high_price,
+                low_price = EXCLUDED.low_price,
+                close_price = EXCLUDED.close_price,
+                volume = EXCLUDED.volume,
+                amount = EXCLUDED.amount,
+                amplitude = EXCLUDED.amplitude,
+                change_pct = EXCLUDED.change_pct,
+                change_amount = EXCLUDED.change_amount,
+                turnover_rate = EXCLUDED.turnover_rate,
+                updated_at = NOW()
+        """
+
+
+class EtfInfoEntity(BaseModel):
+    """ETF 基本信息"""
+
+    etf_code: str
+    etf_name: str
+    tracking_index_code: Optional[str] = None
+    management_fee: Optional[float] = None
+    fund_size: Optional[float] = None
+    establish_date: Optional[str] = None
+    market: str = "CN"
+    source: str = "akshare"
+
+    def to_upsert_tuple(self) -> tuple:
+        return (
+            self.etf_code,
+            self.etf_name,
+            self.tracking_index_code,
+            self.management_fee,
+            self.fund_size,
+            self.establish_date,
+            self.market,
+            self.source,
+        )
+
+    @classmethod
+    def upsert_sql(cls) -> str:
+        return """
+            INSERT INTO etf_info (etf_code, etf_name, tracking_index_code, management_fee, fund_size, establish_date, market, source, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            ON CONFLICT (etf_code) DO UPDATE SET
+                etf_name = EXCLUDED.etf_name,
+                tracking_index_code = EXCLUDED.tracking_index_code,
+                management_fee = EXCLUDED.management_fee,
+                fund_size = EXCLUDED.fund_size,
+                establish_date = EXCLUDED.establish_date,
+                market = EXCLUDED.market,
+                source = EXCLUDED.source,
+                updated_at = NOW()
+        """
+
+
 class FinancialReport(BaseModel):
     """财务报告"""
 

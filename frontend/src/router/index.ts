@@ -59,6 +59,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/indexes',
+      name: 'index-list',
+      component: () => import('@/views/index/IndexListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/indexes/:indexCode',
+      name: 'index-detail',
+      component: () => import('@/views/index/IndexDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/admin/users',
       name: 'admin-users',
       component: () => import('@/views/admin/UserManagementView.vue'),

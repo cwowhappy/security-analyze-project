@@ -228,3 +228,114 @@ class Scheduler:
         """手动立即执行行业分类同步任务"""
         logger.info("Manual trigger: industry classification sync task")
         self._run_industry_sync_task()
+
+    # ------------------------------------------------------------------
+    # 指数模块任务
+    # ------------------------------------------------------------------
+    def add_index_basic_job(self, cron: str, job_id: str = "index_basic_task") -> bool:
+        """添加/更新指数基本信息采集定时任务"""
+        try:
+            trigger = CronTrigger.from_crontab(cron)
+            if self._scheduler.get_job(job_id):
+                self._scheduler.reschedule_job(job_id, trigger=trigger)
+                logger.info(f"Rescheduled index basic job '{job_id}' with cron '{cron}'")
+            else:
+                self._scheduler.add_job(
+                    self._run_index_basic_task,
+                    trigger=trigger,
+                    id=job_id,
+                    name="Index Basic Sync",
+                    replace_existing=True,
+                )
+                logger.info(f"Added index basic job '{job_id}' with cron '{cron}'")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to add index basic job: {e}")
+            return False
+
+    def add_index_history_job(self, cron: str, job_id: str = "index_history_task") -> bool:
+        """添加/更新指数历史行情采集定时任务"""
+        try:
+            trigger = CronTrigger.from_crontab(cron)
+            if self._scheduler.get_job(job_id):
+                self._scheduler.reschedule_job(job_id, trigger=trigger)
+                logger.info(f"Rescheduled index history job '{job_id}' with cron '{cron}'")
+            else:
+                self._scheduler.add_job(
+                    self._run_index_history_task,
+                    trigger=trigger,
+                    id=job_id,
+                    name="Index History Sync",
+                    replace_existing=True,
+                )
+                logger.info(f"Added index history job '{job_id}' with cron '{cron}'")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to add index history job: {e}")
+            return False
+
+    def add_etf_basic_job(self, cron: str, job_id: str = "etf_basic_task") -> bool:
+        """添加/更新 ETF 基本信息采集定时任务"""
+        try:
+            trigger = CronTrigger.from_crontab(cron)
+            if self._scheduler.get_job(job_id):
+                self._scheduler.reschedule_job(job_id, trigger=trigger)
+                logger.info(f"Rescheduled ETF basic job '{job_id}' with cron '{cron}'")
+            else:
+                self._scheduler.add_job(
+                    self._run_etf_basic_task,
+                    trigger=trigger,
+                    id=job_id,
+                    name="ETF Basic Sync",
+                    replace_existing=True,
+                )
+                logger.info(f"Added ETF basic job '{job_id}' with cron '{cron}'")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to add ETF basic job: {e}")
+            return False
+
+    def _run_index_basic_task(self):
+        logger.info("Running scheduled index basic task...")
+        try:
+            from collector.tasks.index_basic_task import IndexBasicTask
+            source = AkshareSource()
+            task = IndexBasicTask(db=self.db, source=source, monitor=self.monitor)
+            task.run()
+        except Exception as e:
+            logger.error(f"Scheduled index basic task failed: {e}")
+
+    def _run_index_history_task(self):
+        logger.info("Running scheduled index history task...")
+        try:
+            from collector.tasks.index_history_task import IndexHistoryTask
+            source = AkshareSource()
+            task = IndexHistoryTask(db=self.db, source=source, monitor=self.monitor)
+            task.run()
+        except Exception as e:
+            logger.error(f"Scheduled index history task failed: {e}")
+
+    def _run_etf_basic_task(self):
+        logger.info("Running scheduled ETF basic task...")
+        try:
+            from collector.tasks.etf_basic_task import EtfBasicTask
+            source = AkshareSource()
+            task = EtfBasicTask(db=self.db, source=source, monitor=self.monitor)
+            task.run()
+        except Exception as e:
+            logger.error(f"Scheduled ETF basic task failed: {e}")
+
+    def run_index_basic_task_now(self):
+        """手动立即执行指数基本信息采集任务"""
+        logger.info("Manual trigger: full index basic task")
+        self._run_index_basic_task()
+
+    def run_index_history_task_now(self):
+        """手动立即执行指数历史行情采集任务"""
+        logger.info("Manual trigger: full index history task")
+        self._run_index_history_task()
+
+    def run_etf_basic_task_now(self):
+        """手动立即执行 ETF 基本信息采集任务"""
+        logger.info("Manual trigger: full ETF basic task")
+        self._run_etf_basic_task()

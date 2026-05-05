@@ -101,7 +101,7 @@ class FinanceServiceTest {
                 .thenReturn(List.of(r1));
 
         List<String> metrics = List.of("totalRevenue", "netProfit", "totalAssets", "totalEquity", "grossMargin", "netMargin", "debtRatio");
-        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, start, end);
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, start, end, "年报");
 
         assertEquals("600519", response.getStockCode());
         assertFalse(response.getMetrics().isEmpty());
@@ -115,7 +115,7 @@ class FinanceServiceTest {
         when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
 
         List<String> metrics = List.of("totalRevenue");
-        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null, "季报");
 
         assertEquals(1, response.getMetrics().size());
         assertEquals("totalRevenue", response.getMetrics().get(0).getMetric());
@@ -127,7 +127,7 @@ class FinanceServiceTest {
         when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
 
         List<String> metrics = List.of("unknownMetric");
-        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null, "季报");
 
         assertTrue(response.getMetrics().isEmpty(), "未知 metric 应返回空列表");
     }
@@ -141,7 +141,7 @@ class FinanceServiceTest {
         when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
 
         List<String> metrics = List.of("totalRevenue", "netProfit");
-        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null, "季报");
 
         assertEquals(2, response.getMetrics().size());
         assertTrue(response.getMetrics().get(0).getData().isEmpty(), "value 为 null 时不应添加数据点");
@@ -157,7 +157,7 @@ class FinanceServiceTest {
         when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
 
         List<String> metrics = List.of("grossMargin");
-        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null, "季报");
 
         assertEquals(1, response.getMetrics().size());
         assertTrue(response.getMetrics().get(0).getData().isEmpty(), "营业收入为 0 时不应计算毛利率");
@@ -172,7 +172,7 @@ class FinanceServiceTest {
         when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
 
         List<String> metrics = List.of("grossMargin");
-        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null, "季报");
 
         assertTrue(response.getMetrics().get(0).getData().isEmpty(), "营业成本为 null 时不应计算毛利率");
     }
@@ -186,7 +186,7 @@ class FinanceServiceTest {
         when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
 
         List<String> metrics = List.of("netMargin");
-        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null, "季报");
 
         assertTrue(response.getMetrics().get(0).getData().isEmpty(), "营业收入为 null 时不应计算净利率");
     }
@@ -200,7 +200,7 @@ class FinanceServiceTest {
         when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
 
         List<String> metrics = List.of("debtRatio");
-        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null, "季报");
 
         assertTrue(response.getMetrics().get(0).getData().isEmpty(), "总资产为 0 时不应计算资产负债率");
     }
@@ -214,7 +214,7 @@ class FinanceServiceTest {
         when(reportRepository.findByStockCode("600519")).thenReturn(List.of(r1));
 
         List<String> metrics = List.of("debtRatio");
-        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null);
+        FinanceIndicatorResponse response = financeService.getIndicators("600519", metrics, null, null, "季报");
 
         assertTrue(response.getMetrics().get(0).getData().isEmpty(), "总负债为 null 时不应计算资产负债率");
     }

@@ -179,6 +179,63 @@ class AkshareSource:
             mask = mask & (years <= end_year)
         return df[mask].copy()
 
+    # ------------------------------------------------------------------
+    # 指数信息
+    # ------------------------------------------------------------------
+    def get_index_list(self) -> List[Dict[str, Any]]:
+        """获取 A 股指数列表"""
+        df = self._ak.index_stock_info()
+        return df.to_dict(orient="records")
+
+    @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    def get_index_history(
+        self,
+        symbol: str,
+        period: str = "daily",
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> Optional[pd.DataFrame]:
+        """获取指数历史行情，支持 daily/weekly/monthly"""
+        try:
+            if start_date is None:
+                start_date = "19000101"
+            if end_date is None:
+                end_date = time.strftime("%Y%m%d")
+            df = self._ak.index_zh_a_hist(
+                symbol=symbol, period=period, start_date=start_date, end_date=end_date
+            )
+            if df is None or df.empty:
+                logger.warning(f"Empty history for index {symbol}, period={period}")
+                return None
+            return df
+        except Exception as e:
+            logger.debug(f"Failed to get index history for {symbol}: {e}")
+            return None
+
+    # ------------------------------------------------------------------
+    # ETF 信息
+    # ------------------------------------------------------------------
+    def get_etf_spot_list(self) -> List[Dict[str, Any]]:
+        """获取 ETF 实时行情列表（含代码、名称等基本信息）"""
+        df = self._ak.fund_etf_spot_em()
+        return df.to_dict(orient="records")
+
+    @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    def get_etf_fund_info(self, fund_code: str) -> Optional[pd.DataFrame]:
+        """获取 ETF 历史净值信息"""
+        try:
+            df = self._ak.fund_etf_fund_info_em(fund=fund_code)
+            if df is None or df.empty:
+                logger.warning(f"Empty fund info for ETF {fund_code}")
+                return None
+            return df
+        except Exception as e:
+            logger.debug(f"Failed to get ETF fund info for {fund_code}: {e}")
+            return None
+
+    # ------------------------------------------------------------------
+    # 静态工具
+    # ------------------------------------------------------------------
     @staticmethod
     def infer_market(stock_code: str) -> str:
         """根据股票代码推断市场板块前缀（用于 akshare 接口）"""

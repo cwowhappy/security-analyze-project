@@ -78,7 +78,7 @@ class FinanceControllerTest {
         FinanceIndicatorResponse response = new FinanceIndicatorResponse();
         response.setStockCode("600519");
 
-        when(financeService.getIndicators("600519", List.of("totalRevenue", "netProfit", "grossMargin", "netMargin", "debtRatio"), null, null))
+        when(financeService.getIndicators("600519", List.of("totalRevenue", "netProfit", "grossMargin", "netMargin", "debtRatio"), null, null, null))
                 .thenReturn(response);
 
         mockMvc.perform(get("/api/finance/600519/indicators"))

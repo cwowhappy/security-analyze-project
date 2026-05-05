@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { ElCard } from 'element-plus'
-import { OfficeBuilding, DataLine, Grid } from '@element-plus/icons-vue'
+import { OfficeBuilding, DataLine, Grid, TrendCharts } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -16,12 +16,23 @@ function goToCollectorDashboard() {
 function goToIndustries() {
   router.push('/industries')
 }
+
+function goToIndexes() {
+  router.push('/indexes')
+}
 </script>
 
 <template>
   <div class="home">
     <h1>证券分析系统</h1>
     <div class="card-grid">
+      <ElCard class="entry-card" shadow="hover" @click="goToIndexes">
+        <div class="card-content">
+          <TrendCharts class="icon" />
+          <div class="title">指数信息</div>
+          <div class="desc">查看指数基本信息、趋势分析、关联ETF</div>
+        </div>
+      </ElCard>
       <ElCard class="entry-card" shadow="hover" @click="goToIndustries">
         <div class="card-content">
           <Grid class="icon" />

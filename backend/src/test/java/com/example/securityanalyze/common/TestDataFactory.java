@@ -3,6 +3,10 @@ package com.example.securityanalyze.common;
 import com.example.securityanalyze.company.domain.Company;
 import com.example.securityanalyze.company.domain.CompanySecurity;
 import com.example.securityanalyze.finance.domain.FinancialReport;
+import com.example.securityanalyze.index.domain.EtfInfo;
+import com.example.securityanalyze.index.domain.IndexEtfMapping;
+import com.example.securityanalyze.index.domain.IndexHistory;
+import com.example.securityanalyze.index.domain.IndexInfo;
 import com.example.securityanalyze.user.domain.Role;
 import com.example.securityanalyze.user.domain.User;
 import com.example.securityanalyze.user.domain.UserStatus;
@@ -156,6 +160,164 @@ public final class TestDataFactory {
         LocalDateTime now = LocalDateTime.now();
         params.addValue("createdAt", report.getCreatedAt() != null ? report.getCreatedAt() : now);
         params.addValue("updatedAt", report.getUpdatedAt() != null ? report.getUpdatedAt() : now);
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(sql, params, keyHolder, new String[]{"id"});
+        return keyHolder.getKey().longValue();
+    }
+
+    // ------------------------------------------------------------------
+    // 指数模块测试数据辅助方法
+    // ------------------------------------------------------------------
+
+    public static IndexInfo indexInfo(String indexCode, String indexName, String indexType) {
+        IndexInfo idx = new IndexInfo();
+        idx.setIndexCode(indexCode);
+        idx.setIndexName(indexName);
+        idx.setIndexType(indexType);
+        idx.setMarket(indexCode.startsWith("0") || indexCode.startsWith("9") ? "SH" : "SZ");
+        idx.setBaseDate(LocalDate.of(2000, 1, 1));
+        idx.setBasePoint(new BigDecimal("1000.00"));
+        idx.setComponentCount(100);
+        idx.setPublishDate(LocalDate.of(2010, 6, 1));
+        idx.setIsCore(false);
+        idx.setSource("test");
+        return idx;
+    }
+
+    public static IndexHistory indexHistory(String indexCode, LocalDate tradeDate, String granularity) {
+        IndexHistory h = new IndexHistory();
+        h.setIndexCode(indexCode);
+        h.setTradeDate(tradeDate);
+        h.setGranularity(granularity);
+        h.setOpenPrice(new BigDecimal("3000.00"));
+        h.setHighPrice(new BigDecimal("3100.00"));
+        h.setLowPrice(new BigDecimal("2900.00"));
+        h.setClosePrice(new BigDecimal("3050.00"));
+        h.setVolume(1000000L);
+        h.setAmount(new BigDecimal("500000000"));
+        h.setAmplitude(new BigDecimal("3.33"));
+        h.setChangePct(new BigDecimal("1.67"));
+        h.setChangeAmount(new BigDecimal("50.00"));
+        h.setTurnoverRate(new BigDecimal("0.50"));
+        return h;
+    }
+
+    public static EtfInfo etfInfo(String etfCode, String etfName, String trackingIndexCode) {
+        EtfInfo etf = new EtfInfo();
+        etf.setEtfCode(etfCode);
+        etf.setEtfName(etfName);
+        etf.setTrackingIndexCode(trackingIndexCode);
+        etf.setManagementFee(new BigDecimal("0.50"));
+        etf.setFundSize(new BigDecimal("1000000000"));
+        etf.setEstablishDate(LocalDate.of(2015, 1, 1));
+        etf.setMarket(etfCode.startsWith("5") ? "SH" : "SZ");
+        etf.setSource("test");
+        return etf;
+    }
+
+    public static IndexEtfMapping indexEtfMapping(String indexCode, String etfCode) {
+        IndexEtfMapping m = new IndexEtfMapping();
+        m.setIndexCode(indexCode);
+        m.setEtfCode(etfCode);
+        m.setRelationType("track");
+        return m;
+    }
+
+    public static Long insertIndexInfo(NamedParameterJdbcTemplate jdbc, IndexInfo index) {
+        String sql = """
+                INSERT INTO index_info (index_code, index_name, index_type, market, base_date, base_point,
+                                        component_count, publish_date, is_core, source, created_at, updated_at)
+                VALUES (:indexCode, :indexName, :indexType, :market, :baseDate, :basePoint,
+                        :componentCount, :publishDate, :isCore, :source, :createdAt, :updatedAt)
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("indexCode", index.getIndexCode());
+        params.addValue("indexName", index.getIndexName());
+        params.addValue("indexType", index.getIndexType());
+        params.addValue("market", index.getMarket());
+        params.addValue("baseDate", index.getBaseDate());
+        params.addValue("basePoint", index.getBasePoint());
+        params.addValue("componentCount", index.getComponentCount());
+        params.addValue("publishDate", index.getPublishDate());
+        params.addValue("isCore", index.getIsCore());
+        params.addValue("source", index.getSource());
+        LocalDateTime now = LocalDateTime.now();
+        params.addValue("createdAt", index.getCreatedAt() != null ? index.getCreatedAt() : now);
+        params.addValue("updatedAt", index.getUpdatedAt() != null ? index.getUpdatedAt() : now);
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(sql, params, keyHolder, new String[]{"id"});
+        return keyHolder.getKey().longValue();
+    }
+
+    public static Long insertIndexHistory(NamedParameterJdbcTemplate jdbc, IndexHistory history) {
+        String sql = """
+                INSERT INTO index_history (index_code, trade_date, granularity, open_price, high_price, low_price,
+                                           close_price, volume, amount, amplitude, change_pct, change_amount,
+                                           turnover_rate, created_at, updated_at)
+                VALUES (:indexCode, :tradeDate, :granularity, :openPrice, :highPrice, :lowPrice,
+                        :closePrice, :volume, :amount, :amplitude, :changePct, :changeAmount,
+                        :turnoverRate, :createdAt, :updatedAt)
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("indexCode", history.getIndexCode());
+        params.addValue("tradeDate", history.getTradeDate());
+        params.addValue("granularity", history.getGranularity());
+        params.addValue("openPrice", history.getOpenPrice());
+        params.addValue("highPrice", history.getHighPrice());
+        params.addValue("lowPrice", history.getLowPrice());
+        params.addValue("closePrice", history.getClosePrice());
+        params.addValue("volume", history.getVolume());
+        params.addValue("amount", history.getAmount());
+        params.addValue("amplitude", history.getAmplitude());
+        params.addValue("changePct", history.getChangePct());
+        params.addValue("changeAmount", history.getChangeAmount());
+        params.addValue("turnoverRate", history.getTurnoverRate());
+        LocalDateTime now = LocalDateTime.now();
+        params.addValue("createdAt", history.getCreatedAt() != null ? history.getCreatedAt() : now);
+        params.addValue("updatedAt", history.getUpdatedAt() != null ? history.getUpdatedAt() : now);
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(sql, params, keyHolder, new String[]{"id"});
+        return keyHolder.getKey().longValue();
+    }
+
+    public static Long insertEtfInfo(NamedParameterJdbcTemplate jdbc, EtfInfo etf) {
+        String sql = """
+                INSERT INTO etf_info (etf_code, etf_name, tracking_index_code, management_fee, fund_size,
+                                      establish_date, market, source, created_at, updated_at)
+                VALUES (:etfCode, :etfName, :trackingIndexCode, :managementFee, :fundSize,
+                        :establishDate, :market, :source, :createdAt, :updatedAt)
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("etfCode", etf.getEtfCode());
+        params.addValue("etfName", etf.getEtfName());
+        params.addValue("trackingIndexCode", etf.getTrackingIndexCode());
+        params.addValue("managementFee", etf.getManagementFee());
+        params.addValue("fundSize", etf.getFundSize());
+        params.addValue("establishDate", etf.getEstablishDate());
+        params.addValue("market", etf.getMarket());
+        params.addValue("source", etf.getSource());
+        LocalDateTime now = LocalDateTime.now();
+        params.addValue("createdAt", etf.getCreatedAt() != null ? etf.getCreatedAt() : now);
+        params.addValue("updatedAt", etf.getUpdatedAt() != null ? etf.getUpdatedAt() : now);
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(sql, params, keyHolder, new String[]{"id"});
+        return keyHolder.getKey().longValue();
+    }
+
+    public static Long insertIndexEtfMapping(NamedParameterJdbcTemplate jdbc, IndexEtfMapping mapping) {
+        String sql = """
+                INSERT INTO index_etf_mapping (index_code, etf_code, relation_type, created_at)
+                VALUES (:indexCode, :etfCode, :relationType, :createdAt)
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("indexCode", mapping.getIndexCode());
+        params.addValue("etfCode", mapping.getEtfCode());
+        params.addValue("relationType", mapping.getRelationType());
+        params.addValue("createdAt", mapping.getCreatedAt() != null ? mapping.getCreatedAt() : LocalDateTime.now());
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbc.update(sql, params, keyHolder, new String[]{"id"});
