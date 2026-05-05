@@ -8,10 +8,16 @@ import com.example.securityanalyze.company.domain.Company;
 import com.example.securityanalyze.company.domain.CompanyRepository;
 import com.example.securityanalyze.company.domain.CompanySecurity;
 import com.example.securityanalyze.company.domain.CompanySecurityRepository;
+import com.example.securityanalyze.industry.api.CompanyIndustryDto;
+import com.example.securityanalyze.industry.domain.CompanyIndustryMapping;
+import com.example.securityanalyze.industry.domain.CompanyIndustryMappingRepository;
+import com.example.securityanalyze.industry.domain.IndustryCategory;
+import com.example.securityanalyze.industry.domain.IndustryCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,6 +30,8 @@ public class CompanyService {
 
     private final CompanyRepository companyRepository;
     private final CompanySecurityRepository companySecurityRepository;
+    private final CompanyIndustryMappingRepository companyIndustryMappingRepository;
+    private final IndustryCategoryRepository industryCategoryRepository;
 
     public CompanyListResponse listCompanies(String keyword, int page, int size) {
         log.debug("查询公司列表, keyword={}, page={}, size={}", keyword, page, size);
@@ -107,6 +115,38 @@ public class CompanyService {
                 .map(this::toSecurityItem)
                 .toList();
         response.setSecurities(securityItems);
+
+        // 填充多标准行业分类
+        List<CompanyIndustryMapping> mappings = companyIndustryMappingRepository.findByCompanyId(company.getId());
+        List<CompanyIndustryDto> industryDtos = new ArrayList<>();
+        for (CompanyIndustryMapping mapping : mappings) {
+            CompanyIndustryDto dto = new CompanyIndustryDto();
+            dto.setStandardCode(mapping.getStandardCode());
+            dto.setPrimary(mapping.getPrimary());
+
+            IndustryCategory l1 = industryCategoryRepository.findByCode(mapping.getStandardCode(), mapping.getLevel1Code()).orElse(null);
+            if (l1 != null) {
+                dto.setLevel1Code(l1.getCode());
+                dto.setLevel1Name(l1.getName());
+            }
+            if (mapping.getLevel2Code() != null) {
+                IndustryCategory l2 = industryCategoryRepository.findByCode(mapping.getStandardCode(), mapping.getLevel2Code()).orElse(null);
+                if (l2 != null) {
+                    dto.setLevel2Code(l2.getCode());
+                    dto.setLevel2Name(l2.getName());
+                }
+            }
+
+            // 标准名称
+            dto.setStandardName(switch (mapping.getStandardCode()) {
+                case "SW" -> "申万行业分类";
+                case "EM" -> "东方财富行业分类";
+                default -> mapping.getStandardCode();
+            });
+
+            industryDtos.add(dto);
+        }
+        response.setIndustries(industryDtos);
 
         return response;
     }

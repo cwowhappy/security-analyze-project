@@ -5,9 +5,59 @@ from collector.db.postgres import PostgresDB
 from collector.sources.akshare_source import AkshareSource
 from collector.monitor import Monitor
 from collector.utils import parse_date, parse_capital, extract_region, infer_market
-from collector.models import CompanyEntity, SecurityEntity
+from collector.models import CompanyEntity, SecurityEntity, CompanyIndustryMapping
 
 logger = logging.getLogger(__name__)
+
+# 申万行业编码映射（从 stock_industry_clf_hist_sw 的 6 位编码映射到 801xxx）
+# 一级：前 2 位 -> 8010xx
+L1_TO_801_MAPPING = {
+    "11": "801030", "22": "801030", "23": "801040", "24": "801050",
+    "27": "801750", "28": "801880", "33": "801110", "34": "801760",
+    "35": "801130", "36": "801140", "37": "801150", "41": "801160",
+    "42": "801170", "43": "801180", "45": "801200", "46": "801210",
+    "48": "801780", "49": "801790", "51": "801880", "61": "801710",
+    "62": "801720", "63": "801730", "64": "801890", "65": "801740",
+    "71": "801750", "72": "801760", "73": "801230", "74": "801950",
+    "75": "801960", "76": "801970", "77": "801980",
+}
+
+# 二级：前 4 位 -> 801xxx
+L2_TO_801_MAPPING = {
+    "1101": "801038", "1102": "801015", "1103": "801011", "1104": "801014",
+    "1105": "801012", "1107": "801181", "1108": "801018", "1109": "801019",
+    "2202": "801033", "2203": "801034", "2204": "801032", "2205": "801036",
+    "2206": "801037", "2208": "801033", "2209": "801039", "2303": "801043",
+    "2304": "801044", "2305": "801045", "2402": "801051", "2403": "801055",
+    "2404": "801181", "2405": "801054", "2406": "801038", "2701": "801101",
+    "2702": "801083", "2703": "801084", "2704": "801082", "2705": "801085",
+    "2706": "801086", "2802": "801093", "2803": "801082", "2804": "801881",
+    "2805": "801095", "2806": "801096", "3301": "801111", "3302": "801112",
+    "3303": "801113", "3304": "801114", "3305": "801115", "3306": "801116",
+    "3307": "801117", "3404": "801769", "3405": "801125", "3406": "801126",
+    "3407": "801127", "3408": "801128", "3409": "801129", "3501": "801131",
+    "3502": "801132", "3503": "801881", "3601": "801143", "3602": "801141",
+    "3603": "801142", "3605": "801765", "3701": "801151", "3702": "801151",
+    "3703": "801152", "3704": "801154", "3705": "801153", "3706": "801156",
+    "4101": "801161", "4103": "801163", "4208": "801178", "4209": "801179",
+    "4210": "801991", "4211": "801992", "4301": "801181", "4303": "801183",
+    "4502": "801202", "4503": "801203", "4504": "801204", "4506": "801206",
+    "4507": "801181", "4606": "801216", "4608": "801982", "4609": "801219",
+    "4610": "801993", "4611": "801994", "4802": "801782", "4803": "801783",
+    "4804": "801784", "4805": "801785", "4901": "801193", "4902": "801194",
+    "4903": "801191", "5101": "801092", "6101": "801711", "6102": "801712",
+    "6103": "801713", "6201": "801721", "6202": "801722", "6203": "801723",
+    "6204": "801102", "6206": "801726", "6301": "801731", "6303": "801733",
+    "6305": "801963", "6306": "801736", "6307": "801737", "6308": "801738",
+    "6401": "801072", "6402": "801074", "6405": "801076", "6406": "801077",
+    "6407": "801078", "6501": "801741", "6502": "801742", "6503": "801743",
+    "6504": "801744", "6505": "801745", "7101": "801101", "7103": "801103",
+    "7104": "801104", "7204": "801764", "7205": "801765", "7206": "801766",
+    "7207": "801767", "7209": "801769", "7210": "801995", "7301": "801231",
+    "7302": "801102", "7401": "801951", "7402": "801952", "7501": "801961",
+    "7502": "801962", "7503": "801963", "7601": "801971", "7602": "801972",
+    "7701": "801981", "7702": "801982", "7703": "801983",
+}
 
 
 class CompanyTask:
@@ -17,10 +67,61 @@ class CompanyTask:
         self.db = db
         self.source = source
         self.monitor = monitor
+        self._sw_mapping: Dict[str, List[tuple]] = {}  # stock_code -> [(l1_code, l2_code)]
+        self._em_name_to_code: Dict[str, str] = {}      # EM industry name -> code
+        self._mappings_loaded = False
+
+    def _preload_mappings(self):
+        """预加载行业分类映射（申万 + 东财）"""
+        if self._mappings_loaded:
+            return
+        self._preload_sw_mapping()
+        self._preload_em_mapping()
+        self._mappings_loaded = True
+
+    def _preload_sw_mapping(self):
+        """从 stock_industry_clf_hist_sw 预加载申万行业映射"""
+        logger.info("预加载申万行业映射...")
+        try:
+            import akshare as ak
+            hist = ak.stock_industry_clf_hist_sw()
+            hist["start_date"] = hist["start_date"].astype(str)
+            # 取每个 symbol 最新的记录
+            latest = hist.loc[hist.groupby("symbol")["start_date"].idxmax()]
+            for _, row in latest.iterrows():
+                code = str(row.get("symbol", "")).strip()
+                industry_code = str(row.get("industry_code", "")).strip()
+                if not code or not industry_code:
+                    continue
+                l1_raw = industry_code[:2]
+                l2_raw = industry_code[:4]
+                l1_code = L1_TO_801_MAPPING.get(l1_raw)
+                l2_code = L2_TO_801_MAPPING.get(l2_raw)
+                if l1_code and l2_code:
+                    if code not in self._sw_mapping:
+                        self._sw_mapping[code] = []
+                    self._sw_mapping[code].append((l1_code, l2_code))
+            logger.info(f"申万映射预加载完成，共 {len(self._sw_mapping)} 只股票")
+        except Exception as e:
+            logger.warning(f"预加载申万映射失败: {e}")
+
+    def _preload_em_mapping(self):
+        """从数据库预加载东财行业名称 -> code 映射"""
+        logger.info("预加载东财行业名称映射...")
+        try:
+            rows = self.db.fetchall(
+                "SELECT code, name FROM industry_category WHERE standard_code = 'EM' AND level = 2"
+            )
+            for code, name in rows:
+                self._em_name_to_code[name] = code
+            logger.info(f"东财名称映射预加载完成，共 {len(self._em_name_to_code)} 个板块")
+        except Exception as e:
+            logger.warning(f"预加载东财名称映射失败: {e}")
 
     def run(self):
         """全量采集所有 A 股公司信息"""
         logger.info("Starting full company task...")
+        self._preload_mappings()
         task_id = None
         if self.monitor:
             task_id = self.monitor.log_task_start("sync_company", "company")
@@ -45,6 +146,7 @@ class CompanyTask:
     def run_by_name(self, query: str):
         """按公司名称或股票代码采集指定公司信息"""
         logger.info(f"Starting company task by query: {query}")
+        self._preload_mappings()
         task_id = None
         if self.monitor:
             task_id = self.monitor.log_task_start("sync_company_by_name", "company")
@@ -100,12 +202,13 @@ class CompanyTask:
             try:
                 detail = self.source.get_company_detail(stock_code)
 
-                em_detail = None
-                if not detail:
+                # 总是获取 EM 基本信息（用于行业映射）
+                em_detail = self.source.get_company_info_em(stock_code)
+
+                if not detail and em_detail:
                     logger.warning(
-                        f"Primary source failed for {stock_code}, trying fallback"
+                        f"Primary source failed for {stock_code}, using EM fallback"
                     )
-                    em_detail = self.source.get_company_info_em(stock_code)
 
                 if not stock_name:
                     if detail:
@@ -126,6 +229,10 @@ class CompanyTask:
                     elif result == "update":
                         updated += 1
 
+                    # 保存行业映射
+                    em_industry_name = em_detail.get("行业") if em_detail else None
+                    self._save_industry_mappings(company_id, stock_code, em_industry_name)
+
             except Exception as e:
                 logger.error(f"Failed to process {stock_code} {stock_name}: {e}")
                 failed += 1
@@ -134,6 +241,46 @@ class CompanyTask:
             f"Company task finished. Total: {total}, Created: {created}, Updated: {updated}, Failed: {failed}"
         )
         return created, updated, failed
+
+    def _save_industry_mappings(
+        self, company_id: int, stock_code: str, em_industry_name: Optional[str]
+    ):
+        """保存公司与行业的映射关系（申万 + 东财）"""
+        mappings: List[CompanyIndustryMapping] = []
+
+        # 申万映射
+        sw_entries = self._sw_mapping.get(stock_code, [])
+        for idx, (l1_code, l2_code) in enumerate(sw_entries):
+            mappings.append(CompanyIndustryMapping(
+                company_id=company_id,
+                standard_code="SW",
+                level1_code=l1_code,
+                level2_code=l2_code,
+                is_primary=(idx == 0),
+            ))
+
+        # 东财映射
+        if em_industry_name:
+            em_code = self._em_name_to_code.get(em_industry_name)
+            if em_code:
+                # EM 没有一级分类，level1_code 设为与 level2_code 相同（满足 NOT NULL 约束）
+                mappings.append(CompanyIndustryMapping(
+                    company_id=company_id,
+                    standard_code="EM",
+                    level1_code=em_code,
+                    level2_code=em_code,
+                    is_primary=True,
+                ))
+            else:
+                logger.debug(f"未找到东财行业映射: {em_industry_name} ({stock_code})")
+
+        if mappings:
+            sql = CompanyIndustryMapping.upsert_sql()
+            params = [m.to_upsert_tuple() for m in mappings]
+            try:
+                self.db.upsert_many(sql, params)
+            except Exception as e:
+                logger.warning(f"保存行业映射失败 {stock_code}: {e}")
 
     def _parse_company_entity(
         self,

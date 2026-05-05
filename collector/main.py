@@ -15,6 +15,8 @@
                                             # 按股票代码+年份范围+增量模式采集
     python main.py --scheduler-cron-company "0 9 * * *"   # 启动调度器并注册每日09:00公司采集
     python main.py --scheduler-cron-finance "0 2 * * 0"   # 启动调度器并注册每周日02:00财务采集
+    python main.py --sync-industry                        # 手动执行一次行业分类同步
+    python main.py --scheduler-cron-industry "0 3 * * 1"  # 启动调度器并注册每周一03:00行业同步
 """
 import argparse
 import os
@@ -27,6 +29,7 @@ from collector.scheduler import Scheduler
 from collector.db.postgres import PostgresDB
 from collector.sources.akshare_source import AkshareSource
 from collector.tasks.finance_task import FinanceTask
+from collector.tasks.industry_classification_sync import run as run_industry_sync
 from collector.monitor import Monitor
 
 load_dotenv()
@@ -55,7 +58,7 @@ def create_db(cfg=None) -> PostgresDB:
     )
 
 
-def run_scheduler(cron_company: str = None, cron_finance: str = None):
+def run_scheduler(cron_company: str = None, cron_finance: str = None, cron_industry: str = None):
     logger.info("Starting security analyze collector scheduler...")
     cfg = CollectorConfig.from_env()
     db = create_db(cfg)
@@ -65,6 +68,8 @@ def run_scheduler(cron_company: str = None, cron_finance: str = None):
         scheduler.add_company_job(cron_company)
     if cron_finance:
         scheduler.add_finance_job(cron_finance)
+    if cron_industry:
+        scheduler.add_industry_sync_job(cron_industry)
 
     scheduler.start()
 
@@ -88,6 +93,12 @@ def run_company_task_by_name(query: str):
     db = create_db()
     scheduler = Scheduler(db=db)
     scheduler.run_company_task_by_name(query)
+
+
+def run_industry_sync_task():
+    logger.info("Manual trigger: industry classification sync task")
+    db = create_db()
+    run_industry_sync(db=db)
 
 
 def run_finance_task(start_year=None, end_year=None, incremental=False, batch_size=100, session_id=None):
@@ -207,6 +218,17 @@ def main():
         metavar="CRON",
         help="启动调度器并注册财务采集定时任务（cron 表达式，例如 '0 2 * * 0'）",
     )
+    parser.add_argument(
+        "--sync-industry",
+        action="store_true",
+        help="手动执行一次行业分类体系同步任务（申万 + 东财）",
+    )
+    parser.add_argument(
+        "--scheduler-cron-industry",
+        type=str,
+        metavar="CRON",
+        help="启动调度器并注册行业分类同步定时任务（cron 表达式，例如 '0 3 * * 1'）",
+    )
     args = parser.parse_args()
 
     if args.finance:
@@ -230,10 +252,13 @@ def main():
         run_company_task_by_name(args.company)
     elif args.run_company:
         run_company_task()
+    elif args.sync_industry:
+        run_industry_sync_task()
     else:
         run_scheduler(
             cron_company=args.scheduler_cron_company,
             cron_finance=args.scheduler_cron_finance,
+            cron_industry=args.scheduler_cron_industry,
         )
 
 

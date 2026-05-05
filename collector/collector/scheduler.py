@@ -111,6 +111,32 @@ class Scheduler:
             logger.error(f"Failed to add finance job: {e}")
             return False
 
+    def add_industry_sync_job(self, cron: str, job_id: str = "industry_sync_task") -> bool:
+        """添加/更新行业分类同步定时任务
+
+        Args:
+            cron: Cron 表达式，例如 "0 3 * * 1"（每周一 03:00）
+            job_id: 任务唯一标识
+        """
+        try:
+            trigger = CronTrigger.from_crontab(cron)
+            if self._scheduler.get_job(job_id):
+                self._scheduler.reschedule_job(job_id, trigger=trigger)
+                logger.info(f"Rescheduled industry sync job '{job_id}' with cron '{cron}'")
+            else:
+                self._scheduler.add_job(
+                    self._run_industry_sync_task,
+                    trigger=trigger,
+                    id=job_id,
+                    name="Industry Classification Sync",
+                    replace_existing=True,
+                )
+                logger.info(f"Added industry sync job '{job_id}' with cron '{cron}'")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to add industry sync job: {e}")
+            return False
+
     def remove_job(self, job_id: str) -> bool:
         try:
             self._scheduler.remove_job(job_id)
@@ -172,6 +198,14 @@ class Scheduler:
         except Exception as e:
             logger.error(f"Scheduled finance task failed: {e}")
 
+    def _run_industry_sync_task(self):
+        logger.info("Running scheduled industry classification sync task...")
+        try:
+            from collector.tasks.industry_classification_sync import run as run_industry_sync
+            run_industry_sync(db=self.db)
+        except Exception as e:
+            logger.error(f"Scheduled industry sync task failed: {e}")
+
     # ------------------------------------------------------------------
     # 手动触发（保持向后兼容）
     # ------------------------------------------------------------------
@@ -189,3 +223,8 @@ class Scheduler:
             task.run_by_name(query)
         except Exception as e:
             logger.error(f"Company task by name failed: {e}")
+
+    def run_industry_sync_task_now(self):
+        """手动立即执行行业分类同步任务"""
+        logger.info("Manual trigger: industry classification sync task")
+        self._run_industry_sync_task()

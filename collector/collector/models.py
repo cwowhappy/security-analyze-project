@@ -41,6 +41,68 @@ class CompanyEntity(BaseModel):
         )
 
 
+class IndustryCategory(BaseModel):
+    """行业分类维度（支持多标准、多级）"""
+
+    standard_code: str
+    level: int
+    code: str
+    name: str
+    parent_code: Optional[str] = None
+    sort_order: int = 0
+
+    def to_upsert_tuple(self) -> tuple:
+        return (
+            self.standard_code,
+            self.level,
+            self.code,
+            self.name,
+            self.parent_code,
+            self.sort_order,
+        )
+
+    @classmethod
+    def upsert_sql(cls) -> str:
+        return """
+            INSERT INTO industry_category (standard_code, level, code, name, parent_code, sort_order, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, NOW())
+            ON CONFLICT (standard_code, level, code) DO UPDATE SET
+                name = EXCLUDED.name,
+                parent_code = EXCLUDED.parent_code,
+                sort_order = EXCLUDED.sort_order,
+                updated_at = EXCLUDED.updated_at
+        """
+
+
+class CompanyIndustryMapping(BaseModel):
+    """公司与行业分类映射"""
+
+    company_id: int
+    standard_code: str
+    level1_code: str
+    level2_code: Optional[str] = None
+    is_primary: bool = True
+
+    def to_upsert_tuple(self) -> tuple:
+        return (
+            self.company_id,
+            self.standard_code,
+            self.level1_code,
+            self.level2_code,
+            self.is_primary,
+        )
+
+    @classmethod
+    def upsert_sql(cls) -> str:
+        return """
+            INSERT INTO company_industry_mapping (company_id, standard_code, level1_code, level2_code, is_primary, created_at)
+            VALUES (%s, %s, %s, %s, %s, NOW())
+            ON CONFLICT (company_id, standard_code, level2_code) DO UPDATE SET
+                level1_code = EXCLUDED.level1_code,
+                is_primary = EXCLUDED.is_primary
+        """
+
+
 class SecurityEntity(BaseModel):
     """上市证券"""
 

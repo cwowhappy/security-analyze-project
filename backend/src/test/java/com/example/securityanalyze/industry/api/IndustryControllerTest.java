@@ -32,19 +32,21 @@ class IndustryControllerTest {
 
     @Test
     void shouldListIndustries() throws Exception {
-        IndustryListItem item = new IndustryListItem();
-        item.setIndustryName("白酒");
+        IndustryCategoryDto item = new IndustryCategoryDto();
+        item.setName("白酒");
+        item.setCode("BK0428");
         item.setCompanyCount(5);
 
         IndustryListResponse response = new IndustryListResponse();
+        response.setStandard("EM");
         response.setData(List.of(item));
         response.setTotal(1);
 
-        when(industryService.listIndustries()).thenReturn(response);
+        when(industryService.listIndustries("EM", null, null)).thenReturn(response);
 
         mockMvc.perform(get("/api/industries"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].industryName").value("白酒"));
+                .andExpect(jsonPath("$.data[0].name").value("白酒"));
     }
 
     @Test
@@ -59,9 +61,9 @@ class IndustryControllerTest {
         response.setPage(0);
         response.setSize(20);
 
-        when(industryService.listCompaniesByIndustry("白酒", 0, 20)).thenReturn(response);
+        when(industryService.listCompaniesByIndustry("EM", null, "BK0428", 0, 20)).thenReturn(response);
 
-        mockMvc.perform(get("/api/industries/白酒/companies"))
+        mockMvc.perform(get("/api/industries/BK0428/companies"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].stockCode").value("600519"));
     }
@@ -73,14 +75,16 @@ class IndustryControllerTest {
         point.setClose(new java.math.BigDecimal("1000.00"));
 
         IndustryTrendResponse response = new IndustryTrendResponse();
+        response.setStandard("EM");
         response.setIndustryName("白酒");
+        response.setIndustryCode("BK0428");
         response.setPeriod("3m");
         response.setData(List.of(point));
         response.setFallback(false);
 
-        when(industryService.getIndustryTrend("白酒", "3m")).thenReturn(response);
+        when(industryService.getIndustryTrend("EM", "BK0428", "3m")).thenReturn(response);
 
-        mockMvc.perform(get("/api/industries/白酒/trend"))
+        mockMvc.perform(get("/api/industries/BK0428/trend"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.industryName").value("白酒"));
     }

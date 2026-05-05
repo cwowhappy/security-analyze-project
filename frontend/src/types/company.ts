@@ -16,10 +16,21 @@ export interface Company {
   market?: string
 }
 
+export interface CompanyIndustryDto {
+  standardName: string
+  standardCode: string
+  level1Code?: string
+  level1Name?: string
+  level2Code?: string
+  level2Name?: string
+  primary: boolean
+}
+
 export interface CompanyDetail extends Company {
   establishDate?: string
   registeredCapital?: number
   securities?: SecurityItem[]
+  industries?: CompanyIndustryDto[]
 }
 
 export interface CompanyListParams {

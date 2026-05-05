@@ -27,7 +27,9 @@ use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, DataZoomCompone
 const route = useRoute()
 const router = useRouter()
 
-const industryName = decodeURIComponent(route.params.industryName as string)
+const industryCode = computed(() => route.params.industryCode as string)
+const standard = computed(() => (route.query.standard as string) || 'EM')
+
 const loading = ref(false)
 const trendLoading = ref(false)
 
@@ -39,6 +41,7 @@ const size = ref(20)
 const trendData = ref<TrendDataPoint[]>([])
 const period = ref('3m')
 const fallback = ref(false)
+const industryName = ref('')
 
 const periodOptions = [
   { value: '1m', label: '近1月' },
@@ -82,7 +85,12 @@ const chartOption = computed(() => {
 async function fetchCompanies() {
   loading.value = true
   try {
-    const res = await getIndustryCompanies(industryName, { page: page.value, size: size.value })
+    const res = await getIndustryCompanies(
+      industryCode.value,
+      standard.value,
+      undefined,
+      { page: page.value, size: size.value },
+    )
     companies.value = res.items
     total.value = res.total
   } catch (err) {
@@ -96,9 +104,10 @@ async function fetchCompanies() {
 async function fetchTrend() {
   trendLoading.value = true
   try {
-    const res = await getIndustryTrend(industryName, period.value)
+    const res = await getIndustryTrend(industryCode.value, standard.value, period.value)
     trendData.value = res.data
     fallback.value = res.fallback
+    industryName.value = res.industryName
   } catch (err) {
     ElMessage.error('加载行业走势失败')
     console.error(err)
@@ -119,6 +128,12 @@ watch([page, size], () => {
   fetchCompanies()
 })
 
+watch(industryCode, () => {
+  page.value = 0
+  fetchCompanies()
+  fetchTrend()
+})
+
 onMounted(() => {
   fetchCompanies()
   fetchTrend()
@@ -130,11 +145,14 @@ onMounted(() => {
     <ElBreadcrumb separator="/">
       <ElBreadcrumbItem :to="{ path: '/' }">首页</ElBreadcrumbItem>
       <ElBreadcrumbItem :to="{ path: '/industries' }">行业信息</ElBreadcrumbItem>
-      <ElBreadcrumbItem>{{ industryName }}</ElBreadcrumbItem>
+      <ElBreadcrumbItem>{{ industryName || industryCode }}</ElBreadcrumbItem>
     </ElBreadcrumb>
 
     <h2 class="page-title">
-      {{ industryName }}
+      {{ industryName || industryCode }}
+      <ElTag size="small" type="info" style="margin-left: 8px; vertical-align: middle">
+        {{ standard === 'EM' ? '东财板块' : '申万行业' }}
+      </ElTag>
       <span class="subtitle">共 {{ total }} 家公司</span>
     </h2>
 

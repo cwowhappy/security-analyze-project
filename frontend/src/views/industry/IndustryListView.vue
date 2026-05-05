@@ -1,20 +1,35 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElCard, ElBreadcrumb, ElBreadcrumbItem, ElMessage } from 'element-plus'
+import { ElCard, ElBreadcrumb, ElBreadcrumbItem, ElMessage, ElRadioGroup, ElRadioButton, ElTag } from 'element-plus'
 import { Grid } from '@element-plus/icons-vue'
 import { getIndustryList } from '@/api/industry'
-import type { IndustryListItem } from '@/types/industry'
+import type { IndustryCategoryDto } from '@/types/industry'
 
 const router = useRouter()
-const industries = ref<IndustryListItem[]>([])
+const standard = ref<'EM' | 'SW'>('EM')
+const industries = ref<IndustryCategoryDto[]>([])
 const loading = ref(false)
+
+// SW 层级状态
+const selectedL1 = ref<string | null>(null)
 
 async function fetchIndustries() {
   loading.value = true
   try {
-    const res = await getIndustryList()
-    industries.value = res.data
+    if (standard.value === 'EM') {
+      const res = await getIndustryList('EM', 2)
+      industries.value = res.data
+    } else {
+      // SW: 如果未选一级，显示一级；否则显示对应二级
+      if (!selectedL1.value) {
+        const res = await getIndustryList('SW', 1)
+        industries.value = res.data
+      } else {
+        const res = await getIndustryList('SW', 2, selectedL1.value)
+        industries.value = res.data
+      }
+    }
   } catch (err) {
     ElMessage.error('加载行业列表失败')
     console.error(err)
@@ -23,9 +38,27 @@ async function fetchIndustries() {
   }
 }
 
-function goToDetail(industryName: string) {
-  router.push(`/industries/${encodeURIComponent(industryName)}`)
+function goToDetail(industryCode: string) {
+  router.push({
+    path: `/industries/${encodeURIComponent(industryCode)}`,
+    query: { standard: standard.value },
+  })
 }
+
+function selectL1(code: string) {
+  selectedL1.value = code
+  fetchIndustries()
+}
+
+function backToL1() {
+  selectedL1.value = null
+  fetchIndustries()
+}
+
+watch(standard, () => {
+  selectedL1.value = null
+  fetchIndustries()
+})
 
 onMounted(() => {
   fetchIndustries()
@@ -39,23 +72,39 @@ onMounted(() => {
       <ElBreadcrumbItem>行业信息</ElBreadcrumbItem>
     </ElBreadcrumb>
 
-    <h2 class="page-title">
-      行业信息
-      <span class="subtitle">共 {{ industries.length }} 个行业分类</span>
-    </h2>
+    <div class="page-header">
+      <h2 class="page-title">
+        行业信息
+        <span class="subtitle">共 {{ industries.length }} 个行业分类</span>
+      </h2>
+      <ElRadioGroup v-model="standard" size="small">
+        <ElRadioButton label="EM">东财板块</ElRadioButton>
+        <ElRadioButton label="SW">申万行业</ElRadioButton>
+      </ElRadioGroup>
+    </div>
+
+    <!-- SW 面包屑导航 -->
+    <div v-if="standard === 'SW' && selectedL1" class="sw-breadcrumb">
+      <ElTag type="info" style="cursor: pointer" @click="backToL1">
+        ← 返回一级行业
+      </ElTag>
+    </div>
 
     <div class="card-grid">
       <ElCard
         v-for="item in industries"
-        :key="item.industryName"
+        :key="item.code"
         class="industry-card"
         shadow="hover"
-        @click="goToDetail(item.industryName)"
+        @click="standard === 'SW' && !selectedL1 ? selectL1(item.code) : goToDetail(item.code)"
       >
         <div class="card-content">
           <Grid class="card-icon" />
-          <div class="card-title">{{ item.industryName }}</div>
-          <div class="card-count">{{ item.companyCount }} 家公司</div>
+          <div class="card-title">{{ item.name }}</div>
+          <div class="card-count">{{ item.companyCount ?? 0 }} 家公司</div>
+          <ElTag v-if="standard === 'SW' && !selectedL1" size="small" type="info" style="margin-top: 8px">
+            查看二级
+          </ElTag>
         </div>
       </ElCard>
     </div>
@@ -66,17 +115,26 @@ onMounted(() => {
 .industry-list {
   padding: 24px;
 }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16px 0 20px;
+}
 .page-title {
   font-size: 24px;
   font-weight: 500;
   color: #303133;
-  margin: 16px 0 20px;
+  margin: 0;
 }
 .subtitle {
   font-size: 14px;
   color: #909399;
   font-weight: normal;
   margin-left: 8px;
+}
+.sw-breadcrumb {
+  margin-bottom: 16px;
 }
 .card-grid {
   display: grid;

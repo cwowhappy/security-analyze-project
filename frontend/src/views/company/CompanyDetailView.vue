@@ -58,10 +58,24 @@ onMounted(() => {
           </div>
           <div class="info-item">
             <span class="label">所属行业</span>
+            <div v-if="company.industries && company.industries.length > 0" class="industry-tags">
+              <div v-for="ind in company.industries" :key="ind.standardCode + ind.level2Code" class="industry-tag-row">
+                <ElTag size="small" :type="ind.standardCode === 'SW' ? 'success' : 'primary'" style="margin-right: 4px">
+                  {{ ind.standardName }}
+                </ElTag>
+                <ElLink
+                  type="primary"
+                  @click="router.push({ path: `/industries/${encodeURIComponent(ind.level2Code || '')}`, query: { standard: ind.standardCode } })"
+                >
+                  {{ ind.level2Name || ind.level1Name || '-' }}
+                </ElLink>
+                <ElTag v-if="!ind.primary" size="small" type="info" style="margin-left: 4px">次</ElTag>
+              </div>
+            </div>
             <ElLink
-              v-if="company.industry"
+              v-else-if="company.industry"
               type="primary"
-              @click="router.push(`/industries/${encodeURIComponent(company.industry)}`)"
+              @click="router.push({ path: `/industries/${encodeURIComponent(company.industry)}`, query: { standard: 'EM' } })"
             >
               {{ company.industry }}
             </ElLink>
@@ -227,5 +241,16 @@ onMounted(() => {
 .security-value {
   font-weight: 500;
   font-size: 14px;
+}
+
+.industry-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.industry-tag-row {
+  display: flex;
+  align-items: center;
 }
 </style>

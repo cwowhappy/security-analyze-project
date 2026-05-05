@@ -1,10 +1,15 @@
-export interface IndustryListItem {
-  industryName: string
-  companyCount: number
+export interface IndustryCategoryDto {
+  code: string
+  name: string
+  level: number
+  parentCode?: string
+  companyCount?: number
 }
 
 export interface IndustryListResponse {
-  data: IndustryListItem[]
+  standard: string
+  level?: number
+  data: IndustryCategoryDto[]
   total: number
 }
 
@@ -15,6 +20,8 @@ export interface TrendDataPoint {
 }
 
 export interface IndustryTrendResponse {
+  standard: string
+  industryCode: string
   industryName: string
   period: string
   data: TrendDataPoint[]

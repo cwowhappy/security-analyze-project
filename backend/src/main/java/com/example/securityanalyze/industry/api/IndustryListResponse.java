@@ -7,6 +7,8 @@ import java.util.List;
 @Data
 public class IndustryListResponse {
 
-    private List<IndustryListItem> data;
+    private String standard;
+    private Integer level;
+    private List<IndustryCategoryDto> data;
     private int total;
 }

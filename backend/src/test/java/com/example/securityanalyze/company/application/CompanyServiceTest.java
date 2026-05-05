@@ -6,6 +6,8 @@ import com.example.securityanalyze.company.domain.Company;
 import com.example.securityanalyze.company.domain.CompanyRepository;
 import com.example.securityanalyze.company.domain.CompanySecurity;
 import com.example.securityanalyze.company.domain.CompanySecurityRepository;
+import com.example.securityanalyze.industry.domain.CompanyIndustryMappingRepository;
+import com.example.securityanalyze.industry.domain.IndustryCategoryRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,6 +30,12 @@ class CompanyServiceTest {
 
     @Mock
     private CompanySecurityRepository companySecurityRepository;
+
+    @Mock
+    private CompanyIndustryMappingRepository companyIndustryMappingRepository;
+
+    @Mock
+    private IndustryCategoryRepository industryCategoryRepository;
 
     @InjectMocks
     private CompanyService companyService;
