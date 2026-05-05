@@ -1,4 +1,5 @@
 import axios from 'axios'
+import router from '@/router'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
@@ -24,7 +25,10 @@ client.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('userInfo')
-      window.location.href = '/login'
+
+      const isAdminPath = window.location.pathname.startsWith('/admin')
+      const loginPath = isAdminPath ? '/admin/login' : '/login'
+      router.replace(loginPath)
     }
     return Promise.reject(error)
   }

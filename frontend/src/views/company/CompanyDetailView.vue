@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElTabs, ElTabPane, ElBreadcrumb, ElBreadcrumbItem, ElMessage, ElCard, ElLink, ElEmpty } from 'element-plus'
+import { ElTabs, ElTabPane, ElBreadcrumb, ElBreadcrumbItem, ElMessage, ElCard, ElLink, ElEmpty, ElTag } from 'element-plus'
 import { getCompanyDetail } from '@/api/company'
 import type { CompanyDetail } from '@/types/company'
 import FinanceReportTab from './finance/FinanceReportTab.vue'

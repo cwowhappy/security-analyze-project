@@ -87,7 +87,8 @@ router.beforeEach((to, from, next) => {
   const isAdmin = authStore.isAdmin
 
   if (to.meta.requiresAuth && !isLoggedIn) {
-    next('/login')
+    const loginPath = to.path.startsWith('/admin') ? '/admin/login' : '/login'
+    next(loginPath)
     return
   }
 
