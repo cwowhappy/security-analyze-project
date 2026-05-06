@@ -208,13 +208,10 @@ psql -h localhost -p 5432 -U stock -d security_analyze
 
 | 脚本文件 | 说明 |
 |----------|------|
-| `V1__create_company_table.sql` | 创建初始公司信息表（已废弃，被 V2 迁移） |
-| `V2__create_company_and_security_tables.sql` | 拆分 company / company_security 表，并迁移旧数据 |
-| `V2__create_collector_monitor_tables.sql` | 创建采集任务日志表 collector_task_log 与数据状态表 collector_data_status |
-| `V3__create_financial_report_table.sql` | 创建财务报表表 financial_report，支持资产负债表/利润表/现金流量表 |
-| `V4__create_stock_sync_status_table.sql` | 创建采集同步状态表 collector_stock_sync_status |
-| `V5__create_user_table.sql` | 创建用户表 sys_user，含状态与角色枚举 |
-| `V6__add_session_recovery.sql` | 扩展任务日志表 session_id 字段，新建逐票进度表 collector_task_progress |
+| `V1__baseline.sql` | **合并基线脚本**。包含公司表、证券表、财务报表表、采集任务日志/进度/状态表、用户表等完整 Schema |
+| `V2__industry_classification.sql` | 行业分类标准字典、行业分类维度表、公司与行业映射表 |
+| `V3__index_module.sql` | 指数基本信息表、指数历史行情表、ETF 信息表、指数-ETF 映射表 |
+| `V4__index_core_flag.sql` | 为核心指数增加 `is_core` 标记字段并初始化数据 |
 
 ### 4.2 手动执行初始化
 
@@ -225,13 +222,10 @@ psql -h localhost -p 5432 -U stock -d security_analyze
 # 确保已创建数据库和用户，且 PostgreSQL 服务正在运行
 
 # 方式 1：逐条执行（推荐，便于排查问题）
-psql -h localhost -p 5432 -U stock -d security_analyze -f backend/src/main/resources/db/migration/V1__create_company_table.sql
-psql -h localhost -p 5432 -U stock -d security_analyze -f backend/src/main/resources/db/migration/V2__create_company_and_security_tables.sql
-psql -h localhost -p 5432 -U stock -d security_analyze -f backend/src/main/resources/db/migration/V2__create_collector_monitor_tables.sql
-psql -h localhost -p 5432 -U stock -d security_analyze -f backend/src/main/resources/db/migration/V3__create_financial_report_table.sql
-psql -h localhost -p 5432 -U stock -d security_analyze -f backend/src/main/resources/db/migration/V4__create_stock_sync_status_table.sql
-psql -h localhost -p 5432 -U stock -d security_analyze -f backend/src/main/resources/db/migration/V5__create_user_table.sql
-psql -h localhost -p 5432 -U stock -d security_analyze -f backend/src/main/resources/db/migration/V6__add_session_recovery.sql
+psql -h localhost -p 5432 -U stock -d security_analyze -f backend/src/main/resources/db/migration/V1__baseline.sql
+psql -h localhost -p 5432 -U stock -d security_analyze -f backend/src/main/resources/db/migration/V2__industry_classification.sql
+psql -h localhost -p 5432 -U stock -d security_analyze -f backend/src/main/resources/db/migration/V3__index_module.sql
+psql -h localhost -p 5432 -U stock -d security_analyze -f backend/src/main/resources/db/migration/V4__index_core_flag.sql
 
 # 方式 2：批量执行（适合重建环境）
 for f in backend/src/main/resources/db/migration/V*.sql; do
@@ -255,6 +249,13 @@ psql -h localhost -p 5432 -U stock -d security_analyze -c "\dt"
 - `collector_stock_sync_status`
 - `collector_task_progress`
 - `sys_user`
+- `industry_classification_standard`
+- `industry_category`
+- `company_industry_mapping`
+- `index_info`
+- `index_history`
+- `etf_info`
+- `index_etf_mapping`
 
 ### 4.4 核心表结构
 
@@ -298,15 +299,19 @@ psql -h localhost -p 5432 -U stock -d security_analyze -c "\dt"
 
 ### 4.5 初始化注意事项
 
-1. **必须按版本顺序执行**：V1 → V2 → V3 → V4 → V5 → V6，因后续脚本依赖前置脚本创建的表或数据。
-2. **重复执行安全性**：V2 以后的脚本多使用 `IF NOT EXISTS` 或 `IF EXISTS`，但 V2 包含数据迁移逻辑，不建议在已有数据的数据库上重复执行。
-3. **如需重建数据库**：
+1. **必须按版本顺序执行**：V1 → V2 → V3 → V4，因后续脚本依赖前置脚本创建的表或数据。
+2. **V1 为合并基线脚本**：已将历史 V1~V6 脚本的最终状态合并为单一文件，首次部署直接执行 V1 即可获得完整 Schema。
+3. **重复执行安全性**：V2~V4 脚本均使用 `IF NOT EXISTS` / `IF EXISTS`，可安全重复执行；但 V1 含大量 `CREATE TABLE`，重复执行不会报错（因有 `IF NOT EXISTS`），但建议首次部署后不再重复执行 V1。
+4. **如需重建数据库**：
    ```bash
    psql -U postgres -c "DROP DATABASE security_analyze;"
    psql -U postgres -c "CREATE DATABASE security_analyze OWNER stock;"
    # 然后重新按顺序执行所有迁移脚本
+   for f in backend/src/main/resources/db/migration/V*.sql; do
+       psql -h localhost -p 5432 -U stock -d security_analyze -f "$f"
+   done
    ```
-4. **生产环境**：建议引入 Flyway 或 Liquibase 进行正式的数据库版本管理，避免手动执行脚本。
+5. **生产环境 Flyway**：当前生产环境 `application.yml` 中 `flyway.enabled=false`，必须手动执行脚本。测试环境已启用 Flyway 自动迁移。
 
 ---
 
@@ -333,19 +338,42 @@ backend/
 
 ### 5.2 配置文件
 
-`backend/src/main/resources/application.yml`：
+`backend/src/main/resources/application.yml`（生产环境通过环境变量覆盖以下默认值）：
 
 ```yaml
 server:
   port: 8080
+  tomcat:
+    relaxed-query-chars: '[,],|,{,},^,`,",<,>,\,'
 
 spring:
+  application:
+    name: security-analyze
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:security_analyze}
-    username: ${DB_USER:stock}
-    password: ${DB_PASSWORD:stock}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:db-security-analyze}
+    username: ${DB_USER:user_security_analyze}
+    password: ${DB_PASSWORD:Admin@2026#}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: never
+
+logging:
+  file:
+    name: logs/security-analyze
+  level:
+    com.example.securityanalyze: DEBUG
 ```
+
+> **警告**：`application.yml` 中的数据库默认名称、用户名、密码均为示例值，**生产环境必须通过环境变量覆盖**，切勿使用默认值直接部署。
 
 ### 5.3 环境变量
 
@@ -353,10 +381,13 @@ spring:
 |--------|--------|------|
 | `DB_HOST` | `localhost` | 数据库主机地址 |
 | `DB_PORT` | `5432` | 数据库端口 |
-| `DB_NAME` | `security_analyze` | 数据库名称 |
-| `DB_USER` | `stock` | 数据库用户名 |
-| `DB_PASSWORD` | `stock` | 数据库密码 |
-| `JWT_SECRET` | — | JWT 签名密钥（生产环境必须配置） |
+| `DB_NAME` | `db-security-analyze` | 数据库名称（**必须与创建的数据库名一致**） |
+| `DB_USER` | `user_security_analyze` | 数据库用户名 |
+| `DB_PASSWORD` | `Admin@2026#` | 数据库密码（**生产环境必须修改**） |
+| `JWT_SECRET` | `security-analyze-default-secret-key-2026` | JWT 签名密钥（**生产环境必须覆盖**） |
+| `JWT_EXPIRATION` | `86400000` | JWT 过期时间（毫秒，默认 1 天） |
+| `SERVER_PORT` | `8080` | 后端服务端口 |
+| `CORS_ALLOWED_ORIGINS` | — | CORS 允许的前端域名（**需先按 [9.1](#91-安全加固清单) 改造 `SecurityConfig.java` 为读取环境变量**） |
 
 ### 5.4 开发运行
 
@@ -383,11 +414,14 @@ cd backend
 # JAR 文件位置
 ls build/libs/security-analyze-*.jar
 
+# 确保日志目录可写
+mkdir -p logs
+
 # 运行 JAR（生产环境）
-java -jar build/libs/security-analyze-0.0.1-SNAPSHOT.jar
+java -jar build/libs/security-analyze-*.jar
 
 # 或指定环境变量运行
-DB_HOST=db.example.com DB_PASSWORD=secure_pass java -jar build/libs/*.jar
+DB_HOST=db.example.com DB_PASSWORD=secure_pass JWT_SECRET=随机密钥 java -jar build/libs/*.jar
 ```
 
 ### 5.6 测试
@@ -433,8 +467,12 @@ frontend/
 创建 `.env.development` 或 `.env.production` 进行覆盖：
 
 ```bash
+# 推荐：同域名部署，使用相对路径，由 Nginx 统一代理 /api（无跨域问题）
 # frontend/.env.production
-VITE_API_BASE_URL=https://api.example.com/api
+VITE_API_BASE_URL=/api
+
+# 备选：前后端分离域名（需同时配置后端 CORS 白名单）
+# VITE_API_BASE_URL=https://api.example.com/api
 ```
 
 ### 6.4 开发运行
@@ -480,15 +518,18 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    # API 代理到后端
+    # API 代理到后端（注意 proxy_pass 需保留 /api 路径）
     location /api/ {
-        proxy_pass http://localhost:8080/;
+        proxy_pass http://localhost:8080/api/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 ```
+
+> **关键说明**：`proxy_pass http://localhost:8080/api/;` 末尾的 `/api/` 不可省略。后端所有 Controller 均以 `/api` 为前缀（如 `/api/companies`），若写成 `proxy_pass http://localhost:8080/;`，Nginx 会将 `/api/companies` 代理为 `http://localhost:8080/companies`，导致 404。
 
 ---
 
@@ -652,14 +693,51 @@ PostgreSQL 服务 (必须先启动)
 
 ### 9.1 安全加固清单
 
-| 项目 | 建议 |
-|------|------|
-| 数据库密码 | 修改默认密码 `stock`，使用强密码 |
-| JWT Secret | 使用强随机字符串（≥ 256 bit），通过环境变量注入 |
-| 管理员密码 | 修改默认密码 `admin123` |
-| CORS | 配置严格的白名单，禁止 `*` 通配符 |
-| 数据库连接 | 使用 SSL/TLS 加密传输；配置 `pg_hba.conf` 限制访问来源 |
-| 网络隔离 | 数据库不暴露公网，仅内网访问；关闭不必要的端口 |
+| 项目 | 建议 | 操作位置 |
+|------|------|----------|
+| 数据库密码 | 修改默认密码，使用强密码 | 环境变量 `DB_PASSWORD` |
+| JWT Secret | 使用强随机字符串（≥ 256 bit），通过环境变量注入 | 环境变量 `JWT_SECRET` |
+| 管理员密码 | 修改默认密码 `admin123` | 系统用户管理页面 |
+| **CORS 白名单** | **必须将 `http://localhost:3000` 替换为生产前端域名** | `backend/src/main/java/.../config/SecurityConfig.java` 第 68 行，或改为读取环境变量 |
+| 数据库连接 | 使用 SSL/TLS 加密传输；配置 `pg_hba.conf` 限制访问来源 | PostgreSQL 配置文件 |
+| 网络隔离 | 数据库不暴露公网，仅内网访问；关闭不必要的端口 | 防火墙 / 安全组 |
+
+**CORS 紧急修复（生产环境使用域名后报 `Invalid CORS request`）**：
+
+当前后端 `SecurityConfig.java` 硬编码了 `http://localhost:3000`。部署到域名后，必须修改允许来源。推荐改为从环境变量读取：
+
+```java
+// SecurityConfig.java
+@Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+
+    String allowedOrigins = System.getenv("CORS_ALLOWED_ORIGINS");
+    if (allowedOrigins != null && !allowedOrigins.isBlank()) {
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+    } else {
+        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+    }
+
+    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(Arrays.asList("*"));
+    configuration.setAllowCredentials(true);
+    configuration.setExposedHeaders(List.of("Authorization"));
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+}
+```
+
+然后启动时设置环境变量：
+
+```bash
+export CORS_ALLOWED_ORIGINS="https://你的前端域名"
+java -jar build/libs/security-analyze-*.jar
+```
+
+**更推荐的做法**：前后端使用**同一域名**，Nginx 代理 `/api` 到后端，前端 `VITE_API_BASE_URL=/api`（相对路径）。此时浏览器不触发跨域，CORS 配置即使保留 `localhost:3000` 也不影响正常访问。
 
 ### 9.2 推荐部署架构
 
@@ -704,8 +782,11 @@ sudo systemctl start postgresql
 sudo -u postgres psql -c "CREATE USER stock WITH PASSWORD '<STRONG_PASSWORD>';"
 sudo -u postgres psql -c "CREATE DATABASE security_analyze OWNER stock;"
 
-# 执行初始化脚本
-psql -h localhost -U stock -d security_analyze -f backend/src/main/resources/db/migration/V*.sql
+# 执行初始化脚本（psql -f 不支持通配符，必须使用循环）
+for f in backend/src/main/resources/db/migration/V*.sql; do
+    echo "Executing: $f"
+    psql -h localhost -U stock -d security_analyze -f "$f"
+done
 ```
 
 **后端**
@@ -713,8 +794,48 @@ psql -h localhost -U stock -d security_analyze -f backend/src/main/resources/db/
 ```bash
 cd backend
 ./gradlew bootJar
-# 通过 systemd / supervisor 管理 JAR 进程
-java -Xms512m -Xmx2g -jar build/libs/*.jar
+
+# 确保日志目录存在且可写
+mkdir -p logs
+
+# 直接运行（临时）
+java -Xms512m -Xmx2g -jar build/libs/security-analyze-*.jar
+
+# 生产环境推荐 systemd 管理（见下方示例）
+```
+
+**systemd 服务示例** `/etc/systemd/system/security-analyze.service`：
+
+```ini
+[Unit]
+Description=Security Analyze Backend
+After=network.target
+
+[Service]
+User=app
+WorkingDirectory=/opt/app/security-analyze
+Environment="DB_HOST=localhost"
+Environment="DB_PORT=5432"
+Environment="DB_NAME=security_analyze"
+Environment="DB_USER=stock"
+Environment="DB_PASSWORD=你的强密码"
+Environment="JWT_SECRET=你的随机密钥"
+Environment="CORS_ALLOWED_ORIGINS=https://你的前端域名"
+ExecStart=/usr/bin/java -Xms512m -Xmx2g -jar /opt/app/security-analyze/backend.jar
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启用并启动：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable security-analyze
+sudo systemctl start security-analyze
+sudo systemctl status security-analyze
 ```
 
 **前端**
@@ -759,7 +880,7 @@ Connection to localhost:5432 refused
 
 ### 10.2 前端 API 请求 404
 
-- 检查后端是否启动：`curl http://localhost:8080/api/company`
+- 检查后端是否启动：`curl http://localhost:8080/api/companies`
 - 检查 Vite 代理配置：`vite.config.ts` 中 `/api` 代理目标
 - 检查 API 基础地址：`VITE_API_BASE_URL` 环境变量
 
@@ -771,16 +892,40 @@ Connection to localhost:5432 refused
 
 ### 10.4 数据库初始化脚本执行失败
 
-- 检查脚本执行顺序：必须按 V1 → V2 → V3 → V4 → V5 → V6 顺序执行
+- 检查脚本执行顺序：必须按 V1 → V2 → V3 → V4 顺序执行
 - 检查数据库用户权限：`GRANT ALL PRIVILEGES ON DATABASE security_analyze TO stock;`
-- V2 脚本含数据迁移逻辑，在已有数据的数据库上重复执行可能报错，建议重建数据库后重新执行
+- V1 为合并基线脚本，在已有数据的数据库上重复执行通常安全（使用 `IF NOT EXISTS`），但建议首次部署后不再重复执行
 
-### 10.5 端口冲突
+### 10.5 CORS 跨域错误（`Invalid CORS request`）
+
+**现象**：生产环境使用域名部署后，前端请求登录接口报错 `Invalid CORS request`，浏览器控制台显示 CORS policy 阻止请求。
+
+**根因**：后端 `SecurityConfig.java` 中 `setAllowedOrigins(List.of("http://localhost:3000"))` 硬编码了开发域名，生产前端域名不在白名单中。
+
+**解决方案**（按推荐顺序）：
+
+1. **最佳方案：同域名部署（无需改后端代码）**
+   - 前端 `VITE_API_BASE_URL=/api`（相对路径）
+   - Nginx 同一域名下代理 `/api` 到后端
+   - 此时请求走同域，不触发 CORS
+
+2. **备选方案：修改后端 CORS 白名单**
+   - 修改 `SecurityConfig.java` 允许生产域名（见 [9.1 安全加固清单](#91-安全加固清单)）
+   - 或通过环境变量 `CORS_ALLOWED_ORIGINS` 注入（若已改造为读取环境变量）
+
+3. **快速验证命令**
+   ```bash
+   curl -H "Origin: https://你的前端域名" \
+        -I http://localhost:8080/api/auth/login
+   # 检查响应头中是否有 Access-Control-Allow-Origin
+   ```
+
+### 10.6 端口冲突
 
 | 服务 | 默认端口 | 修改方式 |
 |------|---------|---------|
 | PostgreSQL | 5432 | `postgresql.conf` 中 `port = 5432` |
-| 后端 | 8080 | `application.yml` 中 `server.port` 或环境变量 |
+| 后端 | 8080 | `application.yml` 中 `server.port` 或环境变量 `SERVER_PORT` |
 | 前端开发服务器 | 3000 | `vite.config.ts` 中 `server.port` |
 
 ---
@@ -814,6 +959,7 @@ echo "数据库已就绪"
 # 3. 检查并执行初始化（可选：首次部署时取消注释）
 # echo "[3/5] 执行数据库初始化..."
 # for f in backend/src/main/resources/db/migration/V*.sql; do
+#     echo "Executing: $f"
 #     psql -h localhost -p 5432 -U stock -d security_analyze -f "$f"
 # done
 
@@ -838,6 +984,6 @@ echo "数据库: localhost:5432"
 
 ---
 
-*文档版本：2026-05-02*  
+*文档版本：2026-05-05*  
 *适用系统版本：security-analyze v0.0.1-SNAPSHOT*  
 *PostgreSQL 部署方式：独立部署（非 Docker）*
