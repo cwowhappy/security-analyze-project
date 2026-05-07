@@ -112,16 +112,13 @@ brew services start postgresql@16
 sudo systemctl start postgresql
 ```
 
-数据库运行在 `localhost:5432`。首次部署需手动创建数据库和用户，并按顺序执行初始化脚本：
+数据库运行在 `localhost:5432`。首次部署需由 DBA 手动创建数据库和应用用户，创建参数以后端 `application.yml` 中定义的数据库连接信息为准（采集模块则参考 `collector/.env`）。初始化脚本按顺序执行：
 
 ```bash
-# 创建用户和数据库
-psql -U postgres -c "CREATE USER stock WITH PASSWORD 'stock';"
-psql -U postgres -c "CREATE DATABASE security_analyze OWNER stock;"
-
-# 按顺序执行初始化脚本
+# 按版本号顺序执行 migration 脚本
+# 注意：-U 和 -d 参数须与后端 application.yml 中的 DB_USER / DB_NAME 一致
 for f in backend/src/main/resources/db/migration/V*.sql; do
-    psql -h localhost -p 5432 -U stock -d security_analyze -f "$f"
+    psql -h localhost -p 5432 -U <DB_USER> -d <DB_NAME> -f "$f"
 done
 ```
 
@@ -140,12 +137,7 @@ cd backend
 ./gradlew test
 ```
 
-后端默认监听 `8080`，可通过环境变量覆盖数据库连接：
-- `DB_HOST`（默认 localhost）
-- `DB_PORT`（默认 5432）
-- `DB_NAME`（默认 security_analyze）
-- `DB_USER`（默认 stock）
-- `DB_PASSWORD`（默认 stock）
+后端默认监听 `8080`。数据库连接参数定义在 `application.yml` 中，支持通过环境变量覆盖（`DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER`、`DB_PASSWORD`），具体默认值以配置文件为准，本文档不再重复。
 
 ### 3. 前端（frontend/）
 
@@ -216,6 +208,7 @@ python main.py --finance 600519
 - DTO 与 Domain Entity 分离：API 层只返回 DTO，不直接暴露 Entity。
 - SQL 关键字与字段名使用 snake_case，Java 实体使用 camelCase，由 JDBC Template 的 RowMapper 手动映射。
 - Controller 统一返回 `ResponseEntity<T>`。
+- **删除策略统一使用逻辑删除**：所有业务表须包含 `is_deleted BOOLEAN NOT NULL DEFAULT FALSE` 和 `deleted_at TIMESTAMP` 字段。Repository 层查询须自动追加 `WHERE is_deleted = FALSE` 条件；DELETE 接口实际执行 UPDATE 置标志位。严禁对业务数据执行物理删除。
 
 ### 前端（TypeScript / Vue）
 

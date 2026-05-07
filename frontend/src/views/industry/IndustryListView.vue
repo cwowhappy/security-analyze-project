@@ -1,8 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElCard, ElBreadcrumb, ElBreadcrumbItem, ElMessage, ElRadioGroup, ElRadioButton, ElTag } from 'element-plus'
-import { Grid } from '@element-plus/icons-vue'
+import {
+  ElCard,
+  ElBreadcrumb,
+  ElBreadcrumbItem,
+  ElMessage,
+  ElRadioGroup,
+  ElRadioButton,
+  ElTag,
+  ElInput,
+  ElButton,
+  ElEmpty,
+} from 'element-plus'
+import { Grid, ArrowLeft, Search } from '@element-plus/icons-vue'
 import { getIndustryList } from '@/api/industry'
 import type { IndustryCategoryDto } from '@/types/industry'
 
@@ -10,9 +21,11 @@ const router = useRouter()
 const standard = ref<'EM' | 'SW'>('EM')
 const industries = ref<IndustryCategoryDto[]>([])
 const loading = ref(false)
+const filterKeyword = ref('')
 
 // SW 层级状态
 const selectedL1 = ref<string | null>(null)
+const selectedL1Name = ref('')
 
 async function fetchIndustries() {
   loading.value = true
@@ -38,6 +51,17 @@ async function fetchIndustries() {
   }
 }
 
+const filteredIndustries = computed(() => {
+  const kw = filterKeyword.value.trim()
+  if (!kw) return industries.value
+  const lower = kw.toLowerCase()
+  return industries.value.filter(
+    (item) =>
+      item.name.toLowerCase().includes(lower) ||
+      item.code.toLowerCase().includes(lower),
+  )
+})
+
 function goToDetail(industryCode: string) {
   router.push({
     path: `/industries/${encodeURIComponent(industryCode)}`,
@@ -45,18 +69,24 @@ function goToDetail(industryCode: string) {
   })
 }
 
-function selectL1(code: string) {
-  selectedL1.value = code
+function selectL1(item: IndustryCategoryDto) {
+  selectedL1.value = item.code
+  selectedL1Name.value = item.name
+  filterKeyword.value = ''
   fetchIndustries()
 }
 
 function backToL1() {
   selectedL1.value = null
+  selectedL1Name.value = ''
+  filterKeyword.value = ''
   fetchIndustries()
 }
 
 watch(standard, () => {
   selectedL1.value = null
+  selectedL1Name.value = ''
+  filterKeyword.value = ''
   fetchIndustries()
 })
 
@@ -83,37 +113,64 @@ onMounted(() => {
       </ElRadioGroup>
     </div>
 
-    <!-- SW 面包屑导航 -->
-    <div v-if="standard === 'SW' && selectedL1" class="sw-breadcrumb">
-      <ElTag type="info" style="cursor: pointer" @click="backToL1">
-        ← 返回一级行业
+    <!-- SW 二级返回导航 -->
+    <div v-if="standard === 'SW' && selectedL1" class="sw-nav">
+      <ElButton link :icon="ArrowLeft" @click="backToL1">
+        返回一级行业
+      </ElButton>
+      <ElTag size="small" type="info" effect="plain" style="margin-left: 8px">
+        {{ selectedL1Name }}
       </ElTag>
     </div>
 
-    <div class="card-grid">
+    <!-- 搜索过滤 -->
+    <div class="filter-bar">
+      <ElInput
+        v-model="filterKeyword"
+        placeholder="搜索行业名称或代码"
+        clearable
+        style="width: 320px"
+      >
+        <template #prefix>
+          <Search style="width: 16px; height: 16px; color: var(--text-tertiary)" />
+        </template>
+      </ElInput>
+    </div>
+
+    <!-- 行业卡片网格 -->
+    <div v-if="filteredIndustries.length > 0" class="card-grid">
       <ElCard
-        v-for="item in industries"
+        v-for="item in filteredIndustries"
         :key="item.code"
         class="industry-card"
         shadow="hover"
-        @click="standard === 'SW' && !selectedL1 ? selectL1(item.code) : goToDetail(item.code)"
+        @click="standard === 'SW' && !selectedL1 ? selectL1(item) : goToDetail(item.code)"
       >
         <div class="card-content">
           <Grid class="card-icon" />
           <div class="card-title">{{ item.name }}</div>
+          <div class="card-code">{{ item.code }}</div>
           <div class="card-count">{{ item.companyCount ?? 0 }} 家公司</div>
-          <ElTag v-if="standard === 'SW' && !selectedL1" size="small" type="info" style="margin-top: 8px">
+          <ElTag
+            v-if="standard === 'SW' && !selectedL1"
+            size="small"
+            type="primary"
+            effect="plain"
+            style="margin-top: 8px"
+          >
             查看二级
           </ElTag>
         </div>
       </ElCard>
     </div>
+
+    <ElEmpty v-else description="未找到匹配的行业分类" />
   </div>
 </template>
 
 <style scoped>
 .industry-list {
-  padding: 24px;
+  padding: 8px;
 }
 .page-header {
   display: flex;
@@ -124,17 +181,22 @@ onMounted(() => {
 .page-title {
   font-size: 24px;
   font-weight: 500;
-  color: #303133;
+  color: var(--text-primary);
   margin: 0;
 }
 .subtitle {
   font-size: 14px;
-  color: #909399;
+  color: var(--text-secondary);
   font-weight: normal;
   margin-left: 8px;
 }
-.sw-breadcrumb {
+.sw-nav {
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+}
+.filter-bar {
+  margin-bottom: 20px;
 }
 .card-grid {
   display: grid;
@@ -143,10 +205,14 @@ onMounted(() => {
 }
 .industry-card {
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
 }
 .industry-card:hover {
   transform: translateY(-4px);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-glow);
 }
 .card-content {
   display: flex;
@@ -158,17 +224,24 @@ onMounted(() => {
 .card-icon {
   width: 40px;
   height: 40px;
-  color: #409eff;
+  color: var(--accent-primary);
 }
 .card-title {
   margin-top: 12px;
   font-size: 15px;
   font-weight: 600;
   line-height: 1.4;
+  color: var(--text-primary);
+}
+.card-code {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--accent-primary);
+  font-family: var(--font-mono);
 }
 .card-count {
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 13px;
-  color: #666;
+  color: var(--text-secondary);
 }
 </style>

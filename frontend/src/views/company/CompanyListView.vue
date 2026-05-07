@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ElAutocomplete,
@@ -10,8 +10,11 @@ import {
   ElTableColumn,
   ElPagination,
   ElMessage,
+  ElCard,
+  ElTag,
+  ElEmpty,
 } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Star, StarFilled } from '@element-plus/icons-vue'
 import { getCompanyList } from '@/api/company'
 import type { Company, CompanyListResponse } from '@/types/company'
 
@@ -24,6 +27,77 @@ const total = ref(0)
 const page = ref(0)
 const size = ref(20)
 const hasSearched = ref(false)
+
+// 重点关注公司（本地暂存，待后端设计完成后替换为接口）
+const favoriteCompanies = ref<Company[]>([])
+const favoriteLoading = ref(false)
+
+const FAVORITE_STORAGE_KEY = 'favorite_companies'
+
+function loadFavoritesFromStorage(): string[] {
+  try {
+    const raw = localStorage.getItem(FAVORITE_STORAGE_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function saveFavoritesToStorage(codes: string[]) {
+  localStorage.setItem(FAVORITE_STORAGE_KEY, JSON.stringify(codes))
+}
+
+function isFavorite(stockCode: string): boolean {
+  return loadFavoritesFromStorage().includes(stockCode)
+}
+
+function toggleFavorite(company: Company) {
+  const codes = loadFavoritesFromStorage()
+  const idx = codes.indexOf(company.stockCode)
+  if (idx > -1) {
+    codes.splice(idx, 1)
+    ElMessage.success(`已取消关注 ${company.stockName}`)
+  } else {
+    codes.push(company.stockCode)
+    ElMessage.success(`已关注 ${company.stockName}`)
+  }
+  saveFavoritesToStorage(codes)
+  refreshFavorites()
+}
+
+async function refreshFavorites() {
+  const codes = loadFavoritesFromStorage()
+  if (codes.length === 0) {
+    favoriteCompanies.value = []
+    return
+  }
+  // 临时方案：从搜索结果或已加载数据中匹配；如无则批量查询（这里简化处理，直接按代码搜索）
+  // 待后端设计完成后，应替换为专用的批量查询接口如 GET /companies/favorites
+  favoriteLoading.value = true
+  try {
+    // 尝试用已缓存的搜索数据匹配
+    const cached = tableData.value.filter((c) => codes.includes(c.stockCode))
+    const cachedCodes = cached.map((c) => c.stockCode)
+    const missing = codes.filter((c) => !cachedCodes.includes(c))
+
+    if (missing.length > 0) {
+      // 简单兜底：逐个查询（实际应使用批量接口）
+      for (const code of missing) {
+        try {
+          const res: CompanyListResponse = await getCompanyList({ keyword: code, page: 0, size: 1 })
+          if (res.items.length > 0) cached.push(res.items[0])
+        } catch {
+          // ignore
+        }
+      }
+    }
+    favoriteCompanies.value = codes
+      .map((code) => cached.find((c) => c.stockCode === code))
+      .filter(Boolean) as Company[]
+  } finally {
+    favoriteLoading.value = false
+  }
+}
 
 interface SuggestItem {
   value: string
@@ -104,6 +178,10 @@ function handleClear() {
   hasSearched.value = false
   tableData.value = []
 }
+
+onMounted(() => {
+  refreshFavorites()
+})
 </script>
 
 <template>
@@ -113,38 +191,44 @@ function handleClear() {
       <ElBreadcrumbItem>公司信息</ElBreadcrumbItem>
     </ElBreadcrumb>
 
-    <h2 class="page-title">公司信息搜索</h2>
+    <h2 class="page-title">公司信息</h2>
 
-    <div class="search-box">
-      <ElAutocomplete
-        v-model="keyword"
-        :fetch-suggestions="fetchSuggestions"
-        placeholder="输入股票代码或公司名称"
-        :prefix-icon="Search"
-        clearable
-        class="search-input"
-        :highlight-first-item="false"
-        @select="handleSelect"
-        @keyup.enter="handleKeyEnter"
-        @clear="handleClear"
-      >
-        <template #default="{ item }">
-          <div class="suggest-item">
-            <span class="suggest-code">{{ item.stockCode }}</span>
-            <span class="suggest-name">{{ item.stockName }}</span>
-            <span v-if="item.market" class="suggest-market">[{{ item.market }}]</span>
-          </div>
-        </template>
-      </ElAutocomplete>
-      <ElButton type="primary" :icon="Search" class="search-btn" @click="handleKeyEnter">
-        搜索
-      </ElButton>
+    <!-- 上方：公司搜索（居中） -->
+    <div class="search-section">
+      <div class="search-box">
+        <ElAutocomplete
+          v-model="keyword"
+          :fetch-suggestions="fetchSuggestions"
+          placeholder="输入股票代码或公司名称"
+          clearable
+          style="width: 480px"
+          :highlight-first-item="false"
+          @select="handleSelect"
+          @keyup.enter="handleKeyEnter"
+          @clear="handleClear"
+        >
+          <template #prefix>
+            <Search style="width: 16px; height: 16px; color: var(--text-tertiary)" />
+          </template>
+          <template #default="{ item }">
+            <div class="suggest-item">
+              <span class="suggest-code">{{ item.stockCode }}</span>
+              <span class="suggest-name">{{ item.stockName }}</span>
+              <span v-if="item.market" class="suggest-market">[{{ item.market }}]</span>
+            </div>
+          </template>
+        </ElAutocomplete>
+        <ElButton type="primary" @click="handleKeyEnter">
+          搜索
+        </ElButton>
+      </div>
+      <div class="search-hint">例如：600519（贵州茅台）、000001（平安银行）、002594（比亚迪）</div>
     </div>
 
-    <div v-if="hasSearched" class="result-section">
+    <!-- 搜索结果 -->
+    <div v-if="hasSearched" v-loading="loading" class="result-area">
       <ElTable
         :data="tableData"
-        v-loading="loading"
         stripe
         style="width: 100%"
         highlight-current-row
@@ -156,6 +240,18 @@ function handleClear() {
         <ElTableColumn prop="region" label="地区" width="120" />
         <ElTableColumn prop="listingDate" label="上市日期" width="120" />
         <ElTableColumn prop="market" label="市场" width="80" />
+        <ElTableColumn label="操作" width="100" align="center">
+          <template #default="{ row }">
+            <ElButton
+              link
+              :type="isFavorite(row.stockCode) ? 'warning' : 'info'"
+              :icon="isFavorite(row.stockCode) ? StarFilled : Star"
+              @click.stop="toggleFavorite(row)"
+            >
+              {{ isFavorite(row.stockCode) ? '已关注' : '关注' }}
+            </ElButton>
+          </template>
+        </ElTableColumn>
       </ElTable>
 
       <div class="pagination">
@@ -171,46 +267,165 @@ function handleClear() {
         />
       </div>
     </div>
+
+    <!-- 下方：重点关注公司 -->
+    <section class="favorite-section" v-loading="favoriteLoading">
+      <div class="section-title">重点关注公司</div>
+
+      <div v-if="favoriteCompanies.length > 0" class="company-cards">
+        <ElCard
+          v-for="item in favoriteCompanies"
+          :key="item.stockCode"
+          class="company-card"
+          shadow="hover"
+          @click="handleRowClick(item)"
+        >
+          <div class="card-header">
+            <span class="company-name">{{ item.stockName }}</span>
+            <ElTag size="small" type="info">{{ item.market }}</ElTag>
+          </div>
+          <div class="card-code">{{ item.stockCode }}</div>
+          <div v-if="item.industry" class="card-info">{{ item.industry }}</div>
+          <div v-if="item.region" class="card-info">{{ item.region }}</div>
+          <div class="card-actions">
+            <ElButton
+              link
+              type="warning"
+              size="small"
+              :icon="StarFilled"
+              @click.stop="toggleFavorite(item)"
+            >
+              取消关注
+            </ElButton>
+          </div>
+        </ElCard>
+      </div>
+
+      <div v-else class="empty-favorite">
+        <ElEmpty description="暂无重点关注公司">
+          <template #description>
+            <div class="empty-desc">
+              <p>暂无重点关注公司</p>
+              <p class="empty-tip">在搜索结果中点击“关注”即可添加至此</p>
+            </div>
+          </template>
+        </ElEmpty>
+      </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
 .company-search {
-  padding: 24px;
+  padding: 8px;
 }
-
 .page-title {
   font-size: 24px;
   font-weight: 500;
-  color: #303133;
-  margin: 16px 0 20px;
+  color: var(--text-primary);
+  margin: 16px 0;
 }
 
+/* 搜索区域：居中 */
+.search-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 32px 0 40px;
+  padding: 32px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
 .search-box {
   display: flex;
+  align-items: center;
   gap: 12px;
-  max-width: 680px;
+}
+.search-hint {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-tertiary);
 }
 
-.search-input {
-  flex: 1;
+/* 搜索结果 */
+.result-area {
+  margin-bottom: 32px;
+}
+.pagination {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
 }
 
-.search-input :deep(.el-input__wrapper) {
-  border-radius: 8px;
-  padding: 4px 12px;
-  height: 48px;
+/* 重点关注公司 */
+.favorite-section {
+  margin-bottom: 32px;
 }
-
-.search-input :deep(.el-input__inner) {
+.section-title {
   font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
 }
-
-.search-btn {
-  height: 48px;
-  padding: 0 32px;
-  font-size: 16px;
-  border-radius: 8px;
+.company-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.company-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+.company-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-glow);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.company-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.card-code {
+  font-size: 13px;
+  color: var(--accent-primary);
+  font-family: var(--font-mono);
+  margin-bottom: 4px;
+}
+.card-info {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+.card-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+.empty-favorite {
+  padding: 24px 0;
+}
+.empty-desc {
+  text-align: center;
+  color: var(--text-secondary);
+}
+.empty-desc p {
+  margin: 0;
+}
+.empty-tip {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
 }
 
 .suggest-item {
@@ -219,31 +434,18 @@ function handleClear() {
   gap: 12px;
   padding: 6px 0;
 }
-
 .suggest-code {
   font-weight: 600;
-  color: #409eff;
+  color: var(--accent-primary);
   min-width: 80px;
 }
-
 .suggest-name {
   flex: 1;
-  color: #333;
+  color: var(--text-primary);
 }
-
 .suggest-market {
-  color: #999;
+  color: var(--text-tertiary);
   font-size: 12px;
-}
-
-.result-section {
-  margin-top: 24px;
-}
-
-.pagination {
-  margin-top: 24px;
-  display: flex;
-  justify-content: flex-end;
 }
 
 :deep(.el-table__row) {

@@ -76,6 +76,18 @@ const router = createRouter({
       component: () => import('@/views/admin/UserManagementView.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
     },
+    {
+      path: '/portfolios',
+      name: 'portfolio-list',
+      component: () => import('@/views/portfolio/PortfolioListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/portfolios/:id',
+      name: 'portfolio-detail',
+      component: () => import('@/views/portfolio/PortfolioDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 

@@ -156,99 +156,85 @@ onMounted(() => {
 
 <style scoped>
 .company-detail {
-  padding: 24px;
+  padding: 8px;
 }
-
 .page-title {
   font-size: 24px;
   font-weight: 500;
-  color: #303133;
+  color: var(--text-primary);
   margin: 16px 0 0;
 }
-
 .subtitle {
   font-size: 14px;
-  color: #909399;
+  color: var(--text-secondary);
   font-weight: normal;
   margin-left: 8px;
 }
-
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   max-width: 600px;
 }
-
 .info-item {
   display: flex;
   align-items: baseline;
 }
-
 .info-item .label {
-  color: #666;
+  color: var(--text-secondary);
   width: 100px;
   flex-shrink: 0;
 }
-
 .info-item .value {
   font-weight: 500;
+  color: var(--text-primary);
 }
-
 .securities-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
-
 .security-card {
   cursor: default;
 }
-
 .security-header {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
 .security-name {
   font-weight: 600;
   font-size: 16px;
+  color: var(--text-primary);
 }
-
 .security-code {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
 }
-
 .security-info {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-
 .security-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-
 .security-label {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
 }
-
 .security-value {
   font-weight: 500;
   font-size: 14px;
+  color: var(--text-primary);
 }
-
 .industry-tags {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-
 .industry-tag-row {
   display: flex;
   align-items: center;

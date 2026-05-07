@@ -12,7 +12,9 @@ import {
   ElOption,
   ElTag,
   ElEmpty,
+  ElButton,
 } from 'element-plus'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
@@ -59,9 +61,13 @@ const chartOption = computed(() => {
   const changeData = trendData.value.map((d) => d.changePercent)
 
   return {
+    backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'cross' },
+      backgroundColor: 'rgba(15,21,37,0.9)',
+      borderColor: 'rgba(255,255,255,0.1)',
+      textStyle: { color: '#e5e7eb' },
       formatter: (params: any[]) => {
         const close = params[0]?.value ?? 0
         const change = params[1]?.value ?? 0
@@ -69,15 +75,15 @@ const chartOption = computed(() => {
       },
     },
     grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
-    dataZoom: [{ type: 'inside' }, { type: 'slider', bottom: 0 }],
-    xAxis: { type: 'category', data: xData, axisLabel: { rotate: 30 } },
+    dataZoom: [{ type: 'inside' }, { type: 'slider', bottom: 0, textStyle: { color: '#9ca3af' } }],
+    xAxis: { type: 'category', data: xData, axisLine: { lineStyle: { color: '#4b5563' } }, axisLabel: { color: '#9ca3af', rotate: 30 } },
     yAxis: [
-      { type: 'value', name: '收盘', position: 'left' },
-      { type: 'value', name: '涨跌幅(%)', position: 'right', axisLabel: { formatter: '{value}%' } },
+      { type: 'value', name: '收盘', position: 'left', axisLine: { lineStyle: { color: '#4b5563' } }, axisLabel: { color: '#9ca3af' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
+      { type: 'value', name: '涨跌幅(%)', position: 'right', axisLabel: { formatter: '{value}%', color: '#9ca3af' }, axisLine: { lineStyle: { color: '#4b5563' } }, splitLine: { show: false } },
     ],
     series: [
-      { name: '收盘', type: 'line', data: closeData, smooth: true, yAxisIndex: 0, areaStyle: { opacity: 0.1 } },
-      { name: '涨跌幅', type: 'line', data: changeData, smooth: true, yAxisIndex: 1, lineStyle: { type: 'dashed' } },
+      { name: '收盘', type: 'line', data: closeData, smooth: true, yAxisIndex: 0, lineStyle: { color: '#00d4ff' }, itemStyle: { color: '#00d4ff' }, areaStyle: { opacity: 0.1, color: 'rgba(0,212,255,0.2)' } },
+      { name: '涨跌幅', type: 'line', data: changeData, smooth: true, yAxisIndex: 1, lineStyle: { type: 'dashed', color: '#ff9500' }, itemStyle: { color: '#ff9500' } },
     ],
   }
 })
@@ -148,13 +154,18 @@ onMounted(() => {
       <ElBreadcrumbItem>{{ industryName || industryCode }}</ElBreadcrumbItem>
     </ElBreadcrumb>
 
-    <h2 class="page-title">
-      {{ industryName || industryCode }}
-      <ElTag size="small" type="info" style="margin-left: 8px; vertical-align: middle">
-        {{ standard === 'EM' ? '东财板块' : '申万行业' }}
-      </ElTag>
-      <span class="subtitle">共 {{ total }} 家公司</span>
-    </h2>
+    <div class="page-header">
+      <h2 class="page-title">
+        {{ industryName || industryCode }}
+        <ElTag size="small" type="info" style="margin-left: 8px; vertical-align: middle">
+          {{ standard === 'EM' ? '东财板块' : '申万行业' }}
+        </ElTag>
+        <span class="subtitle">共 {{ total }} 家公司</span>
+      </h2>
+      <ElButton link :icon="ArrowLeft" @click="router.push('/industries')">
+        返回行业列表
+      </ElButton>
+    </div>
 
     <div class="section" v-loading="trendLoading">
       <div class="section-header">
@@ -185,12 +196,12 @@ onMounted(() => {
         style="width: 100%"
         @row-click="handleRowClick"
       >
-        <ElTableColumn prop="stockCode" label="股票代码" width="120" />
-        <ElTableColumn prop="stockName" label="公司名称" width="180" />
-        <ElTableColumn prop="industry" label="所属行业" width="200" />
-        <ElTableColumn prop="region" label="地区" width="120" />
-        <ElTableColumn prop="listingDate" label="上市日期" width="120" />
-        <ElTableColumn prop="market" label="市场" width="80" />
+        <ElTableColumn prop="stockCode" label="股票代码" min-width="120" />
+        <ElTableColumn prop="stockName" label="公司名称" min-width="180" />
+        <ElTableColumn prop="industry" label="所属行业" min-width="200" />
+        <ElTableColumn prop="region" label="地区" min-width="120" />
+        <ElTableColumn prop="listingDate" label="上市日期" min-width="120" />
+        <ElTableColumn prop="market" label="市场" min-width="80" />
       </ElTable>
       <ElPagination
         v-if="total > 0"
@@ -210,17 +221,23 @@ onMounted(() => {
 
 <style scoped>
 .industry-detail {
-  padding: 24px;
+  padding: 8px;
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16px 0 20px;
 }
 .page-title {
   font-size: 24px;
   font-weight: 500;
-  color: #303133;
-  margin: 16px 0 20px;
+  color: var(--text-primary);
+  margin: 0;
 }
 .subtitle {
   font-size: 14px;
-  color: #909399;
+  color: var(--text-secondary);
   font-weight: normal;
   margin-left: 8px;
 }
@@ -236,7 +253,7 @@ onMounted(() => {
 .section-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
   margin: 0;
 }
 .pagination {

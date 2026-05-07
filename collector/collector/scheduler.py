@@ -137,6 +137,32 @@ class Scheduler:
             logger.error(f"Failed to add industry sync job: {e}")
             return False
 
+    def add_quote_job(self, cron: str, job_id: str = "quote_task") -> bool:
+        """添加/更新日行情采集定时任务
+
+        Args:
+            cron: Cron 表达式，例如 "0 16 * * *"（每天 16:00，盘后）
+            job_id: 任务唯一标识
+        """
+        try:
+            trigger = CronTrigger.from_crontab(cron)
+            if self._scheduler.get_job(job_id):
+                self._scheduler.reschedule_job(job_id, trigger=trigger)
+                logger.info(f"Rescheduled quote job '{job_id}' with cron '{cron}'")
+            else:
+                self._scheduler.add_job(
+                    self._run_quote_task,
+                    trigger=trigger,
+                    id=job_id,
+                    name="Daily Quote Sync",
+                    replace_existing=True,
+                )
+                logger.info(f"Added quote job '{job_id}' with cron '{cron}'")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to add quote job: {e}")
+            return False
+
     def remove_job(self, job_id: str) -> bool:
         try:
             self._scheduler.remove_job(job_id)
@@ -206,6 +232,16 @@ class Scheduler:
         except Exception as e:
             logger.error(f"Scheduled industry sync task failed: {e}")
 
+    def _run_quote_task(self):
+        logger.info("Running scheduled quote task...")
+        try:
+            from collector.tasks.quote_task import QuoteTask
+            source = AkshareSource()
+            task = QuoteTask(db=self.db, source=source)
+            task.run()
+        except Exception as e:
+            logger.error(f"Scheduled quote task failed: {e}")
+
     # ------------------------------------------------------------------
     # 手动触发（保持向后兼容）
     # ------------------------------------------------------------------
@@ -228,6 +264,17 @@ class Scheduler:
         """手动立即执行行业分类同步任务"""
         logger.info("Manual trigger: industry classification sync task")
         self._run_industry_sync_task()
+
+    def run_quote_task_now(self, trade_date: Optional[str] = None):
+        """手动立即执行日行情采集任务"""
+        logger.info(f"Manual trigger: quote task, trade_date={trade_date or 'today'}")
+        try:
+            from collector.tasks.quote_task import QuoteTask
+            source = AkshareSource()
+            task = QuoteTask(db=self.db, source=source)
+            task.run(trade_date=trade_date)
+        except Exception as e:
+            logger.error(f"Quote task failed: {e}")
 
     # ------------------------------------------------------------------
     # 指数模块任务

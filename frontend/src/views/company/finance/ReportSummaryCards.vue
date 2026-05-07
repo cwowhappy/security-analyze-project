@@ -15,11 +15,11 @@ function formatMoney(val?: number): string {
 }
 
 const cards = [
-  { label: '营业总收入', key: 'totalRevenue' as const, color: '#409eff' },
+  { label: '营业总收入', key: 'totalRevenue' as const, color: '#00d4ff' },
   { label: '归母净利润', key: 'parentNetProfit' as const, color: '#67c23a' },
-  { label: '总资产', key: 'totalAssets' as const, color: '#e6a23c' },
+  { label: '总资产', key: 'totalAssets' as const, color: '#ff9500' },
   { label: '净资产', key: 'totalEquity' as const, color: '#f56c6c' },
-  { label: '经营现金流', key: 'operatingCashFlow' as const, color: '#909399' },
+  { label: '经营现金流', key: 'operatingCashFlow' as const, color: '#9ca3af' },
 ]
 </script>
 
@@ -52,11 +52,12 @@ const cards = [
 }
 .card-label {
   font-size: 13px;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 .card-value {
   font-size: 20px;
   font-weight: 600;
+  font-family: var(--font-mono);
 }
 </style>
