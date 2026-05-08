@@ -160,12 +160,12 @@ onUnmounted(() => {
 
 <style scoped>
 .dashboard {
-  padding: 24px;
+  padding: 8px;
 }
 .page-title {
   font-size: 24px;
   font-weight: 500;
-  color: #303133;
+  color: var(--text-primary);
   margin: 0;
 }
 .header {
@@ -185,7 +185,7 @@ onUnmounted(() => {
 .section-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
   margin-bottom: 16px;
 }
 </style>

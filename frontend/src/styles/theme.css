@@ -1,0 +1,234 @@
+/* ================================================================
+   证券分析与投资系统 — 深空暗色金融风（Dark Mode FinTech）
+   风格 A 主题变量
+   ================================================================ */
+
+:root {
+  /* 背景色系 */
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0f1525;
+  --bg-card: rgba(17, 24, 39, 0.75);
+  --bg-card-solid: #111827;
+  --bg-hover: rgba(255, 255, 255, 0.04);
+  --bg-active: rgba(0, 212, 255, 0.08);
+
+  /* 强调色 */
+  --accent-primary: #00d4ff;
+  --accent-primary-dim: rgba(0, 212, 255, 0.15);
+  --accent-warm: #ff9500;
+  --accent-warm-dim: rgba(255, 149, 0, 0.15);
+
+  /* 涨跌色（保持A股习惯：红涨绿跌） */
+  --up-color: #f56c6c;
+  --up-color-dim: rgba(245, 108, 108, 0.15);
+  --down-color: #67c23a;
+  --down-color-dim: rgba(103, 194, 58, 0.15);
+
+  /* 文字色 */
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --text-muted: #4b5563;
+
+  /* 边框 */
+  --border-color: rgba(255, 255, 255, 0.06);
+  --border-color-light: rgba(255, 255, 255, 0.08);
+  --border-color-strong: rgba(255, 255, 255, 0.12);
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 12px rgba(0, 212, 255, 0.15);
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* 字体 */
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+}
+
+/* ================================================================
+   Element Plus 暗色主题覆盖
+   ================================================================ */
+
+html.dark body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+html.dark .el-table {
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-bg-color: var(--bg-card-solid);
+  --el-table-row-hover-bg-color: var(--bg-hover);
+  --el-table-border-color: var(--border-color);
+  --el-table-text-color: var(--text-primary);
+  --el-table-header-text-color: var(--text-secondary);
+}
+
+html.dark .el-table th.el-table__cell {
+  background-color: var(--el-table-header-bg-color) !important;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+html.dark .el-table td.el-table__cell {
+  border-bottom: 1px solid var(--border-color);
+}
+
+html.dark .el-card {
+  --el-card-bg-color: var(--bg-card);
+  --el-card-border-color: var(--border-color);
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+html.dark .el-tabs {
+  --el-text-color-primary: var(--text-primary);
+}
+
+html.dark .el-tabs__item {
+  color: var(--text-secondary);
+}
+
+html.dark .el-tabs__item.is-active {
+  color: var(--accent-primary);
+}
+
+html.dark .el-tabs__active-bar {
+  background-color: var(--accent-primary);
+}
+
+html.dark .el-tabs__nav-wrap::after {
+  background-color: var(--border-color);
+}
+
+html.dark .el-input__wrapper,
+html.dark .el-textarea__inner {
+  background-color: var(--bg-card-solid);
+  box-shadow: 0 0 0 1px var(--border-color) inset;
+}
+
+html.dark .el-input__inner {
+  color: var(--text-primary);
+}
+
+html.dark .el-input__inner::placeholder {
+  color: var(--text-tertiary);
+}
+
+html.dark .el-button--primary {
+  --el-button-bg-color: var(--accent-primary);
+  --el-button-border-color: var(--accent-primary);
+  --el-button-hover-bg-color: #33ddff;
+  --el-button-hover-border-color: #33ddff;
+  --el-button-text-color: #0a0e1a;
+}
+
+html.dark .el-button--default {
+  --el-button-bg-color: var(--bg-card-solid);
+  --el-button-border-color: var(--border-color);
+  --el-button-text-color: var(--text-primary);
+  --el-button-hover-bg-color: var(--bg-hover);
+  --el-button-hover-border-color: var(--border-color-strong);
+}
+
+html.dark .el-button.is-link {
+  color: var(--text-secondary);
+}
+
+html.dark .el-button.is-link:hover {
+  color: var(--accent-primary);
+}
+
+html.dark .el-pagination {
+  --el-pagination-text-color: var(--text-secondary);
+  --el-pagination-button-bg-color: var(--bg-card-solid);
+}
+
+html.dark .el-pagination .btn-prev,
+html.dark .el-pagination .btn-next {
+  background-color: var(--bg-card-solid);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+html.dark .el-pagination .el-pager li {
+  background-color: var(--bg-card-solid);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+html.dark .el-pagination .el-pager li.is-active {
+  background-color: var(--accent-primary-dim);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+html.dark .el-dialog {
+  --el-dialog-bg-color: var(--bg-secondary);
+  --el-dialog-border-color: var(--border-color);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+html.dark .el-dialog__title {
+  color: var(--text-primary);
+}
+
+html.dark .el-form-item__label {
+  color: var(--text-secondary);
+}
+
+html.dark .el-select-dropdown {
+  --el-bg-color-overlay: var(--bg-secondary);
+  --el-border-color-light: var(--border-color);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+html.dark .el-select-dropdown__item {
+  color: var(--text-primary);
+}
+
+html.dark .el-select-dropdown__item.hover,
+html.dark .el-select-dropdown__item:hover {
+  background-color: var(--bg-hover);
+}
+
+html.dark .el-tag {
+  --el-tag-bg-color: var(--bg-hover);
+  --el-tag-border-color: var(--border-color);
+}
+
+html.dark .el-divider {
+  --el-border-color: var(--border-color);
+}
+
+html.dark .el-empty__description {
+  color: var(--text-tertiary);
+}
+
+html.dark .el-message-box {
+  --el-messagebox-bg-color: var(--bg-secondary);
+  --el-messagebox-border-color: var(--border-color);
+  border: 1px solid var(--border-color);
+}
+
+html.dark .el-message-box__title {
+  color: var(--text-primary);
+}
+
+html.dark .el-message-box__message {
+  color: var(--text-secondary);
+}
+
+html.dark .el-loading-mask {
+  background-color: rgba(10, 14, 26, 0.7);
+}

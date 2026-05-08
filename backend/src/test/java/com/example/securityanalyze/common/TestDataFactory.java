@@ -7,6 +7,11 @@ import com.example.securityanalyze.index.domain.EtfInfo;
 import com.example.securityanalyze.index.domain.IndexEtfMapping;
 import com.example.securityanalyze.index.domain.IndexHistory;
 import com.example.securityanalyze.index.domain.IndexInfo;
+import com.example.securityanalyze.portfolio.domain.Portfolio;
+import com.example.securityanalyze.portfolio.domain.PortfolioType;
+import com.example.securityanalyze.portfolio.domain.Position;
+import com.example.securityanalyze.portfolio.domain.TradeType;
+import com.example.securityanalyze.portfolio.domain.TransactionRecord;
 import com.example.securityanalyze.user.domain.Role;
 import com.example.securityanalyze.user.domain.User;
 import com.example.securityanalyze.user.domain.UserStatus;
@@ -403,5 +408,177 @@ public final class TestDataFactory {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("JSONB 序列化失败", e);
         }
+    }
+
+
+    // ------------------------------------------------------------------
+    // 持仓管理模块测试数据辅助方法
+    // ------------------------------------------------------------------
+
+    public static Long insertUser(NamedParameterJdbcTemplate jdbc, User user) {
+        String sql = """
+                INSERT INTO sys_user (username, password_hash, real_name, status, role, created_at, updated_at)
+                VALUES (:username, :passwordHash, :realName, :status::user_status, :role::user_role, :createdAt, :updatedAt)
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("username", user.getUsername());
+        params.addValue("passwordHash", user.getPasswordHash());
+        params.addValue("realName", user.getRealName());
+        params.addValue("status", user.getStatus().name());
+        params.addValue("role", user.getRole().name());
+        LocalDateTime now = LocalDateTime.now();
+        params.addValue("createdAt", user.getCreatedAt() != null ? user.getCreatedAt() : now);
+        params.addValue("updatedAt", user.getUpdatedAt() != null ? user.getUpdatedAt() : now);
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(sql, params, keyHolder, new String[]{"id"});
+        return keyHolder.getKey().longValue();
+    }
+
+    public static Portfolio portfolio(Long userId, String name, PortfolioType type) {
+        Portfolio p = new Portfolio();
+        p.setUserId(userId);
+        p.setName(name);
+        p.setType(type);
+        p.setBroker("华泰证券");
+        p.setDescription("测试组合");
+        p.setIsDeleted(false);
+        return p;
+    }
+
+    public static TransactionRecord transaction(Long portfolioId, String stockCode, TradeType tradeType,
+                                                   java.math.BigDecimal price, java.math.BigDecimal quantity) {
+        TransactionRecord t = new TransactionRecord();
+        t.setPortfolioId(portfolioId);
+        t.setStockCode(stockCode);
+        t.setTradeDate(LocalDate.now());
+        t.setTradeType(tradeType);
+        t.setPrice(price);
+        t.setQuantity(quantity);
+        t.setFee(java.math.BigDecimal.ZERO);
+        t.setTax(java.math.BigDecimal.ZERO);
+        if (price != null && quantity != null) {
+            t.setAmount(price.multiply(quantity));
+        }
+        t.setRealizedPnl(java.math.BigDecimal.ZERO);
+        t.setIsDeleted(false);
+        return t;
+    }
+
+    public static Position position(Long portfolioId, String stockCode, java.math.BigDecimal currentQuantity,
+                                     java.math.BigDecimal totalCost, java.math.BigDecimal avgCost) {
+        Position pos = new Position();
+        pos.setPortfolioId(portfolioId);
+        pos.setStockCode(stockCode);
+        pos.setCurrentQuantity(currentQuantity);
+        pos.setTotalCost(totalCost);
+        pos.setAvgCost(avgCost);
+        pos.setRealizedPnl(java.math.BigDecimal.ZERO);
+        pos.setIsDeleted(false);
+        return pos;
+    }
+
+    public static Long insertPortfolio(NamedParameterJdbcTemplate jdbc, Portfolio portfolio) {
+        String sql = """
+                INSERT INTO portfolio (user_id, name, type, broker, description, is_deleted, deleted_at, created_at, updated_at)
+                VALUES (:userId, :name, :type::portfolio_type, :broker, :description, :isDeleted, :deletedAt, :createdAt, :updatedAt)
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", portfolio.getUserId());
+        params.addValue("name", portfolio.getName());
+        params.addValue("type", portfolio.getType().name());
+        params.addValue("broker", portfolio.getBroker());
+        params.addValue("description", portfolio.getDescription());
+        params.addValue("isDeleted", portfolio.getIsDeleted() != null ? portfolio.getIsDeleted() : false);
+        params.addValue("deletedAt", portfolio.getDeletedAt());
+        LocalDateTime now = LocalDateTime.now();
+        params.addValue("createdAt", portfolio.getCreatedAt() != null ? portfolio.getCreatedAt() : now);
+        params.addValue("updatedAt", portfolio.getUpdatedAt() != null ? portfolio.getUpdatedAt() : now);
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(sql, params, keyHolder, new String[]{"id"});
+        return keyHolder.getKey().longValue();
+    }
+
+    public static Long insertTransaction(NamedParameterJdbcTemplate jdbc, TransactionRecord tx) {
+        String sql = """
+                INSERT INTO transaction_record (portfolio_id, stock_code, trade_date, trade_type, price, quantity,
+                                                fee, tax, amount, realized_pnl, remark, is_deleted, deleted_at, created_at)
+                VALUES (:portfolioId, :stockCode, :tradeDate, :tradeType::trade_type, :price, :quantity,
+                        :fee, :tax, :amount, :realizedPnl, :remark, :isDeleted, :deletedAt, :createdAt)
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("portfolioId", tx.getPortfolioId());
+        params.addValue("stockCode", tx.getStockCode());
+        params.addValue("tradeDate", tx.getTradeDate());
+        params.addValue("tradeType", tx.getTradeType().name());
+        params.addValue("price", tx.getPrice());
+        params.addValue("quantity", tx.getQuantity());
+        params.addValue("fee", tx.getFee());
+        params.addValue("tax", tx.getTax());
+        params.addValue("amount", tx.getAmount());
+        params.addValue("realizedPnl", tx.getRealizedPnl());
+        params.addValue("remark", tx.getRemark());
+        params.addValue("isDeleted", tx.getIsDeleted() != null ? tx.getIsDeleted() : false);
+        params.addValue("deletedAt", tx.getDeletedAt());
+        params.addValue("createdAt", tx.getCreatedAt() != null ? tx.getCreatedAt() : LocalDateTime.now());
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(sql, params, keyHolder, new String[]{"id"});
+        return keyHolder.getKey().longValue();
+    }
+
+    public static Long insertPosition(NamedParameterJdbcTemplate jdbc, Position pos) {
+        String sql = """
+                INSERT INTO position (portfolio_id, stock_code, current_quantity, total_cost, avg_cost,
+                                      realized_pnl, first_buy_date, last_trade_date, is_deleted, deleted_at, updated_at)
+                VALUES (:portfolioId, :stockCode, :currentQuantity, :totalCost, :avgCost,
+                        :realizedPnl, :firstBuyDate, :lastTradeDate, :isDeleted, :deletedAt, :updatedAt)
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("portfolioId", pos.getPortfolioId());
+        params.addValue("stockCode", pos.getStockCode());
+        params.addValue("currentQuantity", pos.getCurrentQuantity());
+        params.addValue("totalCost", pos.getTotalCost());
+        params.addValue("avgCost", pos.getAvgCost());
+        params.addValue("realizedPnl", pos.getRealizedPnl());
+        params.addValue("firstBuyDate", pos.getFirstBuyDate());
+        params.addValue("lastTradeDate", pos.getLastTradeDate());
+        params.addValue("isDeleted", pos.getIsDeleted() != null ? pos.getIsDeleted() : false);
+        params.addValue("deletedAt", pos.getDeletedAt());
+        params.addValue("updatedAt", pos.getUpdatedAt() != null ? pos.getUpdatedAt() : LocalDateTime.now());
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(sql, params, keyHolder, new String[]{"id"});
+        return keyHolder.getKey().longValue();
+    }
+
+    public static Long insertDailyQuote(NamedParameterJdbcTemplate jdbc, String stockCode, LocalDate tradeDate,
+                                         BigDecimal openPrice, BigDecimal highPrice, BigDecimal lowPrice,
+                                         BigDecimal closePrice, Long volume, BigDecimal amount) {
+        String sql = """
+                INSERT INTO daily_quote (stock_code, trade_date, open_price, high_price, low_price,
+                                         close_price, volume, amount, created_at)
+                VALUES (:stockCode, :tradeDate, :openPrice, :highPrice, :lowPrice,
+                        :closePrice, :volume, :amount, :createdAt)
+                ON CONFLICT (stock_code, trade_date) DO UPDATE
+                SET open_price = EXCLUDED.open_price, high_price = EXCLUDED.high_price,
+                    low_price = EXCLUDED.low_price, close_price = EXCLUDED.close_price,
+                    volume = EXCLUDED.volume, amount = EXCLUDED.amount
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("stockCode", stockCode);
+        params.addValue("tradeDate", tradeDate);
+        params.addValue("openPrice", openPrice);
+        params.addValue("highPrice", highPrice);
+        params.addValue("lowPrice", lowPrice);
+        params.addValue("closePrice", closePrice);
+        params.addValue("volume", volume);
+        params.addValue("amount", amount);
+        params.addValue("createdAt", LocalDateTime.now());
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(sql, params, keyHolder, new String[]{"stock_code"});
+        return 1L;
     }
 }

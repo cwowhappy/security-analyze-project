@@ -46,6 +46,8 @@ async function handleRegister() {
 
 <template>
   <div class="register-container">
+    <div class="register-bg" aria-hidden="true" />
+    <div class="register-overlay" aria-hidden="true" />
     <el-card class="register-card" shadow="always">
       <h2 class="title">用户注册</h2>
       <el-form :model="form" label-position="top" @submit.prevent="handleRegister">
@@ -76,19 +78,50 @@ async function handleRegister() {
 
 <style scoped>
 .register-container {
+  position: fixed;
+  inset: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  background: #f5f7fa;
+  background: #0a1628;
+  overflow: hidden;
+  z-index: 1;
 }
+
+.register-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    url('/images/login-bg.png') center center / auto 100% no-repeat;
+  opacity: 0.55;
+}
+
+.register-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(10, 22, 40, 0.88) 0%,
+    rgba(10, 22, 40, 0.65) 50%,
+    rgba(10, 22, 40, 0.88) 100%
+  );
+}
+
 .register-card {
-  width: 400px;
+  position: relative;
+  z-index: 2;
+  width: 420px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  --el-card-bg-color: transparent;
+  --el-card-border-color: transparent;
 }
 .title {
   text-align: center;
   margin-bottom: 24px;
-  color: #303133;
+  color: var(--text-primary);
 }
 .links {
   text-align: center;

@@ -95,7 +95,7 @@ async function handleRegisterAdmin() {
       </el-form>
 
       <el-form v-else :model="registerForm" label-position="top" @submit.prevent="handleRegisterAdmin">
-        <h3 style="text-align: center; margin-bottom: 16px;">创建管理员账号</h3>
+        <h3 style="text-align: center; margin-bottom: 16px; color: var(--text-primary);">创建管理员账号</h3>
         <el-form-item label="用户名">
           <el-input v-model="registerForm.username" placeholder="请输入用户名" clearable />
         </el-form-item>
@@ -124,15 +124,18 @@ async function handleRegisterAdmin() {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--bg-primary);
 }
 .login-card {
   width: 400px;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
 }
 .title {
   text-align: center;
   margin-bottom: 24px;
-  color: #303133;
+  color: var(--text-primary);
 }
 .links {
   text-align: center;

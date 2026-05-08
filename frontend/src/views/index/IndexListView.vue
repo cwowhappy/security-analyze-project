@@ -141,7 +141,51 @@ onMounted(() => {
 
     <h2 class="page-title">指数信息</h2>
 
-    <!-- 分类核心指数 -->
+    <!-- 上方：指数搜索 -->
+    <div class="search-section">
+      <div class="search-box">
+        <ElAutocomplete
+          v-model="keyword"
+          :fetch-suggestions="fetchSuggestions"
+          placeholder="输入指数代码或名称搜索"
+          clearable
+          style="width: 480px"
+          @select="handleSelect"
+          @keyup.enter="handleSearch"
+        >
+          <template #prefix>
+            <Search style="width: 16px; height: 16px; color: var(--text-tertiary)" />
+          </template>
+        </ElAutocomplete>
+        <ElButton type="primary" @click="handleSearch">搜索</ElButton>
+      </div>
+      <div class="search-hint">
+        例如：000001（上证指数）、399001（深证成指）、000300（沪深300）
+      </div>
+    </div>
+
+    <!-- 搜索结果 -->
+    <div v-if="hasSearched" v-loading="loading" class="result-area">
+      <ElTable :data="tableData" style="width: 100%" @row-click="(row: IndexListItem) => goToDetail(row.indexCode)">
+        <ElTableColumn prop="indexCode" label="指数代码" width="120" />
+        <ElTableColumn prop="indexName" label="指数名称" />
+        <ElTableColumn prop="indexType" label="指数类型" width="120" />
+        <ElTableColumn prop="market" label="市场" width="100" />
+        <ElTableColumn prop="publishDate" label="发布日期" width="120" />
+      </ElTable>
+
+      <ElPagination
+        v-if="total > 0"
+        :current-page="page + 1"
+        :page-size="size"
+        :total="total"
+        layout="total, prev, pager, next"
+        style="margin-top: 16px; justify-content: flex-end"
+        @current-change="handlePageChange"
+      />
+    </div>
+
+    <!-- 下方：核心指数 -->
     <div v-if="categoryGroups.length > 0" v-loading="categoryLoading" class="category-section">
       <div class="section-title">核心指数</div>
       <ElTabs v-model="activeCategory" type="border-card">
@@ -170,149 +214,98 @@ onMounted(() => {
         </ElTabPane>
       </ElTabs>
     </div>
-
-    <!-- 搜索区域 -->
-    <div class="search-section">
-      <div class="section-title">指数搜索</div>
-      <div class="search-bar">
-        <ElAutocomplete
-          v-model="keyword"
-          :fetch-suggestions="fetchSuggestions"
-          placeholder="输入指数代码或名称搜索"
-          clearable
-          style="width: 360px"
-          @select="handleSelect"
-          @keyup.enter="handleSearch"
-        >
-          <template #prefix>
-            <Search style="width: 16px; height: 16px; color: #999" />
-          </template>
-        </ElAutocomplete>
-        <ElButton type="primary" @click="handleSearch">搜索</ElButton>
-      </div>
-    </div>
-
-    <!-- 搜索结果 -->
-    <div v-if="hasSearched" v-loading="loading" class="result-area">
-      <ElTable :data="tableData" style="width: 100%" @row-click="(row: IndexListItem) => goToDetail(row.indexCode)">
-        <ElTableColumn prop="indexCode" label="指数代码" width="120" />
-        <ElTableColumn prop="indexName" label="指数名称" />
-        <ElTableColumn prop="indexType" label="指数类型" width="120" />
-        <ElTableColumn prop="market" label="市场" width="100" />
-        <ElTableColumn prop="publishDate" label="发布日期" width="120" />
-      </ElTable>
-
-      <ElPagination
-        v-if="total > 0"
-        :current-page="page + 1"
-        :page-size="size"
-        :total="total"
-        layout="total, prev, pager, next"
-        style="margin-top: 16px; justify-content: flex-end"
-        @current-change="handlePageChange"
-      />
-    </div>
-
-    <div v-else-if="!hasSearched" class="empty-hint">
-      <p>请输入指数代码或名称进行搜索</p>
-      <p class="hint">例如：000001（上证指数）、399001（深证成指）、000300（沪深300）</p>
-    </div>
   </div>
 </template>
 
 <style scoped>
 .index-list {
-  padding: 24px;
+  padding: 8px;
 }
-
 .page-title {
   font-size: 24px;
   font-weight: 500;
-  color: #303133;
+  color: var(--text-primary);
   margin: 16px 0;
 }
-
 .section-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
   margin-bottom: 12px;
 }
 
-.category-section {
+/* 搜索区域：居中 */
+.search-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 32px 0 40px;
+  padding: 32px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.search-hint {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+/* 搜索结果 */
+.result-area {
   margin-bottom: 32px;
 }
 
+/* 核心指数 */
+.category-section {
+  margin-bottom: 32px;
+}
 .index-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
   padding: 8px 0;
 }
-
 .index-card {
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
 }
-
 .index-card:hover {
   transform: translateY(-2px);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-glow);
 }
-
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
 }
-
 .index-name {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
 }
-
 .card-code {
   font-size: 13px;
-  color: #409eff;
-  font-family: monospace;
+  color: var(--accent-primary);
+  font-family: var(--font-mono);
   margin-bottom: 4px;
 }
-
 .card-date {
   font-size: 12px;
-  color: #909399;
-}
-
-.search-section {
-  margin-bottom: 20px;
-}
-
-.search-bar {
-  display: flex;
-  gap: 12px;
-}
-
-.result-area {
-  margin-top: 8px;
-}
-
-.empty-hint {
-  text-align: center;
-  color: #909399;
-  margin-top: 40px;
-}
-
-.empty-hint .hint {
-  font-size: 13px;
-  color: #c0c4cc;
-  margin-top: 8px;
+  color: var(--text-tertiary);
 }
 
 :deep(.el-table__row) {
   cursor: pointer;
 }
-
 :deep(.el-tabs__content) {
   padding: 12px;
 }

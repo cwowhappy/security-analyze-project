@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElBreadcrumb, ElBreadcrumbItem } from 'element-plus'
 import { getUserList, approveUser, disableUser, enableUser } from '@/api/adminUser'
 import type { UserListItem } from '@/api/adminUser'
 
@@ -75,14 +75,25 @@ onMounted(fetchUsers)
 
 <template>
   <div class="user-management">
-    <h2>用户管理</h2>
+    <ElBreadcrumb separator="/">
+      <ElBreadcrumbItem :to="{ path: '/' }">首页</ElBreadcrumbItem>
+      <ElBreadcrumbItem>用户管理</ElBreadcrumbItem>
+    </ElBreadcrumb>
+
+    <h2 class="page-title">用户管理</h2>
 
     <el-row :gutter="16" class="stats-row">
       <el-col :span="12">
-        <el-statistic title="总用户数" :value="totalCount" />
+        <el-card>
+          <div class="stat-label">总用户数</div>
+          <div class="stat-value">{{ totalCount }}</div>
+        </el-card>
       </el-col>
       <el-col :span="12">
-        <el-statistic title="待审批" :value="pendingCount" />
+        <el-card>
+          <div class="stat-label">待审批</div>
+          <div class="stat-value">{{ pendingCount }}</div>
+        </el-card>
       </el-col>
     </el-row>
 
@@ -136,11 +147,28 @@ onMounted(fetchUsers)
 
 <style scoped>
 .user-management {
-  padding: 24px;
+  padding: 8px;
   max-width: 1200px;
   margin: 0 auto;
 }
+.page-title {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 16px 0;
+}
 .stats-row {
   margin-top: 16px;
+}
+.stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.stat-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--accent-primary);
+  font-family: var(--font-mono);
 }
 </style>

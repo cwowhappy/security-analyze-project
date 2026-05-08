@@ -102,11 +102,13 @@ const formatTime = (time?: string) => {
 <style scoped>
 .overview-card {
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
   margin-bottom: 16px;
 }
 .overview-card:hover {
   transform: translateY(-4px);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-glow);
 }
 .card-header {
   display: flex;
@@ -117,11 +119,12 @@ const formatTime = (time?: string) => {
 .card-icon {
   width: 24px;
   height: 24px;
-  color: #409eff;
+  color: var(--accent-primary);
 }
 .card-title {
   font-size: 16px;
   font-weight: 600;
+  color: var(--text-primary);
 }
 .card-body {
   display: flex;
@@ -135,12 +138,13 @@ const formatTime = (time?: string) => {
 .metric-value {
   font-size: 28px;
   font-weight: 700;
-  color: #303133;
+  color: var(--accent-primary);
   line-height: 1.2;
+  font-family: var(--font-mono);
 }
 .metric-label {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
   margin-top: 4px;
 }
 .meta {
@@ -148,7 +152,7 @@ const formatTime = (time?: string) => {
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
-  color: #606266;
+  color: var(--text-secondary);
 }
 .meta-row {
   display: flex;
@@ -157,6 +161,6 @@ const formatTime = (time?: string) => {
   justify-content: flex-end;
 }
 .meta-label {
-  color: #909399;
+  color: var(--text-tertiary);
 }
 </style>

@@ -34,13 +34,18 @@ const chartOption = computed(() => {
   })
 
   return {
+    backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'cross' },
+      backgroundColor: 'rgba(15,21,37,0.9)',
+      borderColor: 'rgba(255,255,255,0.1)',
+      textStyle: { color: '#e5e7eb' },
     },
     legend: {
       data: props.metrics.map((m) => m.label),
       bottom: 0,
+      textStyle: { color: '#9ca3af' },
     },
     grid: {
       left: '3%',
@@ -51,24 +56,31 @@ const chartOption = computed(() => {
     xAxis: {
       type: 'category',
       data: xData,
-      axisLabel: { rotate: 30 },
+      axisLabel: { rotate: 30, color: '#9ca3af' },
+      axisLine: { lineStyle: { color: '#4b5563' } },
     },
     yAxis: [
       {
         type: 'value',
         name: '金额（元）',
+        nameTextStyle: { color: '#9ca3af' },
         axisLabel: {
+          color: '#9ca3af',
           formatter: (value: number) => {
             if (value >= 1e8) return (value / 1e8).toFixed(0) + '亿'
             if (value >= 1e4) return (value / 1e4).toFixed(0) + '万'
             return value
           },
         },
+        axisLine: { lineStyle: { color: '#4b5563' } },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
       },
       {
         type: 'value',
         name: '比率（%）',
-        axisLabel: { formatter: '{value}%' },
+        nameTextStyle: { color: '#9ca3af' },
+        axisLabel: { formatter: '{value}%', color: '#9ca3af' },
+        axisLine: { lineStyle: { color: '#4b5563' } },
         splitLine: { show: false },
       },
     ],
@@ -89,7 +101,7 @@ const chartOption = computed(() => {
   width: 100%;
 }
 .empty-tip {
-  color: #999;
+  color: var(--text-tertiary);
   padding: 40px 0;
   text-align: center;
 }

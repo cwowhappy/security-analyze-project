@@ -2,6 +2,10 @@ package com.example.securityanalyze.exception;
 
 import com.example.securityanalyze.auth.application.AccountDisabledException;
 import com.example.securityanalyze.auth.application.PendingApprovalException;
+import com.example.securityanalyze.portfolio.api.InsufficientPositionException;
+import com.example.securityanalyze.portfolio.api.PortfolioAccessDeniedException;
+import com.example.securityanalyze.portfolio.api.PortfolioNotFoundException;
+import com.example.securityanalyze.portfolio.api.TransactionNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -85,11 +89,40 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), "请求的资源不存在"));
     }
 
+    @ExceptionHandler(PortfolioNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePortfolioNotFound(PortfolioNotFoundException e) {
+        log.warn("组合不存在: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), e.getMessage()));
+    }
+
+    @ExceptionHandler(TransactionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTransactionNotFound(TransactionNotFoundException e) {
+        log.warn("成交记录不存在: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), e.getMessage()));
+    }
+
+    @ExceptionHandler(InsufficientPositionException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientPosition(InsufficientPositionException e) {
+        log.warn("持仓不足: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(HttpStatus.CONFLICT.value(), e.getMessage()));
+    }
+
+    @ExceptionHandler(PortfolioAccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handlePortfolioAccessDenied(PortfolioAccessDeniedException e) {
+        log.warn("持仓模块访问被拒绝: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(HttpStatus.FORBIDDEN.value(), e.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception e) {
         log.error("服务器内部错误", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "服务器内部错误，请联系管理员"));
+                .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "服务器内部错误，请联系管理员: " + e.getMessage()));
     }
 
     public record ErrorResponse(int status, String message, LocalDateTime timestamp) {

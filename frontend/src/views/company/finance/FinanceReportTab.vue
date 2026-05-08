@@ -258,15 +258,14 @@ onMounted(() => {
 .finance-report-tab {
   padding: 16px 0;
 }
-
 .section {
   margin-bottom: 24px;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 20px;
-  background: #fff;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
 }
-
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -275,39 +274,33 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 12px;
 }
-
 .section-title {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
 }
-
 .date-range-selector {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
 .range-separator {
-  color: #999;
+  color: var(--text-tertiary);
   font-size: 14px;
 }
-
 .year-selector {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
 .report-selector {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
 .empty-tip {
-  color: #999;
+  color: var(--text-tertiary);
   padding: 40px 0;
   text-align: center;
 }

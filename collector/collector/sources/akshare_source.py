@@ -67,6 +67,43 @@ class AkshareSource:
             return None
 
     # ------------------------------------------------------------------
+    # 日行情
+    # ------------------------------------------------------------------
+    @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    def get_stock_daily_quote(
+        self,
+        stock_code: str,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> Optional[pd.DataFrame]:
+        """获取 A 股日行情数据
+
+        Args:
+            stock_code: 股票代码（如 600519、000001），akshare 会自动处理市场前缀
+            start_date: 起始日期，YYYYMMDD 格式
+            end_date: 结束日期，YYYYMMDD 格式
+        """
+        try:
+            if start_date is None:
+                start_date = time.strftime("%Y%m%d")
+            if end_date is None:
+                end_date = time.strftime("%Y%m%d")
+            df = self._ak.stock_zh_a_hist(
+                symbol=stock_code,
+                period="daily",
+                start_date=start_date,
+                end_date=end_date,
+                adjust="",
+            )
+            if df is None or df.empty:
+                logger.warning(f"Empty daily quote for {stock_code}")
+                return None
+            return df
+        except Exception as e:
+            logger.debug(f"Failed to get daily quote for {stock_code}: {e}")
+            return None
+
+    # ------------------------------------------------------------------
     # 财务报表
     # ------------------------------------------------------------------
     @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))

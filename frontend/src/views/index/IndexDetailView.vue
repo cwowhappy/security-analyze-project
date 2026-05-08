@@ -83,13 +83,18 @@ const chartOption = computed(() => {
   const volumes = trendData.value.map((d) => d.volume)
 
   return {
+    backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'cross' },
+      backgroundColor: 'rgba(15,21,37,0.9)',
+      borderColor: 'rgba(255,255,255,0.1)',
+      textStyle: { color: '#e5e7eb' },
     },
     legend: {
       data: ['收盘价', '成交量'],
       top: 0,
+      textStyle: { color: '#9ca3af' },
     },
     grid: [
       { left: '10%', right: '8%', height: '50%' },
@@ -101,8 +106,9 @@ const chartOption = computed(() => {
         data: dates,
         scale: true,
         boundaryGap: false,
-        axisLine: { onZero: false },
+        axisLine: { onZero: false, lineStyle: { color: '#4b5563' } },
         splitLine: { show: false },
+        axisLabel: { color: '#9ca3af' },
         min: 'dataMin',
         max: 'dataMax',
       },
@@ -112,7 +118,7 @@ const chartOption = computed(() => {
         data: dates,
         scale: true,
         boundaryGap: false,
-        axisLine: { onZero: false },
+        axisLine: { onZero: false, lineStyle: { color: '#4b5563' } },
         axisTick: { show: false },
         splitLine: { show: false },
         axisLabel: { show: false },
@@ -123,7 +129,9 @@ const chartOption = computed(() => {
     yAxis: [
       {
         scale: true,
-        splitArea: { show: true },
+        axisLine: { lineStyle: { color: '#4b5563' } },
+        axisLabel: { color: '#9ca3af' },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
       },
       {
         scale: true,
@@ -137,7 +145,7 @@ const chartOption = computed(() => {
     ],
     dataZoom: [
       { type: 'inside', xAxisIndex: [0, 1], start: 0, end: 100 },
-      { show: true, xAxisIndex: [0, 1], type: 'slider', top: '88%', start: 0, end: 100 },
+      { show: true, xAxisIndex: [0, 1], type: 'slider', top: '88%', start: 0, end: 100, textStyle: { color: '#9ca3af' } },
     ],
     series: [
       {
@@ -145,14 +153,15 @@ const chartOption = computed(() => {
         type: 'line',
         data: closes,
         smooth: true,
-        lineStyle: { width: 2, color: '#5470c6' },
+        lineStyle: { width: 2, color: '#00d4ff' },
+        itemStyle: { color: '#00d4ff' },
         areaStyle: {
           color: {
             type: 'linear',
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(84, 112, 198, 0.3)' },
-              { offset: 1, color: 'rgba(84, 112, 198, 0.05)' },
+              { offset: 0, color: 'rgba(0,212,255,0.3)' },
+              { offset: 1, color: 'rgba(0,212,255,0.05)' },
             ],
           },
         },
@@ -164,14 +173,15 @@ const chartOption = computed(() => {
         yAxisIndex: 1,
         data: volumes,
         smooth: true,
-        lineStyle: { width: 1, color: '#91cc75' },
+        lineStyle: { width: 1, color: '#67c23a' },
+        itemStyle: { color: '#67c23a' },
         areaStyle: {
           color: {
             type: 'linear',
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(145, 204, 117, 0.3)' },
-              { offset: 1, color: 'rgba(145, 204, 117, 0.05)' },
+              { offset: 0, color: 'rgba(103,194,58,0.3)' },
+              { offset: 1, color: 'rgba(103,194,58,0.05)' },
             ],
           },
         },
@@ -252,9 +262,9 @@ onMounted(() => {
       <ElTabPane label="趋势分析" name="trend">
         <div class="trend-controls">
           <ElRadioGroup v-model="trendGranularity">
-            <ElRadioButton label="day">日线</ElRadioButton>
-            <ElRadioButton label="week">周线</ElRadioButton>
-            <ElRadioButton label="month">月线</ElRadioButton>
+            <ElRadioButton value="day">日线</ElRadioButton>
+            <ElRadioButton value="week">周线</ElRadioButton>
+            <ElRadioButton value="month">月线</ElRadioButton>
           </ElRadioGroup>
         </div>
         <div v-loading="trendLoading" class="chart-wrapper">
@@ -286,49 +296,42 @@ onMounted(() => {
 
 <style scoped>
 .index-detail {
-  padding: 24px;
+  padding: 8px;
 }
-
 .page-title {
   font-size: 24px;
   font-weight: 500;
-  color: #303133;
+  color: var(--text-primary);
   margin: 16px 0 0;
 }
-
 .subtitle {
   font-size: 14px;
-  color: #909399;
+  color: var(--text-secondary);
   font-weight: normal;
   margin-left: 8px;
 }
-
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   max-width: 600px;
 }
-
 .info-item {
   display: flex;
   align-items: baseline;
 }
-
 .info-item .label {
-  color: #666;
+  color: var(--text-secondary);
   width: 100px;
   flex-shrink: 0;
 }
-
 .info-item .value {
   font-weight: 500;
+  color: var(--text-primary);
 }
-
 .trend-controls {
   margin-bottom: 16px;
 }
-
 .chart-wrapper {
   width: 100%;
 }

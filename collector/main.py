@@ -24,6 +24,9 @@
     python main.py --scheduler-cron-index-basic "0 4 * * 1"   # 启动调度器并注册每周一04:00指数基本信息采集
     python main.py --scheduler-cron-index-history "0 5 * * 1" # 启动调度器并注册每周一05:00指数历史行情采集
     python main.py --scheduler-cron-etf-basic "0 6 * * 1"     # 启动调度器并注册每周一06:00 ETF 基本信息采集
+    python main.py --run-quotes                           # 手动执行一次行情采集（默认当天）
+    python main.py --run-quotes --quote-date 2024-01-15   # 补录指定日期的行情
+    python main.py --scheduler-cron-quote "0 16 * * *"    # 启动调度器并注册每日16:00盘后行情采集
 """
 import argparse
 import os
@@ -67,7 +70,8 @@ def create_db(cfg=None) -> PostgresDB:
 
 
 def run_scheduler(cron_company: str = None, cron_finance: str = None, cron_industry: str = None,
-                  cron_index_basic: str = None, cron_index_history: str = None, cron_etf_basic: str = None):
+                  cron_index_basic: str = None, cron_index_history: str = None, cron_etf_basic: str = None,
+                  cron_quote: str = None):
     logger.info("Starting security analyze collector scheduler...")
     cfg = CollectorConfig.from_env()
     db = create_db(cfg)
@@ -85,6 +89,8 @@ def run_scheduler(cron_company: str = None, cron_finance: str = None, cron_indus
         scheduler.add_index_history_job(cron_index_history)
     if cron_etf_basic:
         scheduler.add_etf_basic_job(cron_etf_basic)
+    if cron_quote:
+        scheduler.add_quote_job(cron_quote)
 
     scheduler.start()
 
@@ -150,6 +156,13 @@ def run_industry_sync_task():
     logger.info("Manual trigger: industry classification sync task")
     db = create_db()
     run_industry_sync(db=db)
+
+
+def run_quote_task(trade_date: str = None):
+    logger.info(f"Manual trigger: quote task, trade_date={trade_date or 'today'}")
+    db = create_db()
+    scheduler = Scheduler(db=db)
+    scheduler.run_quote_task_now(trade_date=trade_date)
 
 
 def run_finance_task(start_year=None, end_year=None, incremental=False, batch_size=100, session_id=None):
@@ -324,6 +337,23 @@ def main():
         metavar="CRON",
         help="启动调度器并注册 ETF 基本信息采集定时任务（cron 表达式）",
     )
+    parser.add_argument(
+        "--run-quotes",
+        action="store_true",
+        help="手动执行一次持仓股票日行情采集任务（默认当天）",
+    )
+    parser.add_argument(
+        "--quote-date",
+        type=str,
+        metavar="YYYY-MM-DD",
+        help="指定行情采集日期（与 --run-quotes 配合使用，例如 2024-01-15）",
+    )
+    parser.add_argument(
+        "--scheduler-cron-quote",
+        type=str,
+        metavar="CRON",
+        help="启动调度器并注册日行情采集定时任务（cron 表达式，例如 '0 16 * * *'）",
+    )
     args = parser.parse_args()
 
     if args.finance:
@@ -357,6 +387,8 @@ def main():
         run_index_history_task_incremental()
     elif args.run_etf_basic:
         run_etf_basic_task()
+    elif args.run_quotes:
+        run_quote_task(trade_date=args.quote_date)
     else:
         run_scheduler(
             cron_company=args.scheduler_cron_company,
@@ -365,6 +397,7 @@ def main():
             cron_index_basic=args.scheduler_cron_index_basic,
             cron_index_history=args.scheduler_cron_index_history,
             cron_etf_basic=args.scheduler_cron_etf_basic,
+            cron_quote=args.scheduler_cron_quote,
         )
 
 
