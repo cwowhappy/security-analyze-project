@@ -341,13 +341,13 @@ Type=simple
 User=security
 Group=security
 WorkingDirectory=/opt/security-analyze/collector
-ExecStart=/usr/local/bin/poetry run python main.py \
-    --scheduler-cron-company "0 9 * * *" \
-    --scheduler-cron-finance "0 2 * * 0" \
-    --scheduler-cron-industry "0 3 * * 1" \
-    --scheduler-cron-index-basic "0 4 * * 1" \
-    --scheduler-cron-index-history "0 5 * * 1" \
-    --scheduler-cron-etf-basic "0 6 * * 1"
+ExecStart=/usr/local/bin/poetry run python main.py schedule \
+    --company "0 9 * * *" \
+    --finance "0 2 * * 0" \
+    --industry "0 3 * * 1" \
+    --index-basic "0 4 * * 1" \
+    --index-history "0 5 * * 1" \
+    --etf "0 6 * * 1"
 Restart=on-failure
 RestartSec=30
 StandardOutput=journal
@@ -371,13 +371,13 @@ sudo journalctl -u security-analyze-collector -f
 sudo crontab -e -u security
 
 # 每日 09:00 执行公司信息采集
-0 9 * * * cd /opt/security-analyze/collector && /usr/local/bin/poetry run python main.py --run-company >> /var/log/collector-company.log 2>&1
+0 9 * * * cd /opt/security-analyze/collector && /usr/local/bin/poetry run python main.py company >> /var/log/collector-company.log 2>&1
 
 # 每周日 02:00 执行财务报告采集
-0 2 * * 0 cd /opt/security-analyze/collector && /usr/local/bin/poetry run python main.py --run-finance >> /var/log/collector-finance.log 2>&1
+0 2 * * 0 cd /opt/security-analyze/collector && /usr/local/bin/poetry run python main.py finance >> /var/log/collector-finance.log 2>&1
 
 # 每周一 03:00 执行行业分类同步
-0 3 * * 1 cd /opt/security-analyze/collector && /usr/local/bin/poetry run python main.py --sync-industry >> /var/log/collector-industry.log 2>&1
+0 3 * * 1 cd /opt/security-analyze/collector && /usr/local/bin/poetry run python main.py industry >> /var/log/collector-industry.log 2>&1
 ```
 
 ---
@@ -390,17 +390,17 @@ sudo crontab -e -u security
 cd /opt/security-analyze/collector
 
 # 1. 采集全部上市公司基础信息
-poetry run python main.py --run-company
+poetry run python main.py company
 
 # 2. 同步行业分类体系
-poetry run python main.py --sync-industry
+poetry run python main.py industry
 
 # 3. 采集全部历史财务报告（首次可能耗时较长，建议分批或后台执行）
-nohup poetry run python main.py --run-finance > /var/log/collector-init-finance.log 2>&1 &
+nohup poetry run python main.py finance > /var/log/collector-init-finance.log 2>&1 &
 
 # 4. 采集指数与 ETF 数据
-poetry run python main.py --run-index-basic
-poetry run python main.py --run-etf-basic
+poetry run python main.py index-basic
+poetry run python main.py etf
 ```
 
 ---
@@ -444,8 +444,8 @@ sudo systemctl restart security-analyze-collector
 sudo tail -f /var/log/nginx/security-analyze-access.log
 
 # 手动执行指定股票数据采集
-poetry run python main.py --company 600519
-poetry run python main.py --finance 600519 --finance-start-year 2020 --finance-end-year 2024
+poetry run python main.py company --stock-code 600519
+poetry run python main.py finance --stock-code 600519 --start-year 2020 --end-year 2024
 ```
 
 ### 7.2 健康检查

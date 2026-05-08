@@ -9,10 +9,14 @@ import pandas as pd
 import numpy as np
 
 from collector.db.postgres import PostgresDB
-from collector.sources.akshare_source import AkshareSource, COL_REPORT_DATE
+from collector.sources.base import BaseDataSource
+from collector.sources.akshare_source import (
+    AkshareSource, COL_REPORT_DATE, COL_REPORT_TYPE, COL_NOTICE_DATE, COL_CURRENCY
+)
 from collector.monitor import Monitor
 from collector.utils import infer_market
 from collector.models import FinancialReport
+from collector.tasks.base import BaseTask, TaskResult
 
 logger = logging.getLogger(__name__)
 
@@ -53,35 +57,37 @@ _CASHFLOW_FIELDS = {
 }
 
 
-class FinanceTask:
+class FinanceTask(BaseTask):
     """采集财务报告数据任务（支持 Session 级故障恢复、批次内并发、部分缺失容错）"""
+
+    task_name = "finance_report"
+    data_type = "finance_report"
 
     def __init__(
         self,
         db: PostgresDB,
-        source: AkshareSource,
+        source: BaseDataSource,
         monitor: Monitor = None,
         max_workers: int = 3,
         batch_concurrent_workers: int = 3,
     ):
-        self.db = db
-        self.source = source
-        self.monitor = monitor
+        super().__init__(db=db, source=source, monitor=monitor)
         self._max_workers = max_workers
         self._batch_concurrent_workers = batch_concurrent_workers
 
     # ------------------------------------------------------------------
-    # 公共入口
+    # BaseTask 接口实现
     # ------------------------------------------------------------------
-    def run(
+    def run_full(
         self,
         start_year: Optional[int] = None,
         end_year: Optional[int] = None,
         incremental: bool = False,
         batch_size: int = 100,
         session_id: Optional[str] = None,
-    ):
-        """全量采集所有 A 股公司的财务报告（从 company_security 表读取股票列表）"""
+        **kwargs,
+    ) -> TaskResult:
+        """全量采集所有 A 股公司的财务报告。"""
         if session_id is not None and self.monitor is None:
             raise ValueError("恢复 session 需要提供 monitor 实例")
 
@@ -95,27 +101,82 @@ class FinanceTask:
         pending_codes = [code for code in stock_codes if code not in self._get_success_codes(session_id)]
         if not pending_codes:
             logger.info(f"Session {session_id} 所有股票已处理完成，无需继续")
-            if self.monitor and task_id:
-                self.monitor.log_task_end(task_id, "success", 0)
-            return
+            return TaskResult(rows=0)
 
         created, updated, failed = self._process_batches(
             pending_codes, session_id, task_id, start_year, end_year, incremental, batch_size
         )
 
         rows = created + updated
-        if self.monitor:
-            status = "success" if failed == 0 else "failed"
-            self.monitor.log_task_end(task_id, status, rows)
-            self.monitor.upsert_data_status("finance_report", rows, task_id)
-
         logger.info(
             f"Finance task finished. Session: {session_id}, "
             f"Total stocks: {len(pending_codes)}, Created: {created}, Updated: {updated}, Failed: {failed}"
         )
+        return TaskResult(created=created, updated=updated, failed=failed, rows=rows)
+
+    def run_partial(
+        self,
+        identifiers: List[str],
+        start_year: Optional[int] = None,
+        end_year: Optional[int] = None,
+        incremental: bool = False,
+        **kwargs,
+    ) -> TaskResult:
+        """按股票代码列表采集指定公司的财务报告。"""
+        total_created = 0
+        total_updated = 0
+        total_failed = 0
+        for stock_code in identifiers:
+            try:
+                c, u = self._collect_by_stock_code(
+                    stock_code, start_year=start_year, end_year=end_year, incremental=incremental
+                )
+                total_created += c
+                total_updated += u
+            except Exception as e:
+                logger.error(f"Failed to collect finance for {stock_code}: {e}")
+                total_failed += 1
+        rows = total_created + total_updated
+        return TaskResult(created=total_created, updated=total_updated, failed=total_failed, rows=rows)
+
+    def run_incremental(
+        self,
+        batch_size: int = 100,
+        **kwargs,
+    ) -> TaskResult:
+        """增量采集：仅采集最新报告期之后的新增数据。"""
+        return self.run_full(incremental=True, batch_size=batch_size, **kwargs)
+
+    def resume_session(
+        self,
+        session_id: str,
+        batch_size: int = 100,
+        **kwargs,
+    ) -> TaskResult:
+        """从 Session 断点恢复。"""
+        logger.info(f"恢复财务报告采集 Session {session_id}")
+        return self.run_full(session_id=session_id, batch_size=batch_size, **kwargs)
+
+    # ------------------------------------------------------------------
+    # 向后兼容
+    # ------------------------------------------------------------------
+    def run(
+        self,
+        start_year: Optional[int] = None,
+        end_year: Optional[int] = None,
+        incremental: bool = False,
+        batch_size: int = 100,
+        session_id: Optional[str] = None,
+    ):
+        """【向后兼容】全量采集所有 A 股公司的财务报告。"""
+        result = self.run_full(
+            start_year=start_year, end_year=end_year,
+            incremental=incremental, batch_size=batch_size, session_id=session_id
+        )
+        return result.rows
 
     def run_by_stock_code(self, stock_code: str, incremental: bool = False) -> tuple[int, int]:
-        """按股票代码采集指定公司的全部财务报告，返回 (created, updated)"""
+        """【向后兼容】按股票代码采集指定公司的全部财务报告，返回 (created, updated)。"""
         logger.info(f"Starting finance task for {stock_code}")
         task_id = None
         if self.monitor:
@@ -137,7 +198,7 @@ class FinanceTask:
     def run_by_stock_code_and_years(
         self, stock_code: str, start_year: int, end_year: int, incremental: bool = False
     ) -> tuple[int, int]:
-        """按股票代码和年份范围采集指定公司的财务报告，返回 (created, updated)"""
+        """【向后兼容】按股票代码和年份范围采集指定公司的财务报告，返回 (created, updated)。"""
         logger.info(f"Starting finance task for {stock_code}, years: {start_year}-{end_year}")
         task_id = None
         if self.monitor:

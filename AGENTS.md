@@ -59,9 +59,15 @@ security-analyze-project/
 │       ├── scheduler.py         # 定时调度器封装
 │       ├── db/postgres.py       # PostgreSQL 连接封装（psycopg）
 │       ├── sources/akshare_source.py   # akshare 数据源封装
-│       └── tasks/               # 采集任务
-│           ├── company_task.py  # 公司信息采集（已实现）
-│           └── finance_task.py  # 财务报告采集（已实现，支持 Session 断点续传）
+│       ├── tasks/               # 采集任务（均继承 BaseTask）
+│       │   ├── base.py          # BaseTask 抽象基类
+│       │   ├── company_task.py  # 公司信息采集
+│       │   ├── finance_task.py  # 财务报告采集（支持 Session 断点续传）
+│       │   ├── quote_task.py    # 日行情采集
+│       │   ├── index_basic_task.py   # 指数基本信息
+│       │   ├── index_history_task.py # 指数历史行情
+│       │   ├── etf_basic_task.py     # ETF 基本信息
+│       │   └── industry_task.py      # 行业分类同步
 │
 ├── frontend/                    # Vue 3 前端
 │   ├── package.json
@@ -171,23 +177,23 @@ poetry install
 pip install -r requirements.txt
 
 # 启动调度器（常驻进程，当前无默认定时任务）
-python main.py
+python main.py schedule
 
 # 手动执行一次全量公司信息采集
-python main.py --run-company
+python main.py company
 
 # 按公司名称或股票代码采集
-python main.py --company 贵州茅台
-python main.py --company 600519
+python main.py company --stock-code 贵州茅台
+python main.py company --stock-code 600519
 
 # 手动执行一次全量财务报告采集（默认每批100家）
-python main.py --run-finance
+python main.py finance
 
 # 恢复中断的财务报告采集（从断点继续，跳过已成功的股票）
-python main.py --run-finance --finance-session-id <uuid>
+python main.py finance --resume <uuid>
 
 # 按股票代码采集指定公司财务报告
-python main.py --finance 600519
+python main.py finance --stock-code 600519
 ```
 
 采集模块通过 `.env` 文件或环境变量读取数据库配置，模板见 `collector/.env.example`。
@@ -224,7 +230,7 @@ python main.py --finance 600519
 - 数据源封装在 `sources/` 中，预留多数据源扩展接口（当前仅实现 `AkshareSource`）。
 - 数据库操作封装在 `db/postgres.py`，使用 `psycopg`（版本 3）连接 PostgreSQL。
 - 任务类（如 `CompanyTask`、`FinanceTask`）负责：拉取数据 → 解析清洗 → upsert 到数据库。
-- `FinanceTask` 支持 **Session 级故障恢复**：全量采集任务启动时自动生成 `session_id`（UUID），逐只股票将处理状态写入 `collector_task_progress`；中断后可通过 `--finance-session-id` 恢复，自动跳过已成功的股票并重试失败的。
+- `FinanceTask` 支持 **Session 级故障恢复**：全量采集任务启动时自动生成 `session_id`（UUID），逐只股票将处理状态写入 `collector_task_progress`；中断后可通过 `finance --resume <uuid>` 恢复，自动跳过已成功的股票并重试失败的。
 - 日期格式统一为 `YYYY-MM-DD`，注册资本单位为 **万元**。
 
 ---
@@ -321,7 +327,7 @@ python main.py --finance 600519
 
 - 新增后端模块时，复制 `company/` 或 `auth/` / `admin/` / `user/` 的 package 结构（api / application / domain / infrastructure）。
 - 新增前端页面时，在 `src/views/` 创建组件，在 `src/router/index.ts` 注册路由，在 `src/api/` 添加接口封装。
-- 新增采集任务时，在 `collector/tasks/` 创建 Task 类，在 `collector/sources/` 如需新增数据源则继承风格保持一致。
+- 新增采集任务时，在 `collector/tasks/` 创建继承 `BaseTask` 的 Task 类，实现 `run_full()` / `run_partial()` / `run_incremental()` 三个方法；如需新增数据源则实现 `BaseDataSource` 接口。
 - 修改数据库 schema 时：
   1. 新建 `Vx__description.sql` 增量脚本；
   2. 同步更新 `db/release/v1.0.0__full_schema.sql` 完整快照；

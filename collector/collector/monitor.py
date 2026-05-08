@@ -109,8 +109,32 @@ class Monitor:
             logger.error(f"Failed to get session progress for {session_id}: {e}")
             return set()
 
-    def log_task_progress(self, session_id: str, stock_code: str, status: str, rows_created: int = 0, rows_updated: int = 0, error_message: Optional[str] = None):
-        """记录单只股票的处理进度（Upsert）"""
+    def log_task_progress(
+        self,
+        session_id: str,
+        task_key: Optional[str] = None,
+        status: Optional[str] = None,
+        rows_created: int = 0,
+        rows_updated: int = 0,
+        error_message: Optional[str] = None,
+        stock_code: Optional[str] = None,
+    ):
+        """记录单个任务的处理进度（Upsert）。
+
+        Args:
+            session_id: Session UUID
+            task_key: 通用任务标识（如股票代码、指数代码#粒度等）。
+                      与 stock_code 参数互斥，优先使用 task_key。
+            status: 处理状态
+            rows_created: 新建行数
+            rows_updated: 更新行数
+            error_message: 错误信息
+            stock_code: 【向后兼容】旧参数名，功能同 task_key
+        """
+        key = task_key if task_key is not None else stock_code
+        if key is None:
+            logger.warning("log_task_progress called without task_key or stock_code")
+            return
         try:
             self.db.execute(
                 """
@@ -124,10 +148,10 @@ class Monitor:
                     error_message = EXCLUDED.error_message,
                     ended_at = EXCLUDED.ended_at
                 """,
-                (session_id, stock_code, status, rows_created, rows_updated, error_message),
+                (session_id, key, status, rows_created, rows_updated, error_message),
             )
         except Exception as e:
-            logger.error(f"Failed to log task progress for {session_id}/{stock_code}: {e}")
+            logger.error(f"Failed to log task progress for {session_id}/{key}: {e}")
 
     def get_session_params(self, session_id: str) -> Optional[Dict[str, Any]]:
         """获取指定 Session 的任务参数"""

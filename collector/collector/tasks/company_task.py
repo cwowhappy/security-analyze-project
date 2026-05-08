@@ -1,75 +1,52 @@
+import json
 import logging
+import os
 from typing import List, Dict, Any, Optional
 
 from collector.db.postgres import PostgresDB
-from collector.sources.akshare_source import AkshareSource
+from collector.sources.base import BaseDataSource
 from collector.monitor import Monitor
+import numpy as np
 from collector.utils import parse_date, parse_capital, extract_region, infer_market
 from collector.models import CompanyEntity, SecurityEntity, CompanyIndustryMapping
+from collector.tasks.base import BaseTask, TaskResult
 
 logger = logging.getLogger(__name__)
 
-# 申万行业编码映射（从 stock_industry_clf_hist_sw 的 6 位编码映射到 801xxx）
-# 一级：前 2 位 -> 8010xx
-L1_TO_801_MAPPING = {
-    "11": "801030", "22": "801030", "23": "801040", "24": "801050",
-    "27": "801750", "28": "801880", "33": "801110", "34": "801760",
-    "35": "801130", "36": "801140", "37": "801150", "41": "801160",
-    "42": "801170", "43": "801180", "45": "801200", "46": "801210",
-    "48": "801780", "49": "801790", "51": "801880", "61": "801710",
-    "62": "801720", "63": "801730", "64": "801890", "65": "801740",
-    "71": "801750", "72": "801760", "73": "801230", "74": "801950",
-    "75": "801960", "76": "801970", "77": "801980",
-}
 
-# 二级：前 4 位 -> 801xxx
-L2_TO_801_MAPPING = {
-    "1101": "801038", "1102": "801015", "1103": "801011", "1104": "801014",
-    "1105": "801012", "1107": "801181", "1108": "801018", "1109": "801019",
-    "2202": "801033", "2203": "801034", "2204": "801032", "2205": "801036",
-    "2206": "801037", "2208": "801033", "2209": "801039", "2303": "801043",
-    "2304": "801044", "2305": "801045", "2402": "801051", "2403": "801055",
-    "2404": "801181", "2405": "801054", "2406": "801038", "2701": "801101",
-    "2702": "801083", "2703": "801084", "2704": "801082", "2705": "801085",
-    "2706": "801086", "2802": "801093", "2803": "801082", "2804": "801881",
-    "2805": "801095", "2806": "801096", "3301": "801111", "3302": "801112",
-    "3303": "801113", "3304": "801114", "3305": "801115", "3306": "801116",
-    "3307": "801117", "3404": "801769", "3405": "801125", "3406": "801126",
-    "3407": "801127", "3408": "801128", "3409": "801129", "3501": "801131",
-    "3502": "801132", "3503": "801881", "3601": "801143", "3602": "801141",
-    "3603": "801142", "3605": "801765", "3701": "801151", "3702": "801151",
-    "3703": "801152", "3704": "801154", "3705": "801153", "3706": "801156",
-    "4101": "801161", "4103": "801163", "4208": "801178", "4209": "801179",
-    "4210": "801991", "4211": "801992", "4301": "801181", "4303": "801183",
-    "4502": "801202", "4503": "801203", "4504": "801204", "4506": "801206",
-    "4507": "801181", "4606": "801216", "4608": "801982", "4609": "801219",
-    "4610": "801993", "4611": "801994", "4802": "801782", "4803": "801783",
-    "4804": "801784", "4805": "801785", "4901": "801193", "4902": "801194",
-    "4903": "801191", "5101": "801092", "6101": "801711", "6102": "801712",
-    "6103": "801713", "6201": "801721", "6202": "801722", "6203": "801723",
-    "6204": "801102", "6206": "801726", "6301": "801731", "6303": "801733",
-    "6305": "801963", "6306": "801736", "6307": "801737", "6308": "801738",
-    "6401": "801072", "6402": "801074", "6405": "801076", "6406": "801077",
-    "6407": "801078", "6501": "801741", "6502": "801742", "6503": "801743",
-    "6504": "801744", "6505": "801745", "7101": "801101", "7103": "801103",
-    "7104": "801104", "7204": "801764", "7205": "801765", "7206": "801766",
-    "7207": "801767", "7209": "801769", "7210": "801995", "7301": "801231",
-    "7302": "801102", "7401": "801951", "7402": "801952", "7501": "801961",
-    "7502": "801962", "7503": "801963", "7601": "801971", "7602": "801972",
-    "7701": "801981", "7702": "801982", "7703": "801983",
-}
+def _load_sw_mapping_json() -> tuple[dict, dict]:
+    """从 JSON 文件加载申万行业编码映射。"""
+    json_path = os.path.join(
+        os.path.dirname(__file__), "..", "data", "sw_industry_mapping.json"
+    )
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data.get("L1", {}), data.get("L2", {})
+    except Exception as e:
+        logger.warning(f"加载申万行业映射文件失败: {e}")
+        return {}, {}
 
 
-class CompanyTask:
+def _safe(val, default=""):
+    """清理 NaN / None，避免 Pydantic 验证失败"""
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return default
+    return val
+
+
+class CompanyTask(BaseTask):
     """采集公司基本信息任务（支持公司-证券分离模型）"""
 
-    def __init__(self, db: PostgresDB, source: AkshareSource, monitor: Monitor = None):
-        self.db = db
-        self.source = source
-        self.monitor = monitor
-        self._sw_mapping: Dict[str, List[tuple]] = {}  # stock_code -> [(l1_code, l2_code)]
-        self._em_name_to_code: Dict[str, str] = {}      # EM industry name -> code
+    task_name = "company"
+    data_type = "company"
+
+    def __init__(self, db: PostgresDB, source: BaseDataSource, monitor: Monitor = None):
+        super().__init__(db=db, source=source, monitor=monitor)
+        self._sw_mapping: Dict[str, List[tuple]] = {}
+        self._em_name_to_code: Dict[str, str] = {}
         self._mappings_loaded = False
+        self._l1_mapping, self._l2_mapping = _load_sw_mapping_json()
 
     def _preload_mappings(self):
         """预加载行业分类映射（申万 + 东财）"""
@@ -95,8 +72,8 @@ class CompanyTask:
                     continue
                 l1_raw = industry_code[:2]
                 l2_raw = industry_code[:4]
-                l1_code = L1_TO_801_MAPPING.get(l1_raw)
-                l2_code = L2_TO_801_MAPPING.get(l2_raw)
+                l1_code = self._l1_mapping.get(l1_raw)
+                l2_code = self._l2_mapping.get(l2_raw)
                 if l1_code and l2_code:
                     if code not in self._sw_mapping:
                         self._sw_mapping[code] = []
@@ -119,69 +96,59 @@ class CompanyTask:
             logger.warning(f"预加载东财名称映射失败: {e}")
 
     def run(self):
+        """向后兼容的手动执行入口。"""
+        result = self.run_full()
+        return result.rows
+
+    def run_full(self, **kwargs) -> TaskResult:
         """全量采集所有 A 股公司信息"""
         logger.info("Starting full company task...")
         self._preload_mappings()
-        task_id = None
-        if self.monitor:
-            task_id = self.monitor.log_task_start("sync_company", "company")
 
-        try:
-            stock_list = self.source.get_stock_list()
-            logger.info(f"Fetched {len(stock_list)} stocks from source")
+        stock_list = self.source.get_stock_list()
+        logger.info(f"Fetched {len(stock_list)} stocks from source")
 
-            created, updated, failed = self._process_stocks(stock_list)
-            rows = created + updated
+        created, updated, failed = self._process_stocks(stock_list)
+        rows = created + updated
+        return TaskResult(created=created, updated=updated, failed=failed, rows=rows)
 
-            if self.monitor:
-                status = "success" if failed == 0 else "failed"
-                self.monitor.log_task_end(task_id, status, rows)
-                self.monitor.upsert_data_status("company", rows, task_id)
-        except Exception as e:
-            logger.error(f"Company task failed: {e}")
-            if self.monitor:
-                self.monitor.log_task_end(task_id, "failed", 0, str(e))
-            raise
+    def run_partial(self, identifiers: List[str], **kwargs) -> TaskResult:
+        """按公司名称或股票代码列表采集指定公司信息"""
+        logger.info(f"Starting company task by identifiers: {identifiers}")
+        self._preload_mappings()
+
+        all_matches = []
+        for query in identifiers:
+            matches = self.source.search_by_name(query)
+            all_matches.extend(matches)
+
+        if not all_matches:
+            logger.warning(f"No company found matching any of {identifiers}")
+            return TaskResult(rows=0)
+
+        # 去重
+        seen = set()
+        unique_matches = []
+        for m in all_matches:
+            code = m.get("code", "")
+            if code and code not in seen:
+                seen.add(code)
+                unique_matches.append(m)
+
+        logger.info(f"Found {len(unique_matches)} unique matches")
+        created, updated, failed = self._process_stocks(unique_matches)
+        rows = created + updated
+        return TaskResult(created=created, updated=updated, failed=failed, rows=rows)
+
+    def run_incremental(self, **kwargs) -> TaskResult:
+        """增量采集：基于 company.updated_at 只采集近期变更（暂按全量处理）。"""
+        logger.info("Company task incremental mode (fallback to full)")
+        return self.run_full(**kwargs)
 
     def run_by_name(self, query: str):
-        """按公司名称或股票代码采集指定公司信息"""
-        logger.info(f"Starting company task by query: {query}")
-        self._preload_mappings()
-        task_id = None
-        if self.monitor:
-            task_id = self.monitor.log_task_start("sync_company_by_name", "company")
-
-        try:
-            matches = self.source.search_by_name(query)
-
-            if not matches:
-                logger.warning(f"No company found matching '{query}'")
-                if self.monitor:
-                    self.monitor.log_task_end(task_id, "success", 0)
-                return
-
-            if len(matches) == 1:
-                match = matches[0]
-                logger.info(f"Found exact match: {match.get('name', '')} ({match['code']})")
-            else:
-                logger.info(f"Found {len(matches)} matches for '{query}':")
-                for i, m in enumerate(matches[:10], 1):
-                    logger.info(f"  {i}. {m.get('name', '')} ({m['code']})")
-                if len(matches) > 10:
-                    logger.info(f"  ... and {len(matches) - 10} more")
-                logger.info("Collecting all matched companies...")
-
-            created, updated, failed = self._process_stocks(matches)
-            rows = created + updated
-
-            if self.monitor:
-                status = "success" if failed == 0 else "failed"
-                self.monitor.log_task_end(task_id, status, rows)
-        except Exception as e:
-            logger.error(f"Company task by name failed: {e}")
-            if self.monitor:
-                self.monitor.log_task_end(task_id, "failed", 0, str(e))
-            raise
+        """【向后兼容】按公司名称或股票代码采集指定公司信息"""
+        result = self.run_partial(identifiers=[query])
+        return result.rows
 
     def _process_stocks(self, stock_list: List[Dict[str, Any]]) -> tuple[int, int, int]:
         """处理公司列表：采集详情并写入数据库，返回 (created, updated, failed)"""
@@ -219,11 +186,9 @@ class CompanyTask:
 
                 if not stock_name:
                     if detail:
-                        stock_name = detail.get("A股简称", "") or detail.get(
-                            "公司名称", ""
-                        )
+                        stock_name = _safe(detail.get("A股简称")) or _safe(detail.get("公司名称"))
                     elif em_detail:
-                        stock_name = em_detail.get("股票简称", "")
+                        stock_name = _safe(em_detail.get("股票简称"))
 
                 company_entity = self._parse_company_entity(stock_name, detail, em_detail)
                 securities = self._parse_securities(stock_code, stock_name, detail, em_detail)
@@ -296,28 +261,29 @@ class CompanyTask:
         em_detail: Optional[Dict[str, Any]] = None,
     ) -> CompanyEntity:
         """解析公司法人实体信息"""
+
         if detail:
             return CompanyEntity(
-                company_name=detail.get("公司名称", "") or stock_name,
-                short_name=detail.get("A股简称", "") or stock_name,
-                industry=detail.get("所属行业", None),
-                region=extract_region(detail.get("注册地址", "")),
-                establish_date=parse_date(detail.get("成立日期", "")),
-                registered_capital=parse_capital(detail.get("注册资金", "")),
+                company_name=_safe(detail.get("公司名称")) or _safe(stock_name) or "",
+                short_name=_safe(detail.get("A股简称")) or _safe(stock_name) or "",
+                industry=_safe(detail.get("所属行业"), None),
+                region=extract_region(_safe(detail.get("注册地址"), "")),
+                establish_date=parse_date(_safe(detail.get("成立日期"), "")),
+                registered_capital=parse_capital(_safe(detail.get("注册资金"), "")),
             )
         elif em_detail:
             return CompanyEntity(
-                company_name=em_detail.get("股票简称", "") or stock_name,
-                short_name=em_detail.get("股票简称", "") or stock_name,
-                industry=em_detail.get("行业", None),
+                company_name=_safe(em_detail.get("股票简称")) or _safe(stock_name) or "",
+                short_name=_safe(em_detail.get("股票简称")) or _safe(stock_name) or "",
+                industry=_safe(em_detail.get("行业"), None),
                 region=None,
                 establish_date=None,
                 registered_capital=None,
             )
         else:
             return CompanyEntity(
-                company_name=stock_name,
-                short_name=stock_name,
+                company_name=_safe(stock_name) or "",
+                short_name=_safe(stock_name) or "",
             )
 
     def _parse_securities(
@@ -331,9 +297,9 @@ class CompanyTask:
         securities: List[SecurityEntity] = []
 
         if detail:
-            a_code = detail.get("A股代码", "") or stock_code
-            a_name = detail.get("A股简称", "") or stock_name
-            a_listing = parse_date(detail.get("上市日期", ""))
+            a_code = _safe(detail.get("A股代码")) or stock_code
+            a_name = _safe(detail.get("A股简称")) or _safe(stock_name) or stock_code
+            a_listing = parse_date(_safe(detail.get("上市日期"), ""))
             a_market = infer_market(a_code) or "SH"
             securities.append(SecurityEntity(
                 stock_code=a_code,
@@ -344,8 +310,8 @@ class CompanyTask:
                 listing_status="listed",
             ))
 
-            b_code = detail.get("B股代码", "")
-            b_name = detail.get("B股简称", "")
+            b_code = _safe(detail.get("B股代码"), "")
+            b_name = _safe(detail.get("B股简称"), "")
             if b_code and str(b_code).strip():
                 securities.append(SecurityEntity(
                     stock_code=str(b_code).strip(),
@@ -356,8 +322,8 @@ class CompanyTask:
                     listing_status="listed",
                 ))
 
-            h_code = detail.get("H股代码", "")
-            h_name = detail.get("H股简称", "")
+            h_code = _safe(detail.get("H股代码"), "")
+            h_name = _safe(detail.get("H股简称"), "")
             if h_code and str(h_code).strip():
                 securities.append(SecurityEntity(
                     stock_code=str(h_code).strip(),

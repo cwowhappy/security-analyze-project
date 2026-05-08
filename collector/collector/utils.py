@@ -28,12 +28,29 @@ def infer_market(stock_code: str) -> Optional[str]:
 
 
 def parse_date(date_str) -> Optional[str]:
-    """解析日期字符串为 YYYY-MM-DD"""
+    """解析日期字符串为 YYYY-MM-DD
+
+    支持格式：YYYY-MM-DD、YYYYMMDD、YYYY/MM/DD、datetime 对象。
+    """
     if not date_str:
         return None
+    # datetime 对象直接格式化
+    if hasattr(date_str, "strftime"):
+        try:
+            return date_str.strftime("%Y-%m-%d")
+        except (ValueError, TypeError):
+            return None
     try:
-        dt = datetime.strptime(str(date_str), "%Y-%m-%d")
-        return dt.strftime("%Y-%m-%d")
+        s = str(date_str).strip()
+        if " " in s:
+            s = s.split(" ")[0]
+        for fmt in ("%Y-%m-%d", "%Y%m%d", "%Y/%m/%d"):
+            try:
+                dt = datetime.strptime(s, fmt)
+                return dt.strftime("%Y-%m-%d")
+            except ValueError:
+                continue
+        return None
     except (ValueError, TypeError):
         return None
 

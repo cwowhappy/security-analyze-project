@@ -194,8 +194,8 @@ cd frontend && npm install && npm run dev
 
 # 4. 执行数据采集（按需）
 cd collector && poetry install
-poetry run python main.py --run-company
-poetry run python main.py --sync-industry
+poetry run python main.py company
+poetry run python main.py industry
 ```
 
 前端开发服务器运行在 `http://localhost:3000`，后端 API 运行在 `http://localhost:8080`。
