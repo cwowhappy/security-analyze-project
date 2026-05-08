@@ -27,16 +27,21 @@ function handleLogout() {
         </div>
         <div class="nav-right">
           <template v-if="authStore.isLoggedIn">
-            <el-button link size="small" class="nav-link" @click="router.push('/portfolios')">持仓管理</el-button>
-            <el-button link size="small" class="nav-link" @click="router.push('/companies')">公司信息</el-button>
-            <el-button link size="small" class="nav-link" @click="router.push('/industries')">行业分类</el-button>
+            <!-- 证券分析 -->
             <el-button link size="small" class="nav-link" @click="router.push('/indexes')">指数信息</el-button>
+            <el-button link size="small" class="nav-link" @click="router.push('/industries')">行业信息</el-button>
+            <el-button link size="small" class="nav-link" @click="router.push('/companies')">公司信息</el-button>
             <el-divider direction="vertical" class="nav-divider" />
-            <span class="user-name">{{ authStore.userInfo?.realName || authStore.userInfo?.username }}</span>
-            <el-button v-if="authStore.isAdmin" type="primary" size="small" class="admin-btn" @click="router.push('/admin/users')">
-              用户管理
-            </el-button>
-            <el-button size="small" class="logout-btn" @click="handleLogout">退出</el-button>
+            <!-- 个人持仓 -->
+            <el-button link size="small" class="nav-link" @click="router.push('/portfolios')">持仓管理</el-button>
+            <el-divider direction="vertical" class="nav-divider" />
+            <!-- 辅助功能 -->
+            <el-button v-if="authStore.isAdmin" link size="small" class="nav-link" @click="router.push('/dashboard/collector')">采集监控</el-button>
+            <!-- 用户 -->
+            <div class="nav-user">
+              <span class="user-name">{{ authStore.userInfo?.realName || authStore.userInfo?.username }}</span>
+              <el-button size="small" class="logout-btn" @click="handleLogout">退出</el-button>
+            </div>
           </template>
         </div>
       </div>
@@ -101,6 +106,12 @@ function handleLogout() {
 }
 .nav-divider {
   border-color: var(--border-color-strong);
+}
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 .user-name {
   color: var(--text-primary);
