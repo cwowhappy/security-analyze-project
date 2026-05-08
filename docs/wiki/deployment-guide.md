@@ -605,29 +605,29 @@ pip install -r requirements.txt
 cd collector
 
 # 方式 1：启动调度器（常驻进程，当前无默认定时任务）
-python main.py
+python main.py schedule
 
 # 方式 2：手动执行一次全量公司信息采集
-python main.py --run-company
+python main.py company
 
 # 方式 3：按公司名称或股票代码采集
-python main.py --company 贵州茅台
-python main.py --company 600519
+python main.py company --stock-code 贵州茅台
+python main.py company --stock-code 600519
 
 # 方式 4：手动执行一次全量财务报告采集（默认每批100家）
-python main.py --run-finance
+python main.py finance
 
 # 方式 5：按股票代码采集指定公司财务报告
-python main.py --finance 600519
+python main.py finance --stock-code 600519
 
 # 方式 6：财务报告采集（带年份范围与增量模式）
-python main.py --finance 600519 --finance-start-year 2020 --finance-end-year 2024 --finance-incremental
+python main.py finance --stock-code 600519 --start-year 2020 --end-year 2024 --incremental
 
 # 方式 7：恢复指定 Session 的财务报告采集
-python main.py --run-finance --finance-session-id <uuid>
+python main.py finance --resume <uuid>
 
 # 方式 8：调整批次大小
-python main.py --run-finance --finance-batch-size 50
+python main.py finance --batch-size 50
 ```
 
 ### 7.5 生产部署建议
@@ -674,7 +674,7 @@ npm run dev
 
 # 步骤 7：执行初始数据采集（终端 3，可选）
 cd collector
-python main.py --run-company
+python main.py company
 ```
 
 ### 8.2 服务依赖关系
@@ -854,8 +854,8 @@ cp -r dist/ /var/www/security-analyze/
 cd collector
 poetry install --no-dev
 # 配置 cron 定时任务或常驻服务
-python main.py --run-company
-python main.py --run-finance --finance-incremental
+python main.py company
+python main.py finance --incremental
 ```
 
 ---

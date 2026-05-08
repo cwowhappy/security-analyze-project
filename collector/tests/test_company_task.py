@@ -4,7 +4,7 @@ import pytest
 
 from collector.db.postgres import PostgresDB
 from collector.sources.akshare_source import AkshareSource
-from collector.tasks.company_task import CompanyTask, L1_TO_801_MAPPING, L2_TO_801_MAPPING
+from collector.tasks.company_task import CompanyTask, _load_sw_mapping_json
 from collector.models import CompanyIndustryMapping
 
 
@@ -124,7 +124,8 @@ class TestCompanyTaskIndustryMapping:
         task._save_industry_mappings(company_id=1, stock_code="000001", em_industry_name=None)
         db.upsert_many.assert_called_once()
 
-    def test_mapping_tables_not_empty(self):
-        """确保硬编码的映射表不为空"""
-        assert len(L1_TO_801_MAPPING) > 0
-        assert len(L2_TO_801_MAPPING) > 0
+    def test_mapping_json_not_empty(self):
+        """确保 JSON 映射文件不为空"""
+        l1, l2 = _load_sw_mapping_json()
+        assert len(l1) > 0
+        assert len(l2) > 0

@@ -341,8 +341,8 @@ src/types/portfolio.ts             # TypeScript 类型定义
 
 **命令行入口**：
 ```bash
-python main.py --run-quotes                        # 手动执行一次（默认当天）
-python main.py --run-quotes --date 2026-05-05      # 补录历史某天的行情
+python main.py quote                               # 手动执行一次（默认当天）
+python main.py quote --date 2026-05-05             # 补录历史某天的行情
 ```
 
 **采集逻辑（伪代码）**：

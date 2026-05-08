@@ -2,54 +2,68 @@ import logging
 from typing import List, Dict, Any
 
 from collector.db.postgres import PostgresDB
-from collector.sources.akshare_source import AkshareSource
+from collector.sources.base import BaseDataSource
 from collector.monitor import Monitor
 from collector.models import IndexInfoEntity
+from collector.tasks.base import BaseTask, TaskResult
 
 logger = logging.getLogger(__name__)
 
 
-class IndexBasicTask:
+class IndexBasicTask(BaseTask):
     """采集指数基本信息任务（全量 upsert）"""
 
-    def __init__(self, db: PostgresDB, source: AkshareSource, monitor: Monitor = None):
-        self.db = db
-        self.source = source
-        self.monitor = monitor
+    task_name = "index_basic"
+    data_type = "index_basic"
 
-    def run(self) -> int:
-        """执行采集，返回处理的记录数"""
+    def __init__(self, db: PostgresDB, source: BaseDataSource, monitor: Monitor = None):
+        super().__init__(db=db, source=source, monitor=monitor)
+
+    def run(self, **kwargs) -> int:
+        """向后兼容的手动执行入口，返回处理的记录数。"""
+        result = self.run_full(**kwargs)
+        return result.rows
+
+    def run_full(self, **kwargs) -> TaskResult:
+        """全量采集指数基本信息。"""
         logger.info("开始采集指数基本信息")
-        task_id = None
-        if self.monitor:
-            task_id = self.monitor.log_task_start("index_basic", "index_basic")
+        raw_list = self.source.get_index_list()
+        logger.info(f"从数据源获取到 {len(raw_list)} 条指数记录")
 
-        try:
-            raw_list = self.source.get_index_list()
-            logger.info(f"从数据源获取到 {len(raw_list)} 条指数记录")
+        entities = [self._parse_index(item) for item in raw_list]
+        entities = [e for e in entities if e is not None]
 
-            entities = [self._parse_index(item) for item in raw_list]
-            entities = [e for e in entities if e is not None]
+        if not entities:
+            logger.warning("没有解析到有效的指数数据")
+            return TaskResult(rows=0)
 
-            if not entities:
-                logger.warning("没有解析到有效的指数数据")
-                if task_id:
-                    self.monitor.log_task_end(task_id, "success", 0)
-                return 0
+        self._upsert_to_db(entities)
+        logger.info(f"指数基本信息采集完成，共 {len(entities)} 条")
+        return TaskResult(rows=len(entities))
 
-            self._upsert_to_db(entities)
+    def run_partial(self, identifiers: List[str], **kwargs) -> TaskResult:
+        """指定指数代码列表采集。"""
+        logger.info(f"开始采集指定指数基本信息: {identifiers}")
+        raw_list = self.source.get_index_list()
+        id_set = set(identifiers)
+        filtered = [item for item in raw_list if str(item.get("index_code", "")).strip() in id_set]
+        logger.info(f"从数据源获取到 {len(filtered)} 条匹配指数记录")
 
-            if task_id:
-                self.monitor.log_task_end(task_id, "success", len(entities))
+        entities = [self._parse_index(item) for item in filtered]
+        entities = [e for e in entities if e is not None]
 
-            logger.info(f"指数基本信息采集完成，共 {len(entities)} 条")
-            return len(entities)
+        if not entities:
+            logger.warning("没有解析到有效的指数数据")
+            return TaskResult(rows=0)
 
-        except Exception as e:
-            logger.error(f"指数基本信息采集失败: {e}", exc_info=True)
-            if task_id:
-                self.monitor.log_task_end(task_id, "failed", error_message=str(e))
-            raise
+        self._upsert_to_db(entities)
+        logger.info(f"指定指数基本信息采集完成，共 {len(entities)} 条")
+        return TaskResult(rows=len(entities))
+
+    def run_incremental(self, **kwargs) -> TaskResult:
+        """增量采集（数据量小，暂按全量处理）。"""
+        logger.info("指数基本信息增量采集暂按全量处理")
+        return self.run_full(**kwargs)
 
     def _parse_index(self, raw: Dict[str, Any]) -> IndexInfoEntity:
         """解析原始数据为 IndexInfoEntity"""

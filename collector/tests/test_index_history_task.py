@@ -94,7 +94,9 @@ class TestIndexHistoryTask:
         assert task._to_int("invalid") is None
 
     def test_collect_single_with_data(self):
+        mock_monitor = MagicMock()
         task, db, source = self._make_task()
+        task.monitor = mock_monitor
 
         df = pd.DataFrame({
             "日期": ["2024-01-01"],
@@ -124,10 +126,12 @@ class TestIndexHistoryTask:
         assert rows == 1
         source.get_index_history.assert_called_once_with("000001", period="daily", start_date=None, end_date=None)
         mock_cur.executemany.assert_called_once()
-        mock_cur.execute.assert_called_once()  # _mark_success
+        mock_monitor.log_task_progress.assert_called_once()  # _mark_success via monitor
 
     def test_collect_single_no_data(self):
+        mock_monitor = MagicMock()
         task, db, source = self._make_task()
+        task.monitor = mock_monitor
         source.get_index_history.return_value = None
 
         mock_conn = MagicMock()
@@ -142,23 +146,13 @@ class TestIndexHistoryTask:
 
         assert rows == 0
         mock_cur.executemany.assert_not_called()
-        mock_cur.execute.assert_called_once()  # _mark_success with 0 rows
+        mock_monitor.log_task_progress.assert_called_once()  # _mark_success via monitor
 
     def test_load_success_set(self):
+        mock_monitor = MagicMock()
+        mock_monitor.get_session_progress.return_value = {"000001#day", "000001#week", "399001#day"}
         task, db, source = self._make_task()
-
-        mock_conn = MagicMock()
-        mock_cur = MagicMock()
-        mock_cur.fetchall.return_value = [
-            ("000001#day",),
-            ("000001#week",),
-            ("399001#day",),
-        ]
-        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn.__exit__ = MagicMock(return_value=False)
-        mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cur)
-        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
-        db.connection.return_value = mock_conn
+        task.monitor = mock_monitor
 
         success_set = task._load_success_set("test-session")
 
@@ -175,23 +169,18 @@ class TestIndexHistoryTask:
         assert success_set == set()
 
     def test_mark_success(self):
+        mock_monitor = MagicMock()
         task, db, source = self._make_task()
-
-        mock_conn = MagicMock()
-        mock_cur = MagicMock()
-        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn.__exit__ = MagicMock(return_value=False)
-        mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cur)
-        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
-        db.connection.return_value = mock_conn
+        task.monitor = mock_monitor
 
         task._mark_success("test-session", "000001", "day", 100)
 
-        mock_cur.execute.assert_called_once()
-        call_args = mock_cur.execute.call_args[0]
-        assert call_args[1][0] == "test-session"
-        assert call_args[1][1] == "000001#day"
-        assert call_args[1][2] == 100
+        mock_monitor.log_task_progress.assert_called_once()
+        call_kwargs = mock_monitor.log_task_progress.call_args.kwargs
+        assert call_kwargs["session_id"] == "test-session"
+        assert call_kwargs["task_key"] == "000001#day"
+        assert call_kwargs["status"] == "success"
+        assert call_kwargs["rows_updated"] == 100
 
     def test_entity_upsert_sql(self):
         sql = IndexHistoryEntity.upsert_sql()

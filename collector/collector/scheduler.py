@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Callable
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 # 默认 Job 配置
 DEFAULT_JOB_DEFAULTS = {
-    "coalesce": True,      # 错过的任务只执行一次
-    "max_instances": 1,    # 同一任务同时只能有一个实例在运行
+    "coalesce": True,
+    "max_instances": 1,
     "misfire_grace_time": 3600,
 }
 
@@ -29,9 +29,9 @@ DEFAULT_EXECUTORS = {
 class Scheduler:
     """采集任务调度器（基于 APScheduler + PostgreSQL JobStore）"""
 
-    def __init__(self, db: PostgresDB, db_cfg: Optional[DBConfig] = None):
+    def __init__(self, db: PostgresDB = None, db_cfg: Optional[DBConfig] = None):
         self.db = db
-        self.monitor = Monitor(db)
+        self.monitor = Monitor(db) if db else None
         self._scheduler: Optional[BackgroundScheduler] = None
 
         jobstores = {}
@@ -62,106 +62,126 @@ class Scheduler:
             logger.info("Scheduler stopped")
 
     # ------------------------------------------------------------------
-    # 定时任务管理
+    # 通用 Job 注册（新增）
+    # ------------------------------------------------------------------
+    def register(
+        self, job_id: str, name: str, cron: str, func: Callable, **kwargs
+    ) -> bool:
+        """通用 Job 注册方法。
+
+        Args:
+            job_id: 任务唯一标识
+            name: 任务名称
+            cron: Cron 表达式
+            func: 执行函数
+            **kwargs: 传给 func 的额外关键字参数
+        """
+        try:
+            trigger = CronTrigger.from_crontab(cron)
+            if self._scheduler.get_job(job_id):
+                self._scheduler.reschedule_job(job_id, trigger=trigger)
+                logger.info(f"Rescheduled job '{job_id}' with cron '{cron}'")
+            else:
+                self._scheduler.add_job(
+                    func,
+                    trigger=trigger,
+                    id=job_id,
+                    name=name,
+                    replace_existing=True,
+                    kwargs=kwargs,
+                )
+                logger.info(f"Added job '{job_id}' with cron '{cron}'")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to register job {job_id}: {e}")
+            return False
+
+    # ------------------------------------------------------------------
+    # 定时任务管理（向后兼容）
     # ------------------------------------------------------------------
     def add_company_job(self, cron: str, job_id: str = "company_task") -> bool:
-        """添加/更新公司信息采集定时任务
-
-        Args:
-            cron: Cron 表达式，例如 "0 9 * * *"（每天 09:00）
-            job_id: 任务唯一标识
-        """
-        try:
-            trigger = CronTrigger.from_crontab(cron)
-            if self._scheduler.get_job(job_id):
-                self._scheduler.reschedule_job(job_id, trigger=trigger)
-                logger.info(f"Rescheduled company job '{job_id}' with cron '{cron}'")
-            else:
-                self._scheduler.add_job(
-                    self._run_company_task,
-                    trigger=trigger,
-                    id=job_id,
-                    name="Full Company Sync",
-                    replace_existing=True,
-                )
-                logger.info(f"Added company job '{job_id}' with cron '{cron}'")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to add company job: {e}")
-            return False
+        def _run():
+            try:
+                source = AkshareSource()
+                task = CompanyTask(db=self.db, source=source, monitor=self.monitor)
+                task.run()
+            except Exception as e:
+                logger.error(f"Scheduled company task failed: {e}")
+        return self.register(job_id, "Full Company Sync", cron, _run)
 
     def add_finance_job(self, cron: str, job_id: str = "finance_task") -> bool:
-        """添加/更新财务报告采集定时任务"""
-        try:
-            trigger = CronTrigger.from_crontab(cron)
-            if self._scheduler.get_job(job_id):
-                self._scheduler.reschedule_job(job_id, trigger=trigger)
-                logger.info(f"Rescheduled finance job '{job_id}' with cron '{cron}'")
-            else:
-                self._scheduler.add_job(
-                    self._run_finance_task,
-                    trigger=trigger,
-                    id=job_id,
-                    name="Full Finance Sync",
-                    replace_existing=True,
-                )
-                logger.info(f"Added finance job '{job_id}' with cron '{cron}'")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to add finance job: {e}")
-            return False
+        def _run():
+            try:
+                from collector.tasks.finance_task import FinanceTask
+                source = AkshareSource()
+                task = FinanceTask(db=self.db, source=source, monitor=self.monitor)
+                task.run()
+            except Exception as e:
+                logger.error(f"Scheduled finance task failed: {e}")
+        return self.register(job_id, "Full Finance Sync", cron, _run)
 
-    def add_industry_sync_job(self, cron: str, job_id: str = "industry_sync_task") -> bool:
-        """添加/更新行业分类同步定时任务
-
-        Args:
-            cron: Cron 表达式，例如 "0 3 * * 1"（每周一 03:00）
-            job_id: 任务唯一标识
-        """
-        try:
-            trigger = CronTrigger.from_crontab(cron)
-            if self._scheduler.get_job(job_id):
-                self._scheduler.reschedule_job(job_id, trigger=trigger)
-                logger.info(f"Rescheduled industry sync job '{job_id}' with cron '{cron}'")
-            else:
-                self._scheduler.add_job(
-                    self._run_industry_sync_task,
-                    trigger=trigger,
-                    id=job_id,
-                    name="Industry Classification Sync",
-                    replace_existing=True,
+    def add_industry_sync_job(
+        self, cron: str, job_id: str = "industry_sync_task"
+    ) -> bool:
+        def _run():
+            try:
+                from collector.tasks.industry_classification_sync import (
+                    run as run_industry_sync,
                 )
-                logger.info(f"Added industry sync job '{job_id}' with cron '{cron}'")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to add industry sync job: {e}")
-            return False
+                run_industry_sync(db=self.db)
+            except Exception as e:
+                logger.error(f"Scheduled industry sync task failed: {e}")
+        return self.register(job_id, "Industry Classification Sync", cron, _run)
 
     def add_quote_job(self, cron: str, job_id: str = "quote_task") -> bool:
-        """添加/更新日行情采集定时任务
+        def _run():
+            try:
+                from collector.tasks.quote_task import QuoteTask
+                source = AkshareSource()
+                task = QuoteTask(db=self.db, source=source)
+                task.run()
+            except Exception as e:
+                logger.error(f"Scheduled quote task failed: {e}")
+        return self.register(job_id, "Daily Quote Sync", cron, _run)
 
-        Args:
-            cron: Cron 表达式，例如 "0 16 * * *"（每天 16:00，盘后）
-            job_id: 任务唯一标识
-        """
-        try:
-            trigger = CronTrigger.from_crontab(cron)
-            if self._scheduler.get_job(job_id):
-                self._scheduler.reschedule_job(job_id, trigger=trigger)
-                logger.info(f"Rescheduled quote job '{job_id}' with cron '{cron}'")
-            else:
-                self._scheduler.add_job(
-                    self._run_quote_task,
-                    trigger=trigger,
-                    id=job_id,
-                    name="Daily Quote Sync",
-                    replace_existing=True,
-                )
-                logger.info(f"Added quote job '{job_id}' with cron '{cron}'")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to add quote job: {e}")
-            return False
+    def add_index_basic_job(
+        self, cron: str, job_id: str = "index_basic_task"
+    ) -> bool:
+        def _run():
+            try:
+                from collector.tasks.index_basic_task import IndexBasicTask
+                source = AkshareSource()
+                task = IndexBasicTask(db=self.db, source=source, monitor=self.monitor)
+                task.run()
+            except Exception as e:
+                logger.error(f"Scheduled index basic task failed: {e}")
+        return self.register(job_id, "Index Basic Sync", cron, _run)
+
+    def add_index_history_job(
+        self, cron: str, job_id: str = "index_history_task"
+    ) -> bool:
+        def _run():
+            try:
+                from collector.tasks.index_history_task import IndexHistoryTask
+                source = AkshareSource()
+                task = IndexHistoryTask(db=self.db, source=source, monitor=self.monitor)
+                task.run()
+            except Exception as e:
+                logger.error(f"Scheduled index history task failed: {e}")
+        return self.register(job_id, "Index History Sync", cron, _run)
+
+    def add_etf_basic_job(
+        self, cron: str, job_id: str = "etf_basic_task"
+    ) -> bool:
+        def _run():
+            try:
+                from collector.tasks.etf_basic_task import EtfBasicTask
+                source = AkshareSource()
+                task = EtfBasicTask(db=self.db, source=source, monitor=self.monitor)
+                task.run()
+            except Exception as e:
+                logger.error(f"Scheduled ETF basic task failed: {e}")
+        return self.register(job_id, "ETF Basic Sync", cron, _run)
 
     def remove_job(self, job_id: str) -> bool:
         try:
@@ -203,8 +223,47 @@ class Scheduler:
         ]
 
     # ------------------------------------------------------------------
-    # 任务执行体
+    # 手动触发（向后兼容）
     # ------------------------------------------------------------------
+    def run_company_task_now(self):
+        logger.info("Manual trigger: full company task")
+        self._run_company_task()
+
+    def run_company_task_by_name(self, query: str):
+        logger.info(f"Manual trigger: company task by name '{query}'")
+        try:
+            source = AkshareSource()
+            task = CompanyTask(db=self.db, source=source, monitor=self.monitor)
+            task.run_by_name(query)
+        except Exception as e:
+            logger.error(f"Company task by name failed: {e}")
+
+    def run_industry_sync_task_now(self):
+        logger.info("Manual trigger: industry classification sync task")
+        self._run_industry_sync_task()
+
+    def run_quote_task_now(self, trade_date: Optional[str] = None):
+        logger.info(f"Manual trigger: quote task, trade_date={trade_date or 'today'}")
+        try:
+            from collector.tasks.quote_task import QuoteTask
+            source = AkshareSource()
+            task = QuoteTask(db=self.db, source=source)
+            task.run(trade_date=trade_date)
+        except Exception as e:
+            logger.error(f"Quote task failed: {e}")
+
+    def run_index_basic_task_now(self):
+        logger.info("Manual trigger: full index basic task")
+        self._run_index_basic_task()
+
+    def run_index_history_task_now(self):
+        logger.info("Manual trigger: full index history task")
+        self._run_index_history_task()
+
+    def run_etf_basic_task_now(self):
+        logger.info("Manual trigger: full ETF basic task")
+        self._run_etf_basic_task()
+
     def _run_company_task(self):
         logger.info("Running scheduled company task...")
         try:
@@ -227,7 +286,9 @@ class Scheduler:
     def _run_industry_sync_task(self):
         logger.info("Running scheduled industry classification sync task...")
         try:
-            from collector.tasks.industry_classification_sync import run as run_industry_sync
+            from collector.tasks.industry_classification_sync import (
+                run as run_industry_sync,
+            )
             run_industry_sync(db=self.db)
         except Exception as e:
             logger.error(f"Scheduled industry sync task failed: {e}")
@@ -241,106 +302,6 @@ class Scheduler:
             task.run()
         except Exception as e:
             logger.error(f"Scheduled quote task failed: {e}")
-
-    # ------------------------------------------------------------------
-    # 手动触发（保持向后兼容）
-    # ------------------------------------------------------------------
-    def run_company_task_now(self):
-        """手动立即执行全量公司信息采集任务"""
-        logger.info("Manual trigger: full company task")
-        self._run_company_task()
-
-    def run_company_task_by_name(self, query: str):
-        """手动按公司名称/代码执行采集任务"""
-        logger.info(f"Manual trigger: company task by name '{query}'")
-        try:
-            source = AkshareSource()
-            task = CompanyTask(db=self.db, source=source, monitor=self.monitor)
-            task.run_by_name(query)
-        except Exception as e:
-            logger.error(f"Company task by name failed: {e}")
-
-    def run_industry_sync_task_now(self):
-        """手动立即执行行业分类同步任务"""
-        logger.info("Manual trigger: industry classification sync task")
-        self._run_industry_sync_task()
-
-    def run_quote_task_now(self, trade_date: Optional[str] = None):
-        """手动立即执行日行情采集任务"""
-        logger.info(f"Manual trigger: quote task, trade_date={trade_date or 'today'}")
-        try:
-            from collector.tasks.quote_task import QuoteTask
-            source = AkshareSource()
-            task = QuoteTask(db=self.db, source=source)
-            task.run(trade_date=trade_date)
-        except Exception as e:
-            logger.error(f"Quote task failed: {e}")
-
-    # ------------------------------------------------------------------
-    # 指数模块任务
-    # ------------------------------------------------------------------
-    def add_index_basic_job(self, cron: str, job_id: str = "index_basic_task") -> bool:
-        """添加/更新指数基本信息采集定时任务"""
-        try:
-            trigger = CronTrigger.from_crontab(cron)
-            if self._scheduler.get_job(job_id):
-                self._scheduler.reschedule_job(job_id, trigger=trigger)
-                logger.info(f"Rescheduled index basic job '{job_id}' with cron '{cron}'")
-            else:
-                self._scheduler.add_job(
-                    self._run_index_basic_task,
-                    trigger=trigger,
-                    id=job_id,
-                    name="Index Basic Sync",
-                    replace_existing=True,
-                )
-                logger.info(f"Added index basic job '{job_id}' with cron '{cron}'")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to add index basic job: {e}")
-            return False
-
-    def add_index_history_job(self, cron: str, job_id: str = "index_history_task") -> bool:
-        """添加/更新指数历史行情采集定时任务"""
-        try:
-            trigger = CronTrigger.from_crontab(cron)
-            if self._scheduler.get_job(job_id):
-                self._scheduler.reschedule_job(job_id, trigger=trigger)
-                logger.info(f"Rescheduled index history job '{job_id}' with cron '{cron}'")
-            else:
-                self._scheduler.add_job(
-                    self._run_index_history_task,
-                    trigger=trigger,
-                    id=job_id,
-                    name="Index History Sync",
-                    replace_existing=True,
-                )
-                logger.info(f"Added index history job '{job_id}' with cron '{cron}'")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to add index history job: {e}")
-            return False
-
-    def add_etf_basic_job(self, cron: str, job_id: str = "etf_basic_task") -> bool:
-        """添加/更新 ETF 基本信息采集定时任务"""
-        try:
-            trigger = CronTrigger.from_crontab(cron)
-            if self._scheduler.get_job(job_id):
-                self._scheduler.reschedule_job(job_id, trigger=trigger)
-                logger.info(f"Rescheduled ETF basic job '{job_id}' with cron '{cron}'")
-            else:
-                self._scheduler.add_job(
-                    self._run_etf_basic_task,
-                    trigger=trigger,
-                    id=job_id,
-                    name="ETF Basic Sync",
-                    replace_existing=True,
-                )
-                logger.info(f"Added ETF basic job '{job_id}' with cron '{cron}'")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to add ETF basic job: {e}")
-            return False
 
     def _run_index_basic_task(self):
         logger.info("Running scheduled index basic task...")
@@ -371,18 +332,3 @@ class Scheduler:
             task.run()
         except Exception as e:
             logger.error(f"Scheduled ETF basic task failed: {e}")
-
-    def run_index_basic_task_now(self):
-        """手动立即执行指数基本信息采集任务"""
-        logger.info("Manual trigger: full index basic task")
-        self._run_index_basic_task()
-
-    def run_index_history_task_now(self):
-        """手动立即执行指数历史行情采集任务"""
-        logger.info("Manual trigger: full index history task")
-        self._run_index_history_task()
-
-    def run_etf_basic_task_now(self):
-        """手动立即执行 ETF 基本信息采集任务"""
-        logger.info("Manual trigger: full ETF basic task")
-        self._run_etf_basic_task()

@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional
 
 import pandas as pd
 
+from collector.sources.base import BaseDataSource
 from collector.utils import infer_market
 from collector.decorators import retry
 
@@ -17,8 +18,8 @@ COL_NOTICE_DATE = "NOTICE_DATE"
 COL_CURRENCY = "CURRENCY"
 
 
-class AkshareSource:
-    """akshare 数据源封装，预留多数据源扩展接口"""
+class AkshareSource(BaseDataSource):
+    """akshare 数据源封装"""
 
     def __init__(self, max_retries: int = 3, retry_delay: float = 2.0, retry_backoff: float = 2.0):
         try:
@@ -42,29 +43,47 @@ class AkshareSource:
         self._stock_list = df.to_dict(orient="records")
         return self._stock_list
 
+    # ------------------------------------------------------------------
+    # 公司信息（带重试的原始获取 + 异常安全包装）
+    # ------------------------------------------------------------------
     @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    def _fetch_company_detail(self, stock_code: str):
+        """原始调用 stock_profile_cninfo（由 @retry 保护）"""
+        return self._ak.stock_profile_cninfo(symbol=stock_code)
+
     def get_company_detail(self, stock_code: str) -> Optional[Dict[str, Any]]:
         """获取单公司详细信息（使用 stock_profile_cninfo，字段更完整）"""
         try:
-            df = self._ak.stock_profile_cninfo(symbol=stock_code)
-            if df.empty:
-                logger.warning(f"Empty profile for {stock_code}")
-                return None
-            return df.iloc[0].to_dict()
+            df = self._fetch_company_detail(stock_code)
         except Exception as e:
-            logger.debug(f"Failed to get company profile for {stock_code}: {e}")
+            logger.debug(f"Failed to get company profile for {stock_code} after retries: {e}")
             return None
+        if df is None or df.empty:
+            logger.warning(f"Empty profile for {stock_code}")
+            return None
+        # 清理 NaN / numpy 标量，避免 Pydantic 验证失败
+        row = df.iloc[0]
+        return {
+            key: (None if pd.isna(val) else val)
+            for key, val in row.items()
+        }
 
     @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    def _fetch_company_info_em(self, stock_code: str):
+        """原始调用 stock_individual_info_em（由 @retry 保护）"""
+        return self._ak.stock_individual_info_em(symbol=stock_code)
+
     def get_company_info_em(self, stock_code: str) -> Optional[Dict[str, Any]]:
         """备用：使用 stock_individual_info_em 获取基本信息"""
         try:
-            df = self._ak.stock_individual_info_em(symbol=stock_code)
-            info = dict(zip(df["item"].tolist(), df["value"].tolist()))
-            return info
+            df = self._fetch_company_info_em(stock_code)
         except Exception as e:
-            logger.debug(f"Failed to get company info EM for {stock_code}: {e}")
+            logger.debug(f"Failed to get company info EM for {stock_code} after retries: {e}")
             return None
+        if df is None or df.empty:
+            logger.warning(f"Empty EM info for {stock_code}")
+            return None
+        return dict(zip(df["item"].tolist(), df["value"].tolist()))
 
     # ------------------------------------------------------------------
     # 日行情
