@@ -10,11 +10,15 @@ backend/*.jar
 backend/gradle-app.setting
 backend/.gradletasknamecache
 
+# Environment variables
+backend/.env
+
 # ============================================
 # Frontend (Node.js + Vue + Vite)
 # ============================================
 frontend/node_modules/
 frontend/dist/
+frontend/package-lock.json
 frontend/.cache/
 frontend/.vite/
 frontend/*.local
