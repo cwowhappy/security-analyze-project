@@ -262,11 +262,11 @@ python main.py --finance 600519
 
 - **生产环境**仍采用 **手动管理 SQL 脚本** 的方式（Flyway 风格命名），需按版本顺序手动执行。
 - **测试环境**已引入 **Flyway** 自动迁移，增量脚本按版本号存放于 `db/migration/`，旧脚本归档至 `db/migration-archive/`。`backend/build.gradle` 中已添加 `flyway-core` 与 `flyway-database-postgresql` 依赖；`application-test.yml` 启用 `spring.flyway.enabled=true`。
-- **全新环境一键初始化**：使用 `db/release/v1.1.0__full_schema.sql`（当前最新快照），无需逐条执行增量脚本。
+- **全新环境一键初始化**：使用 `db/release/v1.0.0__full_schema.sql`（当前最新快照），无需逐条执行增量脚本。
 - **采集模块表结构引用**：`collector/sql/schema_reference.sql` 汇总了 collector 直接操作的所有表，供查阅对照；实际建表仍由后端 migration 统一管理。
 - 新增 schema 变更时：
   1. 创建新的 `Vx__description.sql` 放入 `db/migration/`（测试自动应用）；
-  2. 同步更新 `db/release/v1.1.0__full_schema.sql` 快照；
+  2. 同步更新 `db/release/v1.0.0__full_schema.sql` 快照；
   3. 同步更新 `collector/sql/schema_reference.sql`。
 
 ### company / company_security 核心字段
@@ -324,6 +324,6 @@ python main.py --finance 600519
 - 新增采集任务时，在 `collector/tasks/` 创建 Task 类，在 `collector/sources/` 如需新增数据源则继承风格保持一致。
 - 修改数据库 schema 时：
   1. 新建 `Vx__description.sql` 增量脚本；
-  2. 同步更新 `db/release/v1.1.0__full_schema.sql` 完整快照；
+  2. 同步更新 `db/release/v1.0.0__full_schema.sql` 完整快照；
   3. 同步更新 `collector/sql/schema_reference.sql`；
   4. 同步更新 Java Entity 与 Python 的 upsert 逻辑。
