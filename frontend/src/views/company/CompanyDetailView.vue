@@ -5,6 +5,7 @@ import { ElTabs, ElTabPane, ElBreadcrumb, ElBreadcrumbItem, ElMessage, ElCard, E
 import { getCompanyDetail } from '@/api/company'
 import type { CompanyDetail } from '@/types/company'
 import FinanceReportTab from './finance/FinanceReportTab.vue'
+import FundamentalAnalysisTab from './fundamental/FundamentalAnalysisTab.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -145,6 +146,10 @@ onMounted(() => {
 
       <ElTabPane label="财务报告" name="finance">
         <FinanceReportTab :stock-code="stockCode" />
+      </ElTabPane>
+
+      <ElTabPane label="基本面分析" name="fundamental">
+        <FundamentalAnalysisTab :stock-code="stockCode" />
       </ElTabPane>
 
       <ElTabPane label="历史变更" name="history">
