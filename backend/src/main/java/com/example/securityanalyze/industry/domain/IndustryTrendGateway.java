@@ -1,7 +1,5 @@
 package com.example.securityanalyze.industry.domain;
 
-import com.example.securityanalyze.industry.api.TrendDataPoint;
-
 import java.util.List;
 
 /**
@@ -16,5 +14,5 @@ public interface IndustryTrendGateway {
      * @param period       周期（1m/3m/6m/1y）
      * @return 趋势数据点列表，失败时返回空列表
      */
-    List<TrendDataPoint> fetchTrend(String industryName, String period);
+    List<IndustryTrendPoint> fetchTrend(String industryName, String period);
 }

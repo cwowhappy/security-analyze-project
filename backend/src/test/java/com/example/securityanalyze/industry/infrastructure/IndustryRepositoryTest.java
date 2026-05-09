@@ -2,8 +2,8 @@ package com.example.securityanalyze.industry.infrastructure;
 
 import com.example.securityanalyze.common.RepositoryTestBase;
 import com.example.securityanalyze.common.TestDataFactory;
-import com.example.securityanalyze.company.api.CompanyListItem;
-import com.example.securityanalyze.industry.api.IndustryListItem;
+import com.example.securityanalyze.industry.domain.IndustryCompany;
+import com.example.securityanalyze.industry.domain.IndustrySummary;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
@@ -13,11 +13,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Import(IndustryRepository.class)
+@Import(IndustryQueryRepositoryImpl.class)
 class IndustryRepositoryTest extends RepositoryTestBase {
 
     @Autowired
-    private IndustryRepository industryRepository;
+    private IndustryQueryRepositoryImpl industryRepository;
 
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
@@ -34,10 +34,10 @@ class IndustryRepositoryTest extends RepositoryTestBase {
         jdbcTemplate.update("UPDATE company SET industry = '科技' WHERE id = :id",
                 new org.springframework.jdbc.core.namedparam.MapSqlParameterSource("id", c3));
 
-        List<IndustryListItem> results = industryRepository.findIndustries();
+        List<IndustrySummary> results = industryRepository.findIndustries();
 
         assertTrue(results.size() >= 2);
-        IndustryListItem baijiu = results.stream().filter(i -> "白酒".equals(i.getIndustryName())).findFirst().orElseThrow();
+        IndustrySummary baijiu = results.stream().filter(i -> "白酒".equals(i.getIndustryName())).findFirst().orElseThrow();
         assertEquals(2, baijiu.getCompanyCount());
     }
 
@@ -47,7 +47,7 @@ class IndustryRepositoryTest extends RepositoryTestBase {
         jdbcTemplate.update("UPDATE company SET industry = '' WHERE unified_code = :code",
                 new org.springframework.jdbc.core.namedparam.MapSqlParameterSource("code", "91110021"));
 
-        List<IndustryListItem> results = industryRepository.findIndustries();
+        List<IndustrySummary> results = industryRepository.findIndustries();
 
         assertTrue(results.stream().noneMatch(i -> "".equals(i.getIndustryName())));
     }
@@ -66,7 +66,7 @@ class IndustryRepositoryTest extends RepositoryTestBase {
         TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(c1, "600009", "白酒A股"));
         TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(c2, "600010", "白酒B股"));
 
-        List<CompanyListItem> results = industryRepository.findCompaniesByIndustry("白酒", 0, 10);
+        List<IndustryCompany> results = industryRepository.findCompaniesByIndustry("白酒", 0, 10);
 
         assertEquals(2, results.size());
         assertTrue(results.stream().allMatch(r -> "白酒".equals(r.getIndustry())));
@@ -87,7 +87,7 @@ class IndustryRepositoryTest extends RepositoryTestBase {
 
     @Test
     void shouldReturnEmptyWhenNoCompanies() {
-        List<IndustryListItem> results = industryRepository.findIndustries();
+        List<IndustrySummary> results = industryRepository.findIndustries();
         // 即使前面测试插入了数据，@Transactional 回滚后应干净
         // 但由于可能依赖执行顺序，使用弱断言：确认没有空字符串行业
         assertTrue(results.stream().noneMatch(i -> i.getIndustryName() == null || i.getIndustryName().isEmpty()));
@@ -95,7 +95,7 @@ class IndustryRepositoryTest extends RepositoryTestBase {
 
     @Test
     void shouldReturnEmptyWhenIndustryNotFound() {
-        List<CompanyListItem> companies = industryRepository.findCompaniesByIndustry("不存在的行业", 0, 10);
+        List<IndustryCompany> companies = industryRepository.findCompaniesByIndustry("不存在的行业", 0, 10);
         long count = industryRepository.countCompaniesByIndustry("不存在的行业");
 
         assertTrue(companies.isEmpty());
@@ -109,7 +109,7 @@ class IndustryRepositoryTest extends RepositoryTestBase {
                 new org.springframework.jdbc.core.namedparam.MapSqlParameterSource("id", c1));
         TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(c1, "600020", "白酒E股"));
 
-        List<CompanyListItem> results = industryRepository.findCompaniesByIndustry("白酒", 1000, 10);
+        List<IndustryCompany> results = industryRepository.findCompaniesByIndustry("白酒", 1000, 10);
 
         assertTrue(results.isEmpty());
     }

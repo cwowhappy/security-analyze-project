@@ -2,8 +2,8 @@ package com.example.securityanalyze.collector.infrastructure;
 
 import com.example.securityanalyze.common.RepositoryTestBase;
 import com.example.securityanalyze.common.TestDataFactory;
-import com.example.securityanalyze.collector.api.CollectorOverviewItem;
-import com.example.securityanalyze.collector.api.CollectorTaskItem;
+import com.example.securityanalyze.collector.domain.CollectorOverview;
+import com.example.securityanalyze.collector.domain.CollectorTask;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
@@ -14,11 +14,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Import(CollectorDashboardRepository.class)
+@Import(CollectorDashboardRepositoryImpl.class)
 class CollectorDashboardRepositoryTest extends RepositoryTestBase {
 
     @Autowired
-    private CollectorDashboardRepository collectorDashboardRepository;
+    private CollectorDashboardRepositoryImpl collectorDashboardRepository;
 
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
@@ -36,17 +36,17 @@ class CollectorDashboardRepositoryTest extends RepositoryTestBase {
         TestDataFactory.insertCollectorTaskLog(jdbcTemplate, "证券采集", "security", now.minusHours(3), now.minusHours(2), "success", 50);
         TestDataFactory.insertCollectorTaskLog(jdbcTemplate, "财报采集", "finance_report", now.minusHours(4), null, "running", 0);
 
-        List<CollectorOverviewItem> results = collectorDashboardRepository.findOverview();
+        List<CollectorOverview> results = collectorDashboardRepository.findOverview();
 
         assertEquals(3, results.size());
 
-        CollectorOverviewItem companyItem = results.stream().filter(r -> "company".equals(r.getDataType())).findFirst().orElseThrow();
+        CollectorOverview companyItem = results.stream().filter(r -> "company".equals(r.getDataType())).findFirst().orElseThrow();
         assertEquals("公司基本信息", companyItem.getDataTypeLabel());
         assertTrue(companyItem.getTotalRows() >= 1);
         assertEquals("success", companyItem.getLastTaskStatus());
         assertNotNull(companyItem.getLastTaskDurationSeconds());
 
-        CollectorOverviewItem financeItem = results.stream().filter(r -> "finance_report".equals(r.getDataType())).findFirst().orElseThrow();
+        CollectorOverview financeItem = results.stream().filter(r -> "finance_report".equals(r.getDataType())).findFirst().orElseThrow();
         assertEquals("running", financeItem.getLastTaskStatus());
     }
 
@@ -58,15 +58,15 @@ class CollectorDashboardRepositoryTest extends RepositoryTestBase {
         TestDataFactory.insertCollectorTaskLog(jdbcTemplate, "任务C", "security", now.minusHours(3), now.minusHours(2), "success", 50);
 
         // 无条件查询（默认7天内）
-        List<CollectorTaskItem> all = collectorDashboardRepository.findTasks(null, null, 0, 10);
+        List<CollectorTask> all = collectorDashboardRepository.findTasks(null, null, 0, 10);
         assertTrue(all.size() >= 3);
 
         // 按 dataType 过滤
-        List<CollectorTaskItem> companyTasks = collectorDashboardRepository.findTasks("company", null, 0, 10);
+        List<CollectorTask> companyTasks = collectorDashboardRepository.findTasks("company", null, 0, 10);
         assertEquals(2, companyTasks.size());
 
         // 按 status 过滤
-        List<CollectorTaskItem> failedTasks = collectorDashboardRepository.findTasks(null, "failed", 0, 10);
+        List<CollectorTask> failedTasks = collectorDashboardRepository.findTasks(null, "failed", 0, 10);
         assertEquals(1, failedTasks.size());
         assertEquals("任务B", failedTasks.get(0).getTaskName());
     }
@@ -90,10 +90,10 @@ class CollectorDashboardRepositoryTest extends RepositoryTestBase {
     @Test
     void shouldHandleEmptyTablesInOverview() {
         // 未插入任何数据，验证空表时各字段为 null 或 0
-        List<CollectorOverviewItem> results = collectorDashboardRepository.findOverview();
+        List<CollectorOverview> results = collectorDashboardRepository.findOverview();
 
         assertEquals(3, results.size());
-        for (CollectorOverviewItem item : results) {
+        for (CollectorOverview item : results) {
             assertEquals(0, item.getTotalRows(), "空表时 total_rows 应为 0");
             assertNull(item.getLastUpdatedAt(), "空表时 last_updated_at 应为 null");
             assertNull(item.getLastTaskStatus(), "无任务时 last_task_status 应为 null");
@@ -106,9 +106,9 @@ class CollectorDashboardRepositoryTest extends RepositoryTestBase {
         LocalDateTime now = LocalDateTime.now();
         TestDataFactory.insertCollectorTaskLog(jdbcTemplate, "运行中任务", "company", now.minusMinutes(30), null, "running", 0);
 
-        List<CollectorTaskItem> tasks = collectorDashboardRepository.findTasks(null, null, 0, 10);
+        List<CollectorTask> tasks = collectorDashboardRepository.findTasks(null, null, 0, 10);
 
-        CollectorTaskItem runningTask = tasks.stream()
+        CollectorTask runningTask = tasks.stream()
                 .filter(t -> "运行中任务".equals(t.getTaskName()))
                 .findFirst()
                 .orElseThrow();
@@ -123,7 +123,7 @@ class CollectorDashboardRepositoryTest extends RepositoryTestBase {
         TestDataFactory.insertCollectorTaskLog(jdbcTemplate, "组合B", "company", now.minusHours(2), now.minusHours(1), "failed", 0);
         TestDataFactory.insertCollectorTaskLog(jdbcTemplate, "组合C", "security", now.minusHours(3), now.minusHours(2), "success", 5);
 
-        List<CollectorTaskItem> combined = collectorDashboardRepository.findTasks("company", "success", 0, 10);
+        List<CollectorTask> combined = collectorDashboardRepository.findTasks("company", "success", 0, 10);
 
         assertEquals(1, combined.size());
         assertEquals("组合A", combined.get(0).getTaskName());
@@ -134,7 +134,7 @@ class CollectorDashboardRepositoryTest extends RepositoryTestBase {
         LocalDateTime now = LocalDateTime.now();
         TestDataFactory.insertCollectorTaskLog(jdbcTemplate, "分页", "company", now.minusHours(1), now, "success", 1);
 
-        List<CollectorTaskItem> results = collectorDashboardRepository.findTasks(null, null, 1000, 10);
+        List<CollectorTask> results = collectorDashboardRepository.findTasks(null, null, 1000, 10);
         assertTrue(results.isEmpty());
     }
 }

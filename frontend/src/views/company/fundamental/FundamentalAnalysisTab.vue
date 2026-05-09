@@ -138,9 +138,14 @@ watch(() => props.stockCode, fetchData)
 .fundamental-tab { padding: 8px 0; }
 .metric-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 12px;
   margin-bottom: 24px;
+}
+@media (max-width: 768px) {
+  .metric-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 .metric-card {
   background: var(--card-bg, rgba(255,255,255,0.03));

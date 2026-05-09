@@ -3,6 +3,7 @@ package com.example.securityanalyze.research.infrastructure;
 import com.example.securityanalyze.research.domain.AnnualMetric;
 import com.example.securityanalyze.research.domain.FundamentalMetrics;
 import com.example.securityanalyze.research.domain.FundamentalMetricsRepository;
+import com.example.securityanalyze.research.domain.IndustryRankItem;
 import com.example.securityanalyze.research.domain.PeerMetric;
 import com.example.securityanalyze.research.domain.ScreenCompanyItem;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,8 @@ public class FundamentalMetricsRepositoryImpl implements FundamentalMetricsRepos
                 fr.total_equity,
                 fr.total_current_assets,
                 fr.total_noncurrent_assets,
+                fr.total_current_liabilities,
+                fr.total_noncurrent_liabilities,
                 fr.operating_cash_flow,
                 fr.investing_cash_flow,
                 fr.financing_cash_flow,
@@ -80,6 +83,8 @@ public class FundamentalMetricsRepositoryImpl implements FundamentalMetricsRepos
             metric.setTotalEquity(rs.getBigDecimal("total_equity"));
             metric.setTotalCurrentAssets(rs.getBigDecimal("total_current_assets"));
             metric.setTotalNoncurrentAssets(rs.getBigDecimal("total_noncurrent_assets"));
+            metric.setTotalCurrentLiabilities(rs.getBigDecimal("total_current_liabilities"));
+            metric.setTotalNoncurrentLiabilities(rs.getBigDecimal("total_noncurrent_liabilities"));
             metric.setOperatingCashFlow(rs.getBigDecimal("operating_cash_flow"));
             metric.setInvestingCashFlow(rs.getBigDecimal("investing_cash_flow"));
             metric.setFinancingCashFlow(rs.getBigDecimal("financing_cash_flow"));
@@ -328,6 +333,79 @@ public class FundamentalMetricsRepositoryImpl implements FundamentalMetricsRepos
             peer.setRoe(rs.getBigDecimal("roe"));
             peer.setDebtRatio(rs.getBigDecimal("debt_ratio"));
             return peer;
+        });
+    }
+
+    @Override
+    public String findIndustryByStockCode(String stockCode) {
+        String sql = """
+                SELECT c.industry FROM company c
+                JOIN company_security cs ON c.id = cs.company_id
+                WHERE cs.stock_code = :stockCode AND cs.is_deleted = FALSE AND c.is_deleted = FALSE
+                """;
+        try {
+            return jdbcTemplate.queryForObject(sql, new MapSqlParameterSource("stockCode", stockCode), String.class);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public List<IndustryRankItem> findIndustryRankItems(String industry) {
+        String sql = """
+                SELECT
+                    cs.stock_code,
+                    cs.stock_name,
+                    c.industry,
+                    fr.total_revenue,
+                    fr.parent_net_profit,
+                    CASE WHEN fr.operate_income IS NOT NULL AND fr.operate_income > 0
+                         THEN (fr.operate_income - fr.operate_cost) / fr.operate_income * 100
+                         ELSE NULL
+                    END as gross_margin,
+                    sfm.roe,
+                    CASE WHEN fr.total_assets IS NOT NULL AND fr.total_assets > 0
+                         THEN fr.total_liabilities / fr.total_assets * 100
+                         ELSE NULL
+                    END as debt_ratio
+                FROM company_security cs
+                JOIN company c ON cs.company_id = c.id
+                LEFT JOIN LATERAL (
+                    SELECT total_revenue, parent_net_profit, operate_income, operate_cost, total_assets, total_liabilities
+                    FROM financial_report
+                    WHERE stock_code = cs.stock_code
+                      AND report_type = '年报'
+                      AND is_deleted = FALSE
+                    ORDER BY report_date DESC
+                    LIMIT 1
+                ) fr ON TRUE
+                LEFT JOIN LATERAL (
+                    SELECT roe
+                    FROM stock_fundamental_metrics
+                    WHERE stock_code = cs.stock_code
+                      AND is_deleted = FALSE
+                    ORDER BY report_year DESC
+                    LIMIT 1
+                ) sfm ON TRUE
+                WHERE c.industry = :industry
+                  AND cs.is_deleted = FALSE
+                  AND c.is_deleted = FALSE
+                ORDER BY cs.stock_code ASC
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("industry", industry);
+
+        return jdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            IndustryRankItem item = new IndustryRankItem();
+            item.setStockCode(rs.getString("stock_code"));
+            item.setStockName(rs.getString("stock_name"));
+            item.setIndustry(rs.getString("industry"));
+            item.setTotalRevenue(rs.getBigDecimal("total_revenue"));
+            item.setParentNetProfit(rs.getBigDecimal("parent_net_profit"));
+            item.setGrossMargin(rs.getBigDecimal("gross_margin"));
+            item.setRoe(rs.getBigDecimal("roe"));
+            item.setDebtRatio(rs.getBigDecimal("debt_ratio"));
+            return item;
         });
     }
 }

@@ -37,7 +37,7 @@ public class FinancialReportRepositoryImpl implements FinancialReportRepository 
                    sale_expense, manage_expense, research_expense, finance_expense, operate_profit,
                    total_profit, net_profit, parent_net_profit, operating_cash_flow, investing_cash_flow,
                    financing_cash_flow, cce_add, end_cce, balance_sheet, profit_sheet, cash_flow_sheet,
-                   created_at, updated_at
+                   created_at, updated_at, is_deleted, deleted_at
             FROM financial_report
             """;
 
@@ -108,6 +108,13 @@ public class FinancialReportRepositoryImpl implements FinancialReportRepository 
             report.setUpdatedAt(updatedAt.toLocalDateTime());
         }
 
+        report.setIsDeleted(rs.getBoolean("is_deleted"));
+
+        java.sql.Timestamp deletedAt = rs.getTimestamp("deleted_at");
+        if (deletedAt != null) {
+            report.setDeletedAt(deletedAt.toLocalDateTime());
+        }
+
         return report;
     };
 
@@ -132,7 +139,7 @@ public class FinancialReportRepositoryImpl implements FinancialReportRepository 
 
     @Override
     public List<FinancialReport> findByStockCode(String stockCode) {
-        String sql = SELECT_SQL + " WHERE stock_code = :stockCode ORDER BY report_date DESC";
+        String sql = SELECT_SQL + " WHERE is_deleted = FALSE AND stock_code = :stockCode ORDER BY report_date DESC";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("stockCode", stockCode);
         return jdbcTemplate.query(sql, params, rowMapper);
@@ -140,7 +147,7 @@ public class FinancialReportRepositoryImpl implements FinancialReportRepository 
 
     @Override
     public List<FinancialReport> findByStockCodeAndYear(String stockCode, int year) {
-        String sql = SELECT_SQL + " WHERE stock_code = :stockCode AND report_year = :year ORDER BY report_date DESC";
+        String sql = SELECT_SQL + " WHERE is_deleted = FALSE AND stock_code = :stockCode AND report_year = :year ORDER BY report_date DESC";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("stockCode", stockCode);
         params.addValue("year", year);
@@ -149,7 +156,7 @@ public class FinancialReportRepositoryImpl implements FinancialReportRepository 
 
     @Override
     public List<FinancialReport> findByStockCodeAndDateRange(String stockCode, LocalDate startDate, LocalDate endDate) {
-        String sql = SELECT_SQL + " WHERE stock_code = :stockCode AND report_date BETWEEN :startDate AND :endDate ORDER BY report_date DESC";
+        String sql = SELECT_SQL + " WHERE is_deleted = FALSE AND stock_code = :stockCode AND report_date BETWEEN :startDate AND :endDate ORDER BY report_date DESC";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("stockCode", stockCode);
         params.addValue("startDate", startDate);
@@ -159,7 +166,7 @@ public class FinancialReportRepositoryImpl implements FinancialReportRepository 
 
     @Override
     public Optional<FinancialReport> findById(Long id) {
-        String sql = SELECT_SQL + " WHERE id = :id";
+        String sql = SELECT_SQL + " WHERE is_deleted = FALSE AND id = :id";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("id", id);
         List<FinancialReport> results = jdbcTemplate.query(sql, params, rowMapper);
@@ -168,7 +175,7 @@ public class FinancialReportRepositoryImpl implements FinancialReportRepository 
 
     @Override
     public Optional<FinancialReport> findByStockCodeAndReportDate(String stockCode, LocalDate reportDate) {
-        String sql = SELECT_SQL + " WHERE stock_code = :stockCode AND report_date = :reportDate";
+        String sql = SELECT_SQL + " WHERE is_deleted = FALSE AND stock_code = :stockCode AND report_date = :reportDate";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("stockCode", stockCode);
         params.addValue("reportDate", reportDate);
@@ -209,7 +216,7 @@ public class FinancialReportRepositoryImpl implements FinancialReportRepository 
 
     @Override
     public boolean existsByStockCodeAndReportDate(String stockCode, LocalDate reportDate) {
-        String sql = "SELECT COUNT(*) FROM financial_report WHERE stock_code = :stockCode AND report_date = :reportDate";
+        String sql = "SELECT COUNT(*) FROM financial_report WHERE is_deleted = FALSE AND stock_code = :stockCode AND report_date = :reportDate";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("stockCode", stockCode);
         params.addValue("reportDate", reportDate);
@@ -218,7 +225,7 @@ public class FinancialReportRepositoryImpl implements FinancialReportRepository 
     }
 
     private boolean existsById(Long id) {
-        String sql = "SELECT COUNT(*) FROM financial_report WHERE id = :id";
+        String sql = "SELECT COUNT(*) FROM financial_report WHERE is_deleted = FALSE AND id = :id";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("id", id);
         Long count = jdbcTemplate.queryForObject(sql, params, Long.class);

@@ -28,6 +28,10 @@ public class CompanySecurity {
 
     private String listingStatus;
 
+    private Boolean isDeleted;
+
+    private LocalDateTime deletedAt;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

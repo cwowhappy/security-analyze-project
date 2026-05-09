@@ -4,6 +4,7 @@ import type {
   ScreenParams,
   ScreenResponse,
   IndustryPeersResponse,
+  IndustryRankResponse,
 } from '@/types/research'
 
 export async function getFundamentalOverview(
@@ -24,5 +25,16 @@ export async function getIndustryPeers(
   stockCode: string
 ): Promise<IndustryPeersResponse> {
   const response = await client.get(`/research/fundamental/industry-peers/${stockCode}`)
+  return response.data
+}
+
+export async function getIndustryRank(
+  stockCode: string,
+  sortBy: string = 'roe',
+  order: string = 'desc'
+): Promise<IndustryRankResponse> {
+  const response = await client.get(`/research/fundamental/industry-rank/${stockCode}`, {
+    params: { sortBy, order },
+  })
   return response.data
 }

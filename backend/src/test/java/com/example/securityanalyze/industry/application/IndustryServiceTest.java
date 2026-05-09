@@ -4,7 +4,7 @@ import com.example.securityanalyze.company.domain.CompanyRepository;
 import com.example.securityanalyze.industry.api.IndustryCategoryDto;
 import com.example.securityanalyze.industry.api.IndustryListResponse;
 import com.example.securityanalyze.industry.api.IndustryTrendResponse;
-import com.example.securityanalyze.industry.api.TrendDataPoint;
+import com.example.securityanalyze.industry.domain.IndustryTrendPoint;
 import com.example.securityanalyze.industry.domain.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,7 +62,7 @@ class IndustryServiceTest {
         category.setName("白酒");
         when(industryCategoryRepository.findByCode("EM", "BK0428")).thenReturn(Optional.of(category));
 
-        TrendDataPoint point = new TrendDataPoint();
+        IndustryTrendPoint point = new IndustryTrendPoint();
         point.setDate("2024-01-01");
         point.setClose(new java.math.BigDecimal("1000.00"));
 

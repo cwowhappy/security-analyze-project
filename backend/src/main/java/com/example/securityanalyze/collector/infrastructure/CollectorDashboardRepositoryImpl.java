@@ -1,7 +1,8 @@
 package com.example.securityanalyze.collector.infrastructure;
 
-import com.example.securityanalyze.collector.api.CollectorOverviewItem;
-import com.example.securityanalyze.collector.api.CollectorTaskItem;
+import com.example.securityanalyze.collector.domain.CollectorDashboardRepository;
+import com.example.securityanalyze.collector.domain.CollectorOverview;
+import com.example.securityanalyze.collector.domain.CollectorTask;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
@@ -18,14 +19,14 @@ import java.util.List;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class CollectorDashboardRepository {
+public class CollectorDashboardRepositoryImpl implements CollectorDashboardRepository {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
-    private static final RowMapper<CollectorOverviewItem> OVERVIEW_ROW_MAPPER = new RowMapper<>() {
+    private static final RowMapper<CollectorOverview> OVERVIEW_ROW_MAPPER = new RowMapper<>() {
         @Override
-        public CollectorOverviewItem mapRow(ResultSet rs, int rowNum) throws SQLException {
-            CollectorOverviewItem item = new CollectorOverviewItem();
+        public CollectorOverview mapRow(ResultSet rs, int rowNum) throws SQLException {
+            CollectorOverview item = new CollectorOverview();
             item.setDataType(rs.getString("data_type"));
             item.setDataTypeLabel(toLabel(rs.getString("data_type")));
             item.setTotalRows(rs.getInt("total_rows"));
@@ -41,10 +42,10 @@ public class CollectorDashboardRepository {
         }
     };
 
-    private static final RowMapper<CollectorTaskItem> TASK_ROW_MAPPER = new RowMapper<>() {
+    private static final RowMapper<CollectorTask> TASK_ROW_MAPPER = new RowMapper<>() {
         @Override
-        public CollectorTaskItem mapRow(ResultSet rs, int rowNum) throws SQLException {
-            CollectorTaskItem item = new CollectorTaskItem();
+        public CollectorTask mapRow(ResultSet rs, int rowNum) throws SQLException {
+            CollectorTask item = new CollectorTask();
             item.setId(rs.getLong("id"));
             item.setTaskName(rs.getString("task_name"));
             item.setTaskType(rs.getString("task_type"));
@@ -66,15 +67,15 @@ public class CollectorDashboardRepository {
         }
     };
 
-    public List<CollectorOverviewItem> findOverview() {
+    public List<CollectorOverview> findOverview() {
         log.debug("查询采集概览");
         String sql = """
                 WITH table_stats AS (
-                    SELECT 'company' AS data_type, COUNT(*) AS total_rows, MAX(updated_at) AS last_updated_at FROM company
+                    SELECT 'company' AS data_type, COUNT(*) AS total_rows, MAX(updated_at) AS last_updated_at FROM company WHERE is_deleted = FALSE
                     UNION ALL
-                    SELECT 'security', COUNT(*), MAX(updated_at) FROM company_security
+                    SELECT 'security', COUNT(*), MAX(updated_at) FROM company_security WHERE is_deleted = FALSE
                     UNION ALL
-                    SELECT 'finance_report', COUNT(*), MAX(updated_at) FROM financial_report
+                    SELECT 'finance_report', COUNT(*), MAX(updated_at) FROM financial_report WHERE is_deleted = FALSE
                 ),
                 latest_tasks AS (
                     SELECT DISTINCT ON (task_type) task_type, status, started_at, ended_at,
@@ -95,7 +96,7 @@ public class CollectorDashboardRepository {
         return jdbcTemplate.query(sql, OVERVIEW_ROW_MAPPER);
     }
 
-    public List<CollectorTaskItem> findTasks(String dataType, String status, int offset, int limit) {
+    public List<CollectorTask> findTasks(String dataType, String status, int offset, int limit) {
         log.debug("查询采集任务, dataType={}, status={}, offset={}, limit={}", dataType, status, offset, limit);
         StringBuilder sql = new StringBuilder("""
                 SELECT id, task_name, task_type, started_at, ended_at, status, rows_affected,

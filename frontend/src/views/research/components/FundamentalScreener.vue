@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onBeforeUnmount } from 'vue'
 import { ElInput, ElSelect, ElOption, ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { screenCompanies } from '@/api/research'
@@ -7,6 +7,7 @@ import type { ScreenCompanyItem } from '@/types/research'
 
 const emit = defineEmits<{
   select: [stockCode: string]
+  addCompare: [stockCode: string]
 }>()
 
 const keyword = ref('')
@@ -56,6 +57,10 @@ watch([keyword, industry, market], () => {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(fetchCompanies, 300)
 }, { immediate: true })
+
+onBeforeUnmount(() => {
+  clearTimeout(debounceTimer)
+})
 </script>
 
 <template>
@@ -99,15 +104,19 @@ watch([keyword, industry, market], () => {
         :key="item.stockCode"
         class="company-item"
         :class="{ active: selectedStock === item.stockCode }"
-        @click="selectCompany(item.stockCode)"
       >
-        <div class="company-header">
+        <div class="company-header" @click="selectCompany(item.stockCode)">
           <span class="company-name">{{ item.stockName }}</span>
           <span class="company-code">{{ item.stockCode }}</span>
         </div>
-        <div class="company-meta">
+        <div class="company-meta" @click="selectCompany(item.stockCode)">
           <span class="meta-tag">{{ item.industry || '-' }}</span>
           <span class="meta-tag">{{ item.market || '-' }}</span>
+        </div>
+        <div class="company-actions">
+          <button class="action-btn" @click.stop="emit('addCompare', item.stockCode)">
+            + 对比
+          </button>
         </div>
       </div>
       <div v-if="!loading && companies.length === 0" class="empty-tip">
@@ -191,5 +200,24 @@ watch([keyword, industry, market], () => {
   text-align: center;
   padding: 24px 0;
   font-size: 13px;
+}
+.company-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+.action-btn {
+  background: transparent;
+  border: 1px solid rgba(64, 158, 255, 0.4);
+  color: #409eff;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.action-btn:hover {
+  background: rgba(64, 158, 255, 0.1);
+  border-color: #409eff;
 }
 </style>

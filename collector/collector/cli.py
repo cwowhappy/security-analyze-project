@@ -30,6 +30,7 @@ from collector.tasks.index_basic_task import IndexBasicTask
 from collector.tasks.index_history_task import IndexHistoryTask
 from collector.tasks.etf_basic_task import EtfBasicTask
 from collector.tasks.industry_task import IndustryTask
+from collector.tasks.fundamental_metrics_task import FundamentalMetricsTask
 
 load_dotenv()
 
@@ -148,6 +149,20 @@ def build_parser() -> argparse.ArgumentParser:
     quote_parser.add_argument(
         "--stock-code",
         help="指定股票代码（可选，不传则采集全部持仓）",
+    )
+
+    # ------------------------------------------------------------------
+    # fundamental-metrics 子命令
+    # ------------------------------------------------------------------
+    fm_parser = subparsers.add_parser("fundamental-metrics", help="基本面衍生指标预计算")
+    fm_parser.add_argument(
+        "--stock-code",
+        help="股票代码（可选，不传则全量）",
+    )
+    fm_parser.add_argument(
+        "--incremental",
+        action="store_true",
+        help="增量模式：仅计算最近一个完整年报年度",
     )
 
     # ------------------------------------------------------------------
@@ -290,6 +305,14 @@ def _dispatch_command(args, runner: TaskRunner) -> None:
     # ------------------------------------------------------------------
     # schedule
     # ------------------------------------------------------------------
+    elif cmd == "fundamental-metrics":
+        if args.stock_code:
+            runner.run(FundamentalMetricsTask, mode="partial", identifiers=[args.stock_code])
+        elif args.incremental:
+            runner.run(FundamentalMetricsTask, mode="incremental")
+        else:
+            runner.run(FundamentalMetricsTask, mode="full")
+
     elif cmd == "schedule":
         run_scheduler_mode(args, runner)
 

@@ -1,4 +1,4 @@
-package com.example.securityanalyze.portfolio.api;
+package com.example.securityanalyze.portfolio.domain;
 
 public class PortfolioAccessDeniedException extends RuntimeException {
     public PortfolioAccessDeniedException(String message) {

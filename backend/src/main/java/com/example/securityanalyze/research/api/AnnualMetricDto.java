@@ -23,6 +23,10 @@ public class AnnualMetricDto {
     private BigDecimal totalAssets;
     private BigDecimal totalLiabilities;
     private BigDecimal totalEquity;
+    private BigDecimal totalCurrentAssets;
+    private BigDecimal totalNoncurrentAssets;
+    private BigDecimal totalCurrentLiabilities;
+    private BigDecimal totalNoncurrentLiabilities;
     private BigDecimal debtRatio;
 
     // 现金流
@@ -38,4 +42,13 @@ public class AnnualMetricDto {
     private BigDecimal researchExpense;
     private BigDecimal financeExpense;
     private BigDecimal periodExpenseRate;
+
+    // 阶段B衍生指标
+    private BigDecimal revenueYoy;
+    private BigDecimal profitYoy;
+    private BigDecimal roa;
+    private BigDecimal assetTurnover;
+    private BigDecimal equityMultiplier;
+    private BigDecimal currentRatio;
+    private BigDecimal quickRatio;
 }

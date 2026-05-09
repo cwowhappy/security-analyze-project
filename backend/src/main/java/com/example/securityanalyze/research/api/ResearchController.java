@@ -56,4 +56,14 @@ public class ResearchController {
         IndustryPeersResponse response = fundamentalAnalysisService.getIndustryPeers(stockCode);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/fundamental/industry-rank/{stockCode}")
+    public ResponseEntity<IndustryRankResponse> getIndustryRank(
+            @PathVariable String stockCode,
+            @RequestParam(defaultValue = "roe") String sortBy,
+            @RequestParam(defaultValue = "desc") String order) {
+        log.info("查询行业排名, stockCode={}, sortBy={}, order={}", stockCode, sortBy, order);
+        IndustryRankResponse response = fundamentalAnalysisService.getIndustryRank(stockCode, sortBy, order);
+        return ResponseEntity.ok(response);
+    }
 }

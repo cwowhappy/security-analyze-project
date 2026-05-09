@@ -13,6 +13,10 @@ export interface AnnualMetric {
   totalAssets: number
   totalLiabilities: number
   totalEquity: number
+  totalCurrentAssets?: number
+  totalNoncurrentAssets?: number
+  totalCurrentLiabilities?: number
+  totalNoncurrentLiabilities?: number
   debtRatio: number
   // 现金流
   operatingCashFlow: number
@@ -26,6 +30,15 @@ export interface AnnualMetric {
   researchExpense: number
   financeExpense: number
   periodExpenseRate: number
+
+  // 阶段B衍生指标
+  revenueYoy?: number
+  profitYoy?: number
+  roa?: number
+  assetTurnover?: number
+  equityMultiplier?: number
+  currentRatio?: number
+  quickRatio?: number
 }
 
 export interface FundamentalOverview {
@@ -72,4 +85,23 @@ export interface PeerMetric {
 
 export interface IndustryPeersResponse {
   peers: PeerMetric[]
+}
+
+export interface IndustryRankItem {
+  stockCode: string
+  stockName: string
+  industry: string
+  totalRevenue?: number
+  parentNetProfit?: number
+  grossMargin?: number
+  roe?: number
+  debtRatio?: number
+}
+
+export interface IndustryRankResponse {
+  rank: number
+  total: number
+  sortBy: string
+  order: string
+  items: IndustryRankItem[]
 }

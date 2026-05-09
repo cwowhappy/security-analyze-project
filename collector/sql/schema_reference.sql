@@ -242,3 +242,44 @@ CREATE TABLE IF NOT EXISTS index_etf_mapping (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uk_index_etf_mapping UNIQUE (index_code, etf_code, relation_type)
 );
+
+-- --------------------------------------------------------------
+-- 8. 股票基本面衍生指标物化表（阶段B预计算）
+-- --------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS stock_fundamental_metrics (
+    id BIGSERIAL PRIMARY KEY,
+    stock_code VARCHAR(20) NOT NULL,
+    report_year INTEGER NOT NULL,
+
+    -- 同比增长率
+    revenue_yoy DECIMAL(10,4),
+    profit_yoy DECIMAL(10,4),
+    asset_growth_rate DECIMAL(10,4),
+
+    -- 效率指标
+    roe DECIMAL(10,4),
+    roa DECIMAL(10,4),
+    asset_turnover DECIMAL(10,4),
+    equity_multiplier DECIMAL(10,4),
+
+    -- 偿债指标
+    current_ratio DECIMAL(10,4),
+    quick_ratio DECIMAL(10,4),
+
+    -- 盈利质量
+    cashflow_profit_ratio DECIMAL(10,4),
+    period_expense_rate DECIMAL(10,4),
+
+    -- 标准审计字段
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT uk_fundamental_metrics UNIQUE (stock_code, report_year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sfm_stock_code ON stock_fundamental_metrics(stock_code);
+CREATE INDEX IF NOT EXISTS idx_sfm_report_year ON stock_fundamental_metrics(report_year);
+CREATE INDEX IF NOT EXISTS idx_sfm_is_deleted ON stock_fundamental_metrics(is_deleted);
+CREATE INDEX IF NOT EXISTS idx_sfm_stock_year_deleted ON stock_fundamental_metrics(stock_code, report_year, is_deleted);

@@ -2,10 +2,10 @@ package com.example.securityanalyze.exception;
 
 import com.example.securityanalyze.auth.application.AccountDisabledException;
 import com.example.securityanalyze.auth.application.PendingApprovalException;
-import com.example.securityanalyze.portfolio.api.InsufficientPositionException;
-import com.example.securityanalyze.portfolio.api.PortfolioAccessDeniedException;
-import com.example.securityanalyze.portfolio.api.PortfolioNotFoundException;
-import com.example.securityanalyze.portfolio.api.TransactionNotFoundException;
+import com.example.securityanalyze.portfolio.domain.InsufficientPositionException;
+import com.example.securityanalyze.portfolio.domain.PortfolioAccessDeniedException;
+import com.example.securityanalyze.portfolio.domain.PortfolioNotFoundException;
+import com.example.securityanalyze.portfolio.domain.TransactionNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

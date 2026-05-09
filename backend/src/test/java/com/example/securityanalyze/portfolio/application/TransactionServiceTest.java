@@ -1,8 +1,8 @@
 package com.example.securityanalyze.portfolio.application;
 
-import com.example.securityanalyze.portfolio.api.InsufficientPositionException;
-import com.example.securityanalyze.portfolio.api.PortfolioNotFoundException;
-import com.example.securityanalyze.portfolio.api.TransactionNotFoundException;
+import com.example.securityanalyze.portfolio.domain.InsufficientPositionException;
+import com.example.securityanalyze.portfolio.domain.PortfolioNotFoundException;
+import com.example.securityanalyze.portfolio.domain.TransactionNotFoundException;
 import com.example.securityanalyze.portfolio.domain.*;
 import com.example.securityanalyze.user.domain.User;
 import com.example.securityanalyze.user.domain.UserRepository;

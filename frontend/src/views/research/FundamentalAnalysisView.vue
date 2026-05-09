@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElCollapse, ElCollapseItem, ElLink, ElEmpty } from 'element-plus'
-import { getFundamentalOverview, getIndustryPeers } from '@/api/research'
-import type { FundamentalOverview, AnnualMetric, PeerMetric } from '@/types/research'
+import { ElMessage, ElCollapse, ElCollapseItem, ElLink, ElEmpty, ElBreadcrumb, ElBreadcrumbItem, ElSelect, ElOption } from 'element-plus'
+import { getFundamentalOverview, getIndustryPeers, getIndustryRank } from '@/api/research'
+import type { FundamentalOverview, AnnualMetric, PeerMetric, IndustryRankItem } from '@/types/research'
 import FundamentalScreener from './components/FundamentalScreener.vue'
+import MetricDashboard from './components/MetricDashboard.vue'
+import IndustryPeersTable from './components/IndustryPeersTable.vue'
+import IndustryRankTable from './components/IndustryRankTable.vue'
 import ProfitabilityChart from './components/ProfitabilityChart.vue'
 import CostExpenseChart from './components/CostExpenseChart.vue'
 import BalanceSheetChart from './components/BalanceSheetChart.vue'
 import CashFlowChart from './components/CashFlowChart.vue'
+import DupontAnalysisChart from './components/DupontAnalysisChart.vue'
 
 const router = useRouter()
 
@@ -16,19 +20,67 @@ const selectedStock = ref('')
 const loading = ref(false)
 const overview = ref<FundamentalOverview | null>(null)
 const peers = ref<PeerMetric[]>([])
+const rankData = ref<IndustryRankItem[]>([])
+const rankSortBy = ref('roe')
+const rankOrder = ref('desc')
 const activeCollapse = ref<string[]>([])
+const selectedYear = ref<number | null>(null)
 
-const latestMetric = computed<AnnualMetric | null>(() => {
+// 对比池（最多5家）
+const comparePool = ref<{ stockCode: string; stockName: string }[]>([])
+
+function addToCompare(stockCode: string) {
+  if (comparePool.value.length >= 5) {
+    ElMessage.warning('对比池最多支持5家公司')
+    return
+  }
+  if (comparePool.value.some(c => c.stockCode === stockCode)) {
+    ElMessage.info('该公司已在对比池中')
+    return
+  }
+  // 尝试从 peers 或 company list 中获取名称
+  const name = peers.value.find(p => p.stockCode === stockCode)?.stockName || stockCode
+  comparePool.value.push({ stockCode, stockName: name })
+}
+
+function removeFromCompare(index: number) {
+  comparePool.value.splice(index, 1)
+}
+
+function clearCompare() {
+  comparePool.value = []
+}
+
+const availableYears = computed(() => {
+  if (!overview.value?.metrics?.length) return []
+  return overview.value.metrics.map(m => m.reportYear)
+})
+
+const selectedMetric = computed<AnnualMetric | null>(() => {
   if (!overview.value?.metrics?.length) return null
+  if (selectedYear.value != null) {
+    return overview.value.metrics.find(m => m.reportYear === selectedYear.value) || null
+  }
   return overview.value.metrics[overview.value.metrics.length - 1]
 })
 
+
+
+function getYoyInfo(val?: number): { value?: number; direction?: 'up' | 'down' | 'flat' } {
+  if (val == null) return {}
+  if (val > 0.01) return { value: val, direction: 'up' }
+  if (val < -0.01) return { value: val, direction: 'down' }
+  return { value: val, direction: 'flat' }
+}
+
 const metricCards = computed(() => {
-  const m = latestMetric.value
+  const m = selectedMetric.value
   if (!m) return []
+  const revenueYoy = getYoyInfo(m.revenueYoy)
+  const profitYoy = getYoyInfo(m.profitYoy)
   return [
-    { label: '营业总收入', value: formatMoney(m.totalRevenue), color: '#00d4ff' },
-    { label: '归母净利润', value: formatMoney(m.parentNetProfit), color: '#67c23a' },
+    { label: '营业总收入', value: formatMoney(m.totalRevenue), color: '#00d4ff', yoyValue: revenueYoy.value, yoyDirection: revenueYoy.direction },
+    { label: '归母净利润', value: formatMoney(m.parentNetProfit), color: '#67c23a', yoyValue: profitYoy.value, yoyDirection: profitYoy.direction },
     { label: '毛利率', value: formatPercent(m.grossMargin), color: '#409eff' },
     { label: '净利率', value: formatPercent(m.netMargin), color: '#67c23a' },
     { label: 'ROE', value: formatPercent(m.roe), color: '#e6a23c' },
@@ -38,20 +90,42 @@ const metricCards = computed(() => {
   ]
 })
 
+async function onRankSort(field: string) {
+  const nextOrder = rankSortBy.value === field && rankOrder.value === 'desc' ? 'asc' : 'desc'
+  rankSortBy.value = field
+  rankOrder.value = nextOrder
+  try {
+    const res = await getIndustryRank(selectedStock.value, field, nextOrder)
+    rankData.value = res.items
+  } catch (err) {
+    ElMessage.error('排序加载失败')
+  }
+}
+
 async function onSelectCompany(stockCode: string) {
   selectedStock.value = stockCode
   loading.value = true
   try {
-    const [overviewRes, peersRes] = await Promise.all([
+    const [overviewRes, peersRes, rankRes] = await Promise.all([
       getFundamentalOverview(stockCode),
       getIndustryPeers(stockCode),
+      getIndustryRank(stockCode),
     ])
     overview.value = overviewRes
     peers.value = peersRes.peers
+    rankData.value = rankRes.items
+    // 默认选中最新年份
+    if (overviewRes.metrics?.length) {
+      selectedYear.value = overviewRes.metrics[overviewRes.metrics.length - 1].reportYear
+    } else {
+      selectedYear.value = null
+    }
   } catch (err) {
     ElMessage.error('加载数据失败')
     overview.value = null
     peers.value = []
+    rankData.value = []
+    selectedYear.value = null
   } finally {
     loading.value = false
   }
@@ -72,15 +146,21 @@ function formatPercent(val?: number): string {
 </script>
 
 <template>
-  <div class="research-layout">
-    <!-- 左侧边栏 -->
-    <aside class="research-sidebar">
-      <FundamentalScreener @select="onSelectCompany" />
-    </aside>
+  <div class="research-page">
+    <ElBreadcrumb separator="/" class="page-breadcrumb">
+      <ElBreadcrumbItem :to="{ path: '/' }">首页</ElBreadcrumbItem>
+      <ElBreadcrumbItem>投研分析</ElBreadcrumbItem>
+    </ElBreadcrumb>
 
-    <!-- 右侧主区域 -->
-    <main class="research-main" v-loading="loading">
-      <!-- 引导态 -->
+    <div class="research-layout">
+      <!-- 左侧边栏 -->
+      <aside class="research-sidebar">
+        <FundamentalScreener @select="onSelectCompany" @add-compare="addToCompare" />
+      </aside>
+
+      <!-- 右侧主区域 -->
+      <main class="research-main" v-loading="loading">
+        <!-- 引导态 -->
       <ElEmpty v-if="!selectedStock" description="请输入股票代码或选择左侧筛选条件开始分析" />
 
       <template v-else-if="overview">
@@ -99,17 +179,35 @@ function formatPercent(val?: number): string {
           </ElLink>
         </div>
 
-        <!-- 核心指标仪表盘 -->
-        <div class="metric-dashboard">
-          <div
-            v-for="card in metricCards"
-            :key="card.label"
-            class="dashboard-card"
-            :style="{ borderTop: `3px solid ${card.color}` }"
-          >
-            <div class="dashboard-label">{{ card.label }}</div>
-            <div class="dashboard-value" :style="{ color: card.color }">{{ card.value }}</div>
+        <!-- 年份筛选 -->
+        <div class="year-filter-bar">
+          <span class="year-filter-label">数据年份：</span>
+          <ElSelect v-model="selectedYear" placeholder="选择年份" size="small" style="width: 120px">
+            <ElOption
+              v-for="year in availableYears"
+              :key="year"
+              :label="year + ' 年'"
+              :value="year"
+            />
+          </ElSelect>
+        </div>
+
+        <MetricDashboard :cards="metricCards" />
+
+        <!-- 对比池 -->
+        <div v-if="comparePool.length > 0" class="compare-pool-bar">
+          <span class="compare-label">对比池：</span>
+          <div class="compare-tags">
+            <span
+              v-for="(item, idx) in comparePool"
+              :key="item.stockCode"
+              class="compare-tag"
+            >
+              {{ item.stockName }}
+              <span class="compare-remove" @click="removeFromCompare(idx)">×</span>
+            </span>
           </div>
+          <button class="compare-clear" @click="clearCompare">清空</button>
         </div>
 
         <!-- 图表区 -->
@@ -118,60 +216,49 @@ function formatPercent(val?: number): string {
           <CostExpenseChart :metrics="overview.metrics" />
           <BalanceSheetChart :metrics="overview.metrics" />
           <CashFlowChart :metrics="overview.metrics" />
-
-          <!-- 杜邦分析占位 -->
-          <div class="dupont-placeholder">
-            <div class="placeholder-title">杜邦分析拆解</div>
-            <div class="placeholder-desc">阶段B即将上线：ROE = 净利率 × 资产周转率 × 权益乘数</div>
-          </div>
+          <DupontAnalysisChart :metrics="overview.metrics" />
         </div>
 
-        <!-- 同行业公司速览 -->
+        <!-- 同行业公司速览 + 行业排名 -->
         <ElCollapse v-model="activeCollapse" style="margin-top: 24px">
           <ElCollapseItem title="同行业公司速览" name="peers">
-            <table v-if="peers.length > 0" class="peers-table">
-              <thead>
-                <tr>
-                  <th>股票代码</th>
-                  <th>公司名称</th>
-                  <th>营收</th>
-                  <th>净利润</th>
-                  <th>ROE</th>
-                  <th>负债率</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="peer in peers"
-                  :key="peer.stockCode"
-                  class="peer-row"
-                  @click="onSelectCompany(peer.stockCode)"
-                >
-                  <td>{{ peer.stockCode }}</td>
-                  <td>{{ peer.stockName }}</td>
-                  <td>{{ formatMoney(peer.totalRevenue) }}</td>
-                  <td>{{ formatMoney(peer.parentNetProfit) }}</td>
-                  <td>{{ formatPercent(peer.roe) }}</td>
-                  <td>{{ formatPercent(peer.debtRatio) }}</td>
-                </tr>
-              </tbody>
-            </table>
-            <ElEmpty v-else description="暂无同行业对比数据" />
+            <IndustryPeersTable :peers="peers" @select="onSelectCompany" />
+          </ElCollapseItem>
+          <ElCollapseItem title="行业排名" name="rank">
+            <IndustryRankTable
+              :data="rankData"
+              :current-stock-code="selectedStock"
+              :sort-by="rankSortBy"
+              :order="rankOrder"
+              @select="onSelectCompany"
+              @sort="onRankSort"
+            />
           </ElCollapseItem>
         </ElCollapse>
       </template>
 
       <ElEmpty v-else description="暂无数据" />
-    </main>
+      </main>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.research-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}
+.page-breadcrumb {
+  padding: 16px 16px 0;
+  flex-shrink: 0;
+}
 .research-layout {
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 16px;
-  height: calc(100vh - 64px);
+  flex: 1;
   overflow: hidden;
 }
 .research-sidebar {
@@ -188,6 +275,16 @@ function formatPercent(val?: number): string {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+}
+.year-filter-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 8px;
+}
+.year-filter-label {
+  font-size: 14px;
+  color: var(--text-secondary, #9ca3af);
 }
 .company-title {
   display: flex;
@@ -215,74 +312,67 @@ function formatPercent(val?: number): string {
   padding: 2px 8px;
   border-radius: 4px;
 }
-.metric-dashboard {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-.dashboard-card {
-  background: var(--card-bg, rgba(255,255,255,0.03));
-  border-radius: 8px;
-  padding: 16px;
-  text-align: center;
-}
-.dashboard-label {
-  font-size: 13px;
-  color: var(--text-secondary, #9ca3af);
-  margin-bottom: 8px;
-}
-.dashboard-value {
-  font-size: 18px;
-  font-weight: 600;
-  font-family: var(--font-mono, monospace);
-}
 .charts-container {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
-.dupont-placeholder {
-  height: 360px;
-  background: var(--card-bg, rgba(255,255,255,0.03));
-  border-radius: 8px;
+.compare-pool-bar {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  color: var(--text-secondary, #9ca3af);
-  border: 1px dashed var(--border-color, rgba(255,255,255,0.1));
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
-.placeholder-title {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 8px;
-}
-.placeholder-desc {
+.compare-label {
   font-size: 13px;
-}
-.peers-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.peers-table th,
-.peers-table td {
-  padding: 10px 12px;
-  text-align: right;
-  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.06));
-}
-.peers-table th {
   color: var(--text-secondary, #9ca3af);
-  font-weight: 500;
 }
-.peers-table td {
-  color: var(--text-primary, #e5e7eb);
+.compare-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
-.peer-row {
+.compare-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(64, 158, 255, 0.12);
+  color: #409eff;
+  border: 1px solid rgba(64, 158, 255, 0.25);
+}
+.compare-remove {
   cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.7;
 }
-.peer-row:hover {
-  background: rgba(255,255,255,0.03);
+.compare-remove:hover {
+  opacity: 1;
+}
+.compare-clear {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #9ca3af);
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: auto;
+}
+.compare-clear:hover {
+  color: #f56c6c;
+}
+@media (max-width: 768px) {
+  .research-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .research-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.06));
+    max-height: 300px;
+  }
 }
 </style>

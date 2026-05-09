@@ -557,3 +557,60 @@ COMMENT ON TABLE portfolio IS '组合 / 证券账户表';
 COMMENT ON TABLE transaction_record IS '成交记录表';
 COMMENT ON TABLE position IS '持仓汇总快照表';
 COMMENT ON TABLE daily_quote IS '日行情表（盘后同步，P2 阶段启用采集）';
+
+-- ============================================================
+-- 23. 股票基本面衍生指标物化表（阶段B预计算）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS stock_fundamental_metrics (
+    id BIGSERIAL PRIMARY KEY,
+    stock_code VARCHAR(20) NOT NULL,
+    report_year INTEGER NOT NULL,
+
+    -- 同比增长率
+    revenue_yoy DECIMAL(10,4),
+    profit_yoy DECIMAL(10,4),
+    asset_growth_rate DECIMAL(10,4),
+
+    -- 效率指标
+    roe DECIMAL(10,4),
+    roa DECIMAL(10,4),
+    asset_turnover DECIMAL(10,4),
+    equity_multiplier DECIMAL(10,4),
+
+    -- 偿债指标
+    current_ratio DECIMAL(10,4),
+    quick_ratio DECIMAL(10,4),
+
+    -- 盈利质量
+    cashflow_profit_ratio DECIMAL(10,4),
+    period_expense_rate DECIMAL(10,4),
+
+    -- 标准审计字段
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT uk_fundamental_metrics UNIQUE (stock_code, report_year)
+);
+
+-- stock_fundamental_metrics 索引
+CREATE INDEX IF NOT EXISTS idx_sfm_stock_code ON stock_fundamental_metrics(stock_code);
+CREATE INDEX IF NOT EXISTS idx_sfm_report_year ON stock_fundamental_metrics(report_year);
+CREATE INDEX IF NOT EXISTS idx_sfm_is_deleted ON stock_fundamental_metrics(is_deleted);
+CREATE INDEX IF NOT EXISTS idx_sfm_stock_year_deleted ON stock_fundamental_metrics(stock_code, report_year, is_deleted);
+
+COMMENT ON TABLE stock_fundamental_metrics IS '股票基本面衍生指标物化表（阶段B预计算）';
+COMMENT ON COLUMN stock_fundamental_metrics.stock_code IS '股票代码';
+COMMENT ON COLUMN stock_fundamental_metrics.report_year IS '报告年度';
+COMMENT ON COLUMN stock_fundamental_metrics.revenue_yoy IS '营业收入同比增长率 %';
+COMMENT ON COLUMN stock_fundamental_metrics.profit_yoy IS '归母净利润同比增长率 %';
+COMMENT ON COLUMN stock_fundamental_metrics.asset_growth_rate IS '总资产同比增长率 %';
+COMMENT ON COLUMN stock_fundamental_metrics.roe IS '净资产收益率 ROE %';
+COMMENT ON COLUMN stock_fundamental_metrics.roa IS '总资产收益率 ROA %';
+COMMENT ON COLUMN stock_fundamental_metrics.asset_turnover IS '总资产周转率（次）';
+COMMENT ON COLUMN stock_fundamental_metrics.equity_multiplier IS '权益乘数';
+COMMENT ON COLUMN stock_fundamental_metrics.current_ratio IS '流动比率';
+COMMENT ON COLUMN stock_fundamental_metrics.quick_ratio IS '速动比率';
+COMMENT ON COLUMN stock_fundamental_metrics.cashflow_profit_ratio IS '经营现金流/净利润比 %';
+COMMENT ON COLUMN stock_fundamental_metrics.period_expense_rate IS '期间费用率 %';

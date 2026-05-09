@@ -1,6 +1,6 @@
 package com.example.securityanalyze.industry.infrastructure;
 
-import com.example.securityanalyze.industry.api.TrendDataPoint;
+import com.example.securityanalyze.industry.domain.IndustryTrendPoint;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +28,7 @@ class IndustryTrendAdapterTest {
         String json = "[{\"date\":\"2024-01\",\"close\":100,\"changePercent\":5.5}]";
         doReturn(json).when(spyAdapter).executeScript(anyString(), anyString());
 
-        List<TrendDataPoint> result = spyAdapter.fetchTrend("白酒", "1y");
+        List<IndustryTrendPoint> result = spyAdapter.fetchTrend("白酒", "1y");
 
         assertEquals(1, result.size());
         assertEquals("2024-01", result.get(0).getDate());
@@ -42,9 +42,9 @@ class IndustryTrendAdapterTest {
         String json = "{\"date\":\"2024-01\",\"close\":100,\"changePercent\":5.5}";
         doReturn(json).when(spyAdapter).executeScript(anyString(), anyString());
 
-        List<TrendDataPoint> result = spyAdapter.fetchTrend("白酒", "1y");
+        List<IndustryTrendPoint> result = spyAdapter.fetchTrend("白酒", "1y");
 
-        assertTrue(result.isEmpty(), "JSON 对象无法解析为 List<TrendDataPoint>，应返回空列表");
+        assertTrue(result.isEmpty(), "JSON 对象无法解析为 List<IndustryTrendPoint>，应返回空列表");
     }
 
     @Test
@@ -52,7 +52,7 @@ class IndustryTrendAdapterTest {
         IndustryTrendAdapter spyAdapter = spy(industryTrendAdapter);
         doReturn("").when(spyAdapter).executeScript(anyString(), anyString());
 
-        List<TrendDataPoint> result = spyAdapter.fetchTrend("白酒", "1y");
+        List<IndustryTrendPoint> result = spyAdapter.fetchTrend("白酒", "1y");
 
         assertTrue(result.isEmpty());
     }
@@ -62,7 +62,7 @@ class IndustryTrendAdapterTest {
         IndustryTrendAdapter spyAdapter = spy(industryTrendAdapter);
         doReturn("ERROR: script failed").when(spyAdapter).executeScript(anyString(), anyString());
 
-        List<TrendDataPoint> result = spyAdapter.fetchTrend("白酒", "1y");
+        List<IndustryTrendPoint> result = spyAdapter.fetchTrend("白酒", "1y");
 
         assertTrue(result.isEmpty());
     }
@@ -72,7 +72,7 @@ class IndustryTrendAdapterTest {
         IndustryTrendAdapter spyAdapter = spy(industryTrendAdapter);
         doThrow(new RuntimeException("超时")).when(spyAdapter).executeScript(anyString(), anyString());
 
-        List<TrendDataPoint> result = spyAdapter.fetchTrend("白酒", "1y");
+        List<IndustryTrendPoint> result = spyAdapter.fetchTrend("白酒", "1y");
 
         assertTrue(result.isEmpty());
     }
@@ -82,7 +82,7 @@ class IndustryTrendAdapterTest {
         IndustryTrendAdapter spyAdapter = spy(industryTrendAdapter);
         doReturn("{").when(spyAdapter).executeScript(anyString(), anyString());
 
-        List<TrendDataPoint> result = spyAdapter.fetchTrend("白酒", "1y");
+        List<IndustryTrendPoint> result = spyAdapter.fetchTrend("白酒", "1y");
 
         assertTrue(result.isEmpty());
     }

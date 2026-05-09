@@ -27,6 +27,29 @@ const chartOption = computed(() => {
       backgroundColor: 'rgba(15,21,37,0.9)',
       borderColor: 'rgba(255,255,255,0.1)',
       textStyle: { color: '#e5e7eb' },
+      formatter: (params: any[]) => {
+        let html = `<div style="font-weight:600;margin-bottom:4px">${params[0].axisValue}</div>`
+        params.forEach((p: any) => {
+          const val = p.value
+          let display: string
+          if (val == null) {
+            display = '<span style="color:#999">数据缺失</span>'
+          } else if (p.seriesName === '资产负债率') {
+            display = val.toFixed(2) + '%'
+          } else {
+            const abs = Math.abs(val)
+            if (abs >= 1e8) display = (val / 1e8).toFixed(2) + ' 亿'
+            else if (abs >= 1e4) display = (val / 1e4).toFixed(2) + ' 万'
+            else display = val.toLocaleString()
+          }
+          html += `<div style="display:flex;align-items:center;gap:6px;margin:2px 0">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span>
+            <span>${p.seriesName}:</span>
+            <span style="margin-left:auto;font-weight:500">${display}</span>
+          </div>`
+        })
+        return html
+      },
     },
     legend: { data: ['流动资产', '非流动资产', '流动负债', '非流动负债', '资产负债率'], bottom: 0, textStyle: { color: '#9ca3af' } },
     grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
@@ -44,8 +67,9 @@ const chartOption = computed(() => {
         axisLabel: {
           color: '#9ca3af',
           formatter: (value: number) => {
-            if (value >= 1e8) return (value / 1e8).toFixed(0) + '亿'
-            if (value >= 1e4) return (value / 1e4).toFixed(0) + '万'
+            const abs = Math.abs(value)
+            if (abs >= 1e8) return (value / 1e8).toFixed(0) + '亿'
+            if (abs >= 1e4) return (value / 1e4).toFixed(0) + '万'
             return value
           },
         },
@@ -64,8 +88,8 @@ const chartOption = computed(() => {
     series: [
       { name: '流动资产', type: 'bar', stack: 'assets', data: props.metrics.map(m => m.totalCurrentAssets), yAxisIndex: 0, itemStyle: { color: '#409eff' } },
       { name: '非流动资产', type: 'bar', stack: 'assets', data: props.metrics.map(m => m.totalNoncurrentAssets), yAxisIndex: 0, itemStyle: { color: '#67c23a' } },
-      { name: '流动负债', type: 'bar', stack: 'liabilities', data: props.metrics.map(m => m.totalLiabilities), yAxisIndex: 0, itemStyle: { color: '#f56c6c' } },
-      { name: '非流动负债', type: 'bar', stack: 'liabilities', data: props.metrics.map(m => m.totalLiabilities), yAxisIndex: 0, itemStyle: { color: '#e6a23c' } },
+      { name: '流动负债', type: 'bar', stack: 'liabilities', data: props.metrics.map(m => m.totalCurrentLiabilities), yAxisIndex: 0, itemStyle: { color: '#f56c6c' } },
+      { name: '非流动负债', type: 'bar', stack: 'liabilities', data: props.metrics.map(m => m.totalNoncurrentLiabilities), yAxisIndex: 0, itemStyle: { color: '#e6a23c' } },
       { name: '资产负债率', type: 'line', data: props.metrics.map(m => m.debtRatio), yAxisIndex: 1, smooth: true, itemStyle: { color: '#ff9500' } },
     ],
   }

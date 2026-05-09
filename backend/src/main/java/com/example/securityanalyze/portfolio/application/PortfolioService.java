@@ -1,7 +1,7 @@
 package com.example.securityanalyze.portfolio.application;
 
-import com.example.securityanalyze.portfolio.api.PortfolioAccessDeniedException;
-import com.example.securityanalyze.portfolio.api.PortfolioNotFoundException;
+import com.example.securityanalyze.portfolio.domain.PortfolioAccessDeniedException;
+import com.example.securityanalyze.portfolio.domain.PortfolioNotFoundException;
 import com.example.securityanalyze.portfolio.domain.Portfolio;
 import com.example.securityanalyze.portfolio.domain.PortfolioRepository;
 import com.example.securityanalyze.portfolio.domain.PortfolioType;

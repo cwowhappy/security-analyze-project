@@ -9,6 +9,7 @@ import {
   TrendCharts,
   Wallet,
   UserFilled,
+  Collection,
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -36,6 +37,10 @@ function goToPortfolios() {
 
 function goToAdminUsers() {
   router.push('/admin/users')
+}
+
+function goToResearch() {
+  router.push('/research/fundamental')
 }
 </script>
 
@@ -69,6 +74,13 @@ function goToAdminUsers() {
             <OfficeBuilding class="icon" />
             <div class="title">公司信息</div>
             <div class="desc">查询上市公司基本信息、行业分类、上市资料</div>
+          </div>
+        </ElCard>
+        <ElCard class="entry-card" shadow="hover" @click="goToResearch">
+          <div class="card-content">
+            <Collection class="icon" />
+            <div class="title">投研分析</div>
+            <div class="desc">基本面量化分析、财务指标筛选与研究报告</div>
           </div>
         </ElCard>
       </div>

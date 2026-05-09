@@ -27,6 +27,29 @@ const chartOption = computed(() => {
       backgroundColor: 'rgba(15,21,37,0.9)',
       borderColor: 'rgba(255,255,255,0.1)',
       textStyle: { color: '#e5e7eb' },
+      formatter: (params: any[]) => {
+        let html = `<div style="font-weight:600;margin-bottom:4px">${params[0].axisValue}</div>`
+        params.forEach((p: any) => {
+          const val = p.value
+          let display: string
+          if (val == null) {
+            display = '<span style="color:#999">数据缺失</span>'
+          } else if (p.seriesName === '毛利率' || p.seriesName === '净利率' || p.seriesName === 'ROE') {
+            display = val.toFixed(2) + '%'
+          } else {
+            const abs = Math.abs(val)
+            if (abs >= 1e8) display = (val / 1e8).toFixed(2) + ' 亿'
+            else if (abs >= 1e4) display = (val / 1e4).toFixed(2) + ' 万'
+            else display = val.toLocaleString()
+          }
+          html += `<div style="display:flex;align-items:center;gap:6px;margin:2px 0">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color}"></span>
+            <span>${p.seriesName}:</span>
+            <span style="margin-left:auto;font-weight:500">${display}</span>
+          </div>`
+        })
+        return html
+      },
     },
     legend: { data: ['营业总收入', '归母净利润', '营业成本', '毛利率', '净利率', 'ROE'], bottom: 0, textStyle: { color: '#9ca3af' } },
     grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
@@ -44,8 +67,9 @@ const chartOption = computed(() => {
         axisLabel: {
           color: '#9ca3af',
           formatter: (value: number) => {
-            if (value >= 1e8) return (value / 1e8).toFixed(0) + '亿'
-            if (value >= 1e4) return (value / 1e4).toFixed(0) + '万'
+            const abs = Math.abs(value)
+            if (abs >= 1e8) return (value / 1e8).toFixed(0) + '亿'
+            if (abs >= 1e4) return (value / 1e4).toFixed(0) + '万'
             return value
           },
         },

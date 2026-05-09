@@ -8,6 +8,7 @@ import com.example.securityanalyze.research.domain.FundamentalMetrics;
 import com.example.securityanalyze.research.domain.FundamentalMetricsRepository;
 import com.example.securityanalyze.research.domain.PeerMetric;
 import com.example.securityanalyze.research.domain.ScreenCompanyItem;
+import com.example.securityanalyze.research.domain.StockFundamentalMetricsRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,6 +28,9 @@ class FundamentalAnalysisServiceTest {
 
     @Mock
     private FundamentalMetricsRepository repository;
+
+    @Mock
+    private StockFundamentalMetricsRepository stockFundamentalMetricsRepository;
 
     @InjectMocks
     private FundamentalAnalysisService service;
