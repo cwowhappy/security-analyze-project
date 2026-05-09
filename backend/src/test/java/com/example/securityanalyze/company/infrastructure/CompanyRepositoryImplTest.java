@@ -154,4 +154,27 @@ class CompanyRepositoryImplTest extends RepositoryTestBase {
         assertEquals(1, withSpaces.size(), "关键字前后空格应被 trim");
         assertEquals(" 前后空格公司 ", withSpaces.get(0).getCompanyName());
     }
+
+    @Test
+    void shouldReturnEmptyListWhenIdsNull() {
+        List<Company> results = companyRepository.findAllById(null);
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    void shouldReturnAllWhenKeywordBlank() {
+        TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110015", "空白关键词公司", "空白"));
+        TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110016", "空白关键词公司B", "空白B"));
+
+        List<Company> results = companyRepository.findByKeyword("", 0, 10);
+        assertTrue(results.size() >= 2);
+    }
+
+    @Test
+    void shouldCountAllWhenKeywordBlank() {
+        TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110017", "计数空白公司", "计数空白"));
+
+        long count = companyRepository.countByKeyword("   ");
+        assertTrue(count >= 1L);
+    }
 }

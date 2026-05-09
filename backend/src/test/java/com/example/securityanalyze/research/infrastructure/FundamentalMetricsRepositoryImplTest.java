@@ -200,4 +200,120 @@ class FundamentalMetricsRepositoryImplTest extends RepositoryTestBase {
         assertEquals(0, new BigDecimal("10").compareTo(peer.getRoe().setScale(0, BigDecimal.ROUND_HALF_UP)));
         assertNotNull(peer.getDebtRatio()); // 20000000 / 80000000 * 100 = 25
     }
+
+    @Test
+    void shouldScreenCompaniesByIndustry() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110014", "行业筛选", "行业"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600014", "行业筛选"));
+        TestDataFactory.insertFinancialReport(jdbcTemplate, TestDataFactory.report("600014", LocalDate.of(2023, 12, 31)));
+
+        List<ScreenCompanyItem> results = repository.screenCompanies(null, "信息技术", null, 0, 20);
+
+        assertTrue(results.stream().anyMatch(r -> "600014".equals(r.getStockCode())));
+    }
+
+    @Test
+    void shouldScreenCompaniesWithAllFilters() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110015", "全筛选", "全筛"));
+        CompanySecurity sec = TestDataFactory.security(companyId, "600015", "全筛选");
+        sec.setMarket("SZ");
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, sec);
+        TestDataFactory.insertFinancialReport(jdbcTemplate, TestDataFactory.report("600015", LocalDate.of(2023, 12, 31)));
+
+        List<ScreenCompanyItem> results = repository.screenCompanies("600015", "信息技术", "SZ", 0, 20);
+
+        assertEquals(1, results.size());
+        assertEquals("600015", results.get(0).getStockCode());
+    }
+
+    @Test
+    void shouldCountScreenCompaniesWithFilters() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110016", "计数筛选", "计数"));
+        CompanySecurity sec = TestDataFactory.security(companyId, "600016", "计数筛选");
+        sec.setMarket("BJ");
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, sec);
+
+        long count = repository.countScreenCompanies(null, "信息技术", "BJ");
+
+        assertTrue(count >= 1);
+    }
+
+    @Test
+    void shouldReturnEmptyPeersWhenTargetCompanyHasNoIndustry() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110017", "无行业", "无业"));
+        Company company = TestDataFactory.company("91110017", "无行业", "无业");
+        company.setIndustry(null);
+        // 重新插入以更新 industry 为 null
+        String updateSql = "UPDATE company SET industry = NULL WHERE id = :id";
+        org.springframework.jdbc.core.namedparam.MapSqlParameterSource params =
+                new org.springframework.jdbc.core.namedparam.MapSqlParameterSource();
+        params.addValue("id", companyId);
+        jdbcTemplate.update(updateSql, params);
+
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600017", "无行业"));
+        TestDataFactory.insertFinancialReport(jdbcTemplate, TestDataFactory.report("600017", LocalDate.of(2023, 12, 31)));
+
+        List<PeerMetric> peers = repository.findIndustryPeers("600017");
+
+        // industry 为 null 时，对比结果应为空（因为 WHERE c.industry = tc.industry 中 tc.industry 为 null）
+        assertTrue(peers.isEmpty());
+    }
+
+    @Test
+    void shouldScreenCompaniesWithBlankKeyword() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110018", "空白关键词", "空白"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600018", "空白证券"));
+        TestDataFactory.insertFinancialReport(jdbcTemplate, TestDataFactory.report("600018", LocalDate.of(2023, 12, 31)));
+
+        // blank keyword 应等同于 null，返回所有结果
+        List<ScreenCompanyItem> results = repository.screenCompanies("", null, null, 0, 20);
+        assertTrue(results.stream().anyMatch(r -> "600018".equals(r.getStockCode())));
+    }
+
+    @Test
+    void shouldScreenCompaniesWithBlankIndustry() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110019", "空白行业", "空白"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600019", "空白行业证券"));
+        TestDataFactory.insertFinancialReport(jdbcTemplate, TestDataFactory.report("600019", LocalDate.of(2023, 12, 31)));
+
+        List<ScreenCompanyItem> results = repository.screenCompanies(null, "   ", null, 0, 20);
+        assertTrue(results.stream().anyMatch(r -> "600019".equals(r.getStockCode())));
+    }
+
+    @Test
+    void shouldScreenCompaniesWithBlankMarket() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110020", "空白市场", "空白"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600020", "空白市场证券"));
+        TestDataFactory.insertFinancialReport(jdbcTemplate, TestDataFactory.report("600020", LocalDate.of(2023, 12, 31)));
+
+        List<ScreenCompanyItem> results = repository.screenCompanies(null, null, "", 0, 20);
+        assertTrue(results.stream().anyMatch(r -> "600020".equals(r.getStockCode())));
+    }
+
+    @Test
+    void shouldCountScreenCompaniesWithBlankKeyword() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110021", "计数空白关键词", "计数空白"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600021", "计数空白证券"));
+
+        long count = repository.countScreenCompanies("", null, null);
+        assertTrue(count >= 1);
+    }
+
+    @Test
+    void shouldCountScreenCompaniesWithBlankIndustry() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110022", "计数空白行业", "计数空白行业"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600022", "计数空白行业证券"));
+
+        long count = repository.countScreenCompanies(null, "   ", null);
+        assertTrue(count >= 1);
+    }
+
+    @Test
+    void shouldCountScreenCompaniesWithBlankMarket() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110023", "计数空白市场", "计数空白市场"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600023", "计数空白市场证券"));
+
+        long count = repository.countScreenCompanies(null, null, "");
+        assertTrue(count >= 1);
+    }
 }

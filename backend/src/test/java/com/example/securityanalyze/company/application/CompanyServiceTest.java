@@ -162,6 +162,68 @@ class CompanyServiceTest {
         assertEquals(50, results.size());
     }
 
+    @Test
+    void shouldListCompaniesWhenCompanyInfoMissing() {
+        CompanySecurity sec = createSecurity(999L, "600999", "孤儿证券", "SH");
+        when(companySecurityRepository.findByKeyword(null, 0, 20))
+                .thenReturn(List.of(sec));
+        when(companySecurityRepository.countByKeyword(null)).thenReturn(1L);
+        when(companyRepository.findAllById(List.of(999L))).thenReturn(List.of());
+
+        CompanyListResponse response = companyService.listCompanies(null, 0, 20);
+
+        assertEquals(1, response.getItems().size());
+        assertNull(response.getItems().get(0).getIndustry());
+        assertNull(response.getItems().get(0).getRegion());
+    }
+
+    @Test
+    void shouldGetCompanyDetailWithIndustries() {
+        CompanySecurity primary = createSecurity(1L, "600519", "贵州茅台", "SH");
+        Company company = createCompany(1L, "白酒", "贵州");
+
+        when(companySecurityRepository.findByStockCode("600519")).thenReturn(Optional.of(primary));
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(companySecurityRepository.findByCompanyId(1L)).thenReturn(List.of(primary));
+
+        // 模拟多标准行业映射
+        com.example.securityanalyze.industry.domain.CompanyIndustryMapping mapping1 =
+                new com.example.securityanalyze.industry.domain.CompanyIndustryMapping();
+        mapping1.setStandardCode("SW");
+        mapping1.setLevel1Code("C15");
+        mapping1.setLevel2Code("C1511");
+        mapping1.setPrimary(true);
+
+        com.example.securityanalyze.industry.domain.CompanyIndustryMapping mapping2 =
+                new com.example.securityanalyze.industry.domain.CompanyIndustryMapping();
+        mapping2.setStandardCode("EM");
+        mapping2.setLevel1Code("E01");
+        mapping2.setPrimary(false);
+
+        when(companyIndustryMappingRepository.findByCompanyId(1L))
+                .thenReturn(List.of(mapping1, mapping2));
+
+        // 模拟行业分类查询
+        com.example.securityanalyze.industry.domain.IndustryCategory cat1 =
+                new com.example.securityanalyze.industry.domain.IndustryCategory();
+        cat1.setCode("C15");
+        cat1.setName("食品饮料");
+
+        com.example.securityanalyze.industry.domain.IndustryCategory cat2 =
+                new com.example.securityanalyze.industry.domain.IndustryCategory();
+        cat2.setCode("C1511");
+        cat2.setName("白酒");
+
+        when(industryCategoryRepository.findByCode("SW", "C15")).thenReturn(Optional.of(cat1));
+        when(industryCategoryRepository.findByCode("SW", "C1511")).thenReturn(Optional.of(cat2));
+
+        Optional<CompanyDetailResponse> detail = companyService.getCompanyDetail("600519");
+
+        assertTrue(detail.isPresent());
+        assertEquals(2, detail.get().getIndustries().size());
+        assertTrue(detail.get().getIndustries().get(0).getPrimary());
+    }
+
     private CompanySecurity createSecurity(Long companyId, String stockCode, String stockName, String market) {
         CompanySecurity s = new CompanySecurity();
         s.setCompanyId(companyId);
