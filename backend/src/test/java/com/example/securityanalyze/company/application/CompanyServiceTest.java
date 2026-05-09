@@ -113,6 +113,55 @@ class CompanyServiceTest {
         assertTrue(detail.isEmpty());
     }
 
+    @Test
+    void shouldBatchQueryCompanies() {
+        CompanySecurity sec1 = createSecurity(1L, "600519", "贵州茅台", "SH");
+        CompanySecurity sec2 = createSecurity(2L, "000001", "平安银行", "SZ");
+        Company comp1 = createCompany(1L, "白酒", "贵州");
+        Company comp2 = createCompany(2L, "银行", "广东");
+
+        when(companySecurityRepository.findByStockCode("600519")).thenReturn(Optional.of(sec1));
+        when(companySecurityRepository.findByStockCode("000001")).thenReturn(Optional.of(sec2));
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(comp1));
+        when(companyRepository.findById(2L)).thenReturn(Optional.of(comp2));
+
+        var results = companyService.batchQuery(List.of("600519", "000001"));
+
+        assertEquals(2, results.size());
+        assertEquals("600519", results.get(0).getStockCode());
+        assertEquals("000001", results.get(1).getStockCode());
+    }
+
+    @Test
+    void shouldReturnEmptyForBatchQueryWithInvalidCodes() {
+        when(companySecurityRepository.findByStockCode("999999")).thenReturn(Optional.empty());
+
+        var results = companyService.batchQuery(List.of("999999"));
+
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    void shouldLimitBatchQueryTo50() {
+        var codes = new java.util.ArrayList<String>();
+        for (int i = 0; i < 60; i++) {
+            codes.add(String.format("%06d", i));
+        }
+
+        // 只 mock 前50个查询
+        for (int i = 0; i < 50; i++) {
+            CompanySecurity sec = createSecurity((long) i, String.format("%06d", i), "公司" + i, "SH");
+            when(companySecurityRepository.findByStockCode(String.format("%06d", i)))
+                    .thenReturn(Optional.of(sec));
+            when(companyRepository.findById((long) i))
+                    .thenReturn(Optional.of(createCompany((long) i, "行业" + i, "地区" + i)));
+        }
+
+        var results = companyService.batchQuery(codes);
+
+        assertEquals(50, results.size());
+    }
+
     private CompanySecurity createSecurity(Long companyId, String stockCode, String stockName, String market) {
         CompanySecurity s = new CompanySecurity();
         s.setCompanyId(companyId);

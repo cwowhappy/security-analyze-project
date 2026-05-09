@@ -71,8 +71,25 @@ public final class TestDataFactory {
         r.setNoticeDate(reportDate.plusMonths(1));
         r.setCurrency("CNY");
         r.setTotalAssets(new BigDecimal("100000000"));
+        r.setTotalLiabilities(new BigDecimal("40000000"));
+        r.setTotalEquity(new BigDecimal("60000000"));
+        r.setTotalCurrentAssets(new BigDecimal("60000000"));
+        r.setTotalNoncurrentAssets(new BigDecimal("40000000"));
         r.setTotalRevenue(new BigDecimal("50000000"));
-        r.setNetProfit(new BigDecimal("5000000"));
+        r.setOperateIncome(new BigDecimal("48000000"));
+        r.setOperateCost(new BigDecimal("24000000"));
+        r.setSaleExpense(new BigDecimal("3000000"));
+        r.setManageExpense(new BigDecimal("4000000"));
+        r.setResearchExpense(new BigDecimal("2000000"));
+        r.setFinanceExpense(new BigDecimal("1000000"));
+        r.setOperateProfit(new BigDecimal("8000000"));
+        r.setTotalProfit(new BigDecimal("8500000"));
+        r.setNetProfit(new BigDecimal("6000000"));
+        r.setParentNetProfit(new BigDecimal("5000000"));
+        r.setOperatingCashFlow(new BigDecimal("4500000"));
+        r.setInvestingCashFlow(new BigDecimal("-1500000"));
+        r.setFinancingCashFlow(new BigDecimal("-2000000"));
+        r.setEndCce(new BigDecimal("12000000"));
         r.setBalanceSheet(Map.of("key", "value"));
         return r;
     }
