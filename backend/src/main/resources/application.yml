@@ -5,7 +5,7 @@ spring:
   application:
     name: security-analyze-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/db-security-analyze
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:db-security-analyze}
     username: ${DB_USER:user-security-analyze}
     password: ${DB_PASSWORD:SecurityAnalyze@2026}
     driver-class-name: org.postgresql.Driver

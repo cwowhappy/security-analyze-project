@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:tc:postgresql:18:///testdb
-    username: test
-    password: test
+    url: jdbc:tc:postgresql:${TESTCONTAINERS_POSTGRES_VERSION:16}///${TEST_DB_NAME:testdb}
+    username: ${TEST_DB_USER:test}
+    password: ${TEST_DB_PASSWORD:test}
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
   flyway:
     enabled: true

@@ -14,17 +14,23 @@
 ## 项目结构
 
 ```
-src/stock_collector/
+src/data_collector/
+├── config.py               # pydantic-settings 全局配置
+├── api.py                  # FastAPI HTTP API
+├── scheduler.py            # APScheduler 调度引擎
+├── task_executor.py        # 任务执行器（按 task_type 路由）
 ├── core/                   # 核心业务层
-│   ├── domain/             # 领域模型
-│   ├── ports/              # 抽象接口（Repository、DataSource）
-│   └── use_cases/          # 业务用例
+│   ├── domain/             # 领域模型（Stock、Company、CollectionTask）
+│   └── ports/              # 抽象接口（Repository、DataSource）
 ├── adapters/               # 适配器实现
-├── infrastructure/         # 基础设施层
-│   ├── config/             # 配置管理
-│   └── logging/            # 日志配置
-└── interfaces/             # 接口层
-    └── cli/                # 命令行入口
+│   ├── akshare_source.py   # akshare 数据源（主）
+│   ├── tushare_source.py   # tushare 数据源（备）
+│   ├── db_stock_repository.py
+│   ├── db_company_repository.py
+│   └── db_collection_task_repository.py
+└── infrastructure/         # 基础设施层
+    ├── db.py               # PostgreSQL 连接池
+    └── logging/            # 日志配置
 ```
 
 ## 开发规范
@@ -69,89 +75,69 @@ poetry run ruff format .         # 代码格式化
 - 开发环境：彩色文本输出
 - 生产环境：`LOG_FORMAT=json` 启用 JSON 结构化输出
 
-### 3. 多数据源采集规范（核心设计）
+### 3. 采集器架构（Phase 2）
 
-本模块的核心设计要求：**同一份数据支持多数据源采集，具备主动降级切换和主动切换能力**。
-
-#### 3.1 架构设计
+#### 3.1 总体架构
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              MultiSourceCollector                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  Eastmoney   │  │    Sina      │  │   Tushare    │  │
-│  │  priority=1  │  │  priority=2  │  │  priority=3  │  │
-│  │   (主源)     │  │   (备用1)    │  │   (备用2)    │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
+│                    采集器进程 (Python)                    │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐  │
+│  │  HTTP API   │  │ APScheduler │  │   Event Listener │  │
+│  │  (FastAPI)  │  │ Background  │  │   (状态记录)      │  │
+│  │             │  │ Scheduler   │  │                  │  │
+│  └──────┬──────┘  └──────┬──────┘  └─────────────────┘  │
+│         │                │                                │
+│         └────────────────┼────────────────┐               │
+│                          ▼                ▼               │
+│              ┌─────────────────┐  ┌──────────────┐       │
+│              │  Task Executor  │  │ PostgreSQL   │       │
+│              │  (任务路由)      │  │ (状态记录)    │       │
+│              └────────┬────────┘  └──────────────┘       │
+│                       │                                   │
+│         ┌─────────────┼─────────────┐                    │
+│         ▼             ▼             ▼                    │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐           │
+│  │ akshare    │ │ tushare    │ │ PostgreSQL │           │
+│  │ 适配器      │ │ 适配器      │ │ 入库适配器  │           │
+│  └────────────┘ └────────────┘ └────────────┘           │
 └─────────────────────────────────────────────────────────┘
 ```
 
-#### 3.2 数据源接口（DataSource）
+#### 3.2 数据源适配器
 
-所有数据源必须实现 `DataSource` 抽象基类：
+| 数据源 | 优先级 | 职责 |
+|--------|--------|------|
+| `akshare` | 1（主） | `fetch_stock_list()` 全量股票，`fetch_company_info()` 公司详情 |
+| `tushare` | 2（备） | 同上，需配置 `TUSHARE_TOKEN`，受积分限制 |
 
-| 方法/属性 | 说明 |
+所有数据源实现 `DataSource` 抽象基类，支持健康检查与自动降级。
+
+#### 3.3 任务执行器（TaskExecutor）
+
+按 `task_type` 路由到对应采集逻辑：
+
+| task_type | 说明 |
 |-----------|------|
-| `name` | 数据源唯一标识（如 `eastmoney`、`sina`）|
-| `priority` | 优先级，数值越小优先级越高 |
-| `fetch(symbol)` | 执行数据采集 |
-| `check_health()` | 返回健康状态（HEALTHY/DEGRADED/UNAVAILABLE）|
-| `is_available()` | 判断是否可用 |
+| `stock_full` | 全量采集股票列表，调用 `fetch_stock_list()` |
+| `company_full` | 遍历已有股票，逐条调用 `fetch_company_info()` |
+| `stock_single` | 单条股票更新（`task_params.stock_code`）|
+| `company_single` | 单条公司更新（`task_params.stock_code`）|
 
-#### 3.3 降级切换策略
+#### 3.4 APScheduler 调度
 
-**自动降级（Failover）：**
-- 按 `priority` 排序依次尝试各数据源
-- 主源失败时自动降级到备用源
-- 每次降级记录到 `fallback_history`
-- 采集成功后在日志中标注降级路径
+- 启动时从 `tb_collection_task_schedule` 加载启用的 Cron 规则
+- 支持即时任务：`POST /tasks` → `add_job(DateTrigger)`
+- Event Listener 自动记录任务状态到 `tb_collection_task`
 
-```python
-collector = MultiSourceCollector([eastmoney, sina, tushare])
-data = collector.collect("000001")  # 自动在主源和备用源间切换
-```
+#### 3.5 HTTP API（FastAPI）
 
-**主动切换（Manual Switch）：**
-- 支持运维人员手动切换数据源
-- 适用于数据源质量评估、A/B 测试等场景
-
-```python
-collector.switch_to("sina")   # 主动切换到新浪
-collector.reset()              # 重置回最高优先级主源
-```
-
-#### 3.4 健康检查与状态监控
-
-- 每个数据源独立维护健康状态
-- 采集前检查 `is_available()`，不可用直接跳过
-- 提供 `health_report()` 输出完整健康报告
-
-```python
-report = collector.health_report()
-# {
-#   "current_source": "sina",
-#   "fallback_history": ["sina"],
-#   "sources": [
-#     {"name": "eastmoney", "priority": 1, "health": {...}},
-#     {"name": "sina", "priority": 2, "health": {...}}
-#   ]
-# }
-```
-
-#### 3.5 异常处理规范
-
-| 异常类型 | 触发场景 | 处理方式 |
-|----------|----------|----------|
-| `SourceRateLimitError` | 触发限流 | 降级到下一数据源，记录 WARNING 日志 |
-| `SourceUnavailableError` | 数据源不可用 | 跳过该源，尝试其他源 |
-| `DataSourceError` | 其他采集错误 | 记录错误详情，降级或终止 |
-
-#### 3.6 实现要求
-
-- 所有数据源实现必须是无状态的（除配置外）
-- 数据采集失败不得阻塞整体流程
-- 降级切换必须记录完整上下文（from_source, to_source, symbol）
-- 支持通过配置动态调整数据源优先级
+| 方法 | 路径 | 功能 |
+|------|------|------|
+| POST | `/tasks` | 创建即时采集任务 |
+| GET | `/tasks` | 查询任务历史 |
+| GET | `/tasks/{id}` | 查询单条任务详情 |
+| GET | `/health` | 健康检查（数据源 + DB）|
 
 ### 4. 数据采集通用规范
 
@@ -175,8 +161,16 @@ report = collector.health_report()
 # 安装依赖
 poetry install
 
-# 运行采集模块
-poetry run python -m stock_collector
+# 启动 API 服务
+poetry run python -m data_collector api
+
+# CLI 模式：股票数据采集
+poetry run python -m data_collector stock --full
+poetry run python -m data_collector stock --code 000001
+
+# CLI 模式：公司数据采集
+poetry run python -m data_collector company --full
+poetry run python -m data_collector company --code 000001 --source akshare
 
 # 运行测试
 poetry run pytest

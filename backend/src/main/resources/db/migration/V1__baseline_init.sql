@@ -24,11 +24,11 @@ CREATE TABLE IF NOT EXISTS tb_stock_basic (
 
 COMMENT ON TABLE tb_stock_basic IS '股票基础信息表：存储A股等市场股票静态属性';
 
-CREATE INDEX idx_tb_stock_basic_stock_code ON tb_stock_basic(stock_code);
-CREATE INDEX idx_tb_stock_basic_ts_code     ON tb_stock_basic(ts_code);
-CREATE INDEX idx_tb_stock_basic_industry    ON tb_stock_basic(industry);
-CREATE INDEX idx_tb_stock_basic_market      ON tb_stock_basic(market);
-CREATE INDEX idx_tb_stock_basic_exchange    ON tb_stock_basic(exchange);
+CREATE INDEX IF NOT EXISTS idx_tb_stock_basic_stock_code ON tb_stock_basic(stock_code);
+CREATE INDEX IF NOT EXISTS idx_tb_stock_basic_ts_code     ON tb_stock_basic(ts_code);
+CREATE INDEX IF NOT EXISTS idx_tb_stock_basic_industry    ON tb_stock_basic(industry);
+CREATE INDEX IF NOT EXISTS idx_tb_stock_basic_market      ON tb_stock_basic(market);
+CREATE INDEX IF NOT EXISTS idx_tb_stock_basic_exchange    ON tb_stock_basic(exchange);
 
 -- 2. 公司基础信息表
 CREATE TABLE IF NOT EXISTS tb_company_basic (
@@ -62,9 +62,9 @@ CREATE TABLE IF NOT EXISTS tb_company_basic (
 
 COMMENT ON TABLE tb_company_basic IS '公司基础信息表：存储上市公司工商信息与主营业务';
 
-CREATE INDEX idx_tb_company_basic_usc_code ON tb_company_basic(unified_social_credit_code);
-CREATE INDEX idx_tb_company_basic_name     ON tb_company_basic(name);
-CREATE INDEX idx_tb_company_basic_industry ON tb_company_basic(industry);
+CREATE INDEX IF NOT EXISTS idx_tb_company_basic_usc_code ON tb_company_basic(unified_social_credit_code);
+CREATE INDEX IF NOT EXISTS idx_tb_company_basic_name     ON tb_company_basic(name);
+CREATE INDEX IF NOT EXISTS idx_tb_company_basic_industry ON tb_company_basic(industry);
 
 -- 3. 股票与公司关联关系表
 CREATE TABLE IF NOT EXISTS tb_relation_stock_company (
@@ -79,8 +79,8 @@ CREATE TABLE IF NOT EXISTS tb_relation_stock_company (
 
 COMMENT ON TABLE tb_relation_stock_company IS '股票与公司关联关系表：一只股票对应一家公司';
 
-CREATE INDEX idx_tb_relation_stock_company_code ON tb_relation_stock_company(stock_code);
-CREATE INDEX idx_tb_relation_stock_company_usc  ON tb_relation_stock_company(company_usc_code);
+CREATE INDEX IF NOT EXISTS idx_tb_relation_stock_company_code ON tb_relation_stock_company(stock_code);
+CREATE INDEX IF NOT EXISTS idx_tb_relation_stock_company_usc  ON tb_relation_stock_company(company_usc_code);
 
 -- 4. 采集任务执行表
 CREATE TABLE IF NOT EXISTS tb_collection_task (
@@ -101,9 +101,9 @@ CREATE TABLE IF NOT EXISTS tb_collection_task (
 
 COMMENT ON TABLE tb_collection_task IS '采集任务执行表：记录每次数据采集任务的执行状态与结果';
 
-CREATE INDEX idx_tb_collection_task_status       ON tb_collection_task(status);
-CREATE INDEX idx_tb_collection_task_scheduled_at ON tb_collection_task(scheduled_at) WHERE scheduled_at IS NOT NULL;
-CREATE INDEX idx_tb_collection_task_type         ON tb_collection_task(task_type);
+CREATE INDEX IF NOT EXISTS idx_tb_collection_task_status       ON tb_collection_task(status);
+CREATE INDEX IF NOT EXISTS idx_tb_collection_task_scheduled_at ON tb_collection_task(scheduled_at) WHERE scheduled_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_tb_collection_task_type         ON tb_collection_task(task_type);
 
 -- 5. 采集定时规则表
 CREATE TABLE IF NOT EXISTS tb_collection_task_schedule (
@@ -120,4 +120,4 @@ CREATE TABLE IF NOT EXISTS tb_collection_task_schedule (
 
 COMMENT ON TABLE tb_collection_task_schedule IS '采集定时规则表：定义周期性自动采集任务';
 
-CREATE INDEX idx_tb_collection_task_schedule_enabled ON tb_collection_task_schedule(is_enabled) WHERE is_enabled = TRUE;
+CREATE INDEX IF NOT EXISTS idx_tb_collection_task_schedule_enabled ON tb_collection_task_schedule(is_enabled) WHERE is_enabled = TRUE;

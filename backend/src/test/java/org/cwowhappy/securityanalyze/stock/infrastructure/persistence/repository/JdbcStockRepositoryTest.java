@@ -31,11 +31,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class JdbcStockRepositoryTest {
 
+    private static final String POSTGRES_IMAGE = "postgres:" + System.getenv().getOrDefault("TESTCONTAINERS_POSTGRES_VERSION", "16");
+    private static final String TEST_DB_NAME = System.getenv().getOrDefault("TEST_DB_NAME", "db-security-analyze");
+    private static final String TEST_DB_USER = System.getenv().getOrDefault("TEST_DB_USER", "test");
+    private static final String TEST_DB_PASSWORD = System.getenv().getOrDefault("TEST_DB_PASSWORD", "test");
+
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
-            .withDatabaseName("db-security-analyze")
-            .withUsername("test")
-            .withPassword("test");
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(POSTGRES_IMAGE)
+            .withDatabaseName(TEST_DB_NAME)
+            .withUsername(TEST_DB_USER)
+            .withPassword(TEST_DB_PASSWORD);
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

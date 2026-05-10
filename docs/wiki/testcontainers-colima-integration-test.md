@@ -60,7 +60,72 @@ Attempted configurations were:
 
 ---
 
-## 三、推荐解决方案
+## 三、升级验证结果（2026-05-10）
+
+### 验证结论
+
+**升级 Testcontainers 到 1.21.3 + 显式升级 docker-java 到 3.7.0 成功解决了 API 版本不匹配问题。**
+
+docker-java 3.7.0 的 Release Notes 明确提到：`Set default docker API version to 1.44`。该版本在 Maven Central 上可用。
+
+### 实际生效的配置
+
+`backend/build.gradle.kts`：
+
+```kotlin
+// 覆盖 Spring Boot 3.5 BOM 中锁定的 testcontainers 1.21.0
+ext["testcontainers.version"] = "1.21.3"
+
+dependencies {
+    // ... 其他依赖
+
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:postgresql")
+    // 显式升级 docker-java 到 3.7.0（默认 API 1.44）
+    testImplementation("com.github.docker-java:docker-java-core:3.7.0")
+    testImplementation("com.github.docker-java:docker-java-transport-zerodep:3.7.0")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform {
+        excludeTags("integration")
+    }
+    // 指向 Colima 的 Docker socket
+    environment("DOCKER_HOST", "unix:///Users/xxx/.colima/default/docker.sock")
+    environment("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "/Users/xxx/.colima/default/docker.sock")
+}
+```
+
+`backend/src/test/resources/docker-java.properties`（保险配置）：
+
+```properties
+api.version=1.44
+```
+
+### 验证日志
+
+升级后 Testcontainers 成功连接 Colima：
+
+```
+Testcontainers version: 1.21.3
+Found Docker environment ... Resolved dockerHost=unix:///Users/xxx/.colima/default/docker.sock
+Connected to docker:
+  Server Version: 29.2.1
+  API Version: 1.53
+  Operating System: Ubuntu 24.04.4 LTS
+```
+
+**之前的 `client version 1.32 is too old` 错误彻底消失。**
+
+### 剩余问题
+
+API 版本解决后，遇到的新问题是 **Colima 内部无法连接 Docker Hub 拉取镜像**（`dial tcp ... i/o timeout`）。这是 Colima 的网络/代理配置问题，与 Testcontainers 无关。
+
+因此 integration 测试仍然默认排除，待 Colima 网络问题解决后（或使用 Docker Desktop 时）可启用。
+
+---
+
+## 四、推荐解决方案
 
 ### 方案一：使用 Docker Desktop（推荐，最简单）
 
@@ -184,7 +249,7 @@ Attempted configurations were:
 
 ---
 
-## 四、验证清单
+## 五、验证清单
 
 在应用任何方案后，使用以下命令验证：
 
@@ -208,7 +273,7 @@ cat build/reports/jacoco/test/index.html | grep "Total"
 
 ---
 
-## 五、当前代码状态
+## 六、当前代码状态
 
 已创建的 integration 测试文件（待 Docker 环境就绪后自动启用）：
 

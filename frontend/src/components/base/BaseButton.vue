@@ -31,25 +31,57 @@ const handleClick = (e: MouseEvent) => {
 
 <style scoped>
 .base-button {
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: 1px solid #dcdfe6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  border: 1px solid transparent;
 }
+
 .base-button--primary {
-  background-color: #409eff;
+  background: var(--primary);
   color: #fff;
-  border-color: #409eff;
+  border-color: var(--primary);
 }
+
+.base-button--primary:hover {
+  background: var(--primary-dim);
+  border-color: var(--primary-dim);
+}
+
+.base-button--default {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+}
+
+.base-button--default:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .base-button--danger {
-  background-color: #f56c6c;
+  background: var(--red);
   color: #fff;
-  border-color: #f56c6c;
+  border-color: var(--red);
 }
+
+.base-button--danger:hover {
+  background: #c0392b;
+  border-color: #c0392b;
+}
+
 .base-button:disabled {
-  opacity: 0.6;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 </style>
