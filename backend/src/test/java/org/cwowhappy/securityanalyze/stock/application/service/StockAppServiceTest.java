@@ -12,6 +12,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.cwowhappy.securityanalyze.shared.dto.PageQuery;
+import org.cwowhappy.securityanalyze.shared.dto.PageResult;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -40,6 +43,7 @@ class StockAppServiceTest {
                 .stockCode("000001")
                 .name("平安银行")
                 .market("SZ")
+                .industry("银行")
                 .build();
     }
 
@@ -103,5 +107,42 @@ class StockAppServiceTest {
         // Assert
         assertThat(id).isNotNull();
         verify(stockRepository, times(1)).save(any(Stock.class));
+    }
+
+    @Test
+    void shouldReturnPageResultWhenFindByPage() {
+        // Arrange
+        PageQuery query = new PageQuery();
+        query.setPage(1);
+        query.setSize(20);
+        PageResult<Stock> pageResult = PageResult.<Stock>builder()
+                .list(List.of(sampleStock))
+                .total(1L)
+                .page(1)
+                .size(20)
+                .build();
+        when(stockRepository.findByPage(query)).thenReturn(pageResult);
+
+        // Act
+        PageResult<StockDTO> result = stockAppService.findByPage(query);
+
+        // Assert
+        assertThat(result.getList()).hasSize(1);
+        assertThat(result.getTotal()).isEqualTo(1L);
+        verify(stockRepository, times(1)).findByPage(query);
+    }
+
+    @Test
+    void shouldReturnStocksWhenFindByIndustry() {
+        // Arrange
+        when(stockRepository.findByIndustry("银行")).thenReturn(List.of(sampleStock));
+
+        // Act
+        List<StockDTO> result = stockAppService.findByIndustry("银行");
+
+        // Assert
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getIndustry()).isEqualTo("银行");
+        verify(stockRepository, times(1)).findByIndustry("银行");
     }
 }
