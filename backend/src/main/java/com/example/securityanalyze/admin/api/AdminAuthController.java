@@ -1,6 +1,8 @@
 package com.example.securityanalyze.admin.api;
 
 import com.example.securityanalyze.admin.application.AdminAuthService;
+import com.example.securityanalyze.admin.application.AdminLoginCommand;
+import com.example.securityanalyze.admin.application.AdminRegisterCommand;
 import com.example.securityanalyze.auth.api.AuthResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +24,10 @@ public class AdminAuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AdminLoginRequest request) {
         log.info("管理员登录请求, username={}", request.getUsername());
-        AuthResponse response = adminAuthService.login(request);
+        AdminLoginCommand command = new AdminLoginCommand();
+        command.setUsername(request.getUsername());
+        command.setPassword(request.getPassword());
+        AuthResponse response = adminAuthService.login(command);
         log.info("管理员登录成功, username={}", request.getUsername());
         return ResponseEntity.ok(response);
     }
@@ -30,7 +35,11 @@ public class AdminAuthController {
     @PostMapping("/register")
     public ResponseEntity<Void> registerAdmin(@Valid @RequestBody AdminRegisterRequest request) {
         log.info("管理员注册请求, username={}", request.getUsername());
-        adminAuthService.registerAdmin(request);
+        AdminRegisterCommand command = new AdminRegisterCommand();
+        command.setUsername(request.getUsername());
+        command.setPassword(request.getPassword());
+        command.setRealName(request.getRealName());
+        adminAuthService.registerAdmin(command);
         log.info("管理员注册成功, username={}", request.getUsername());
         return ResponseEntity.ok().build();
     }

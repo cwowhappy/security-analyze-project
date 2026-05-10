@@ -4,6 +4,7 @@ import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 import './styles/global.css'
+import './styles/cyberpunk.css'
 import VueECharts from 'vue-echarts'
 
 import App from './App.vue'

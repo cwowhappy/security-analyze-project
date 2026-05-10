@@ -60,6 +60,8 @@ public class FinancialReport {
     private Map<String, Object> profitSheet;
     private Map<String, Object> cashFlowSheet;
 
+    private Boolean isDeleted;
+    private LocalDateTime deletedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

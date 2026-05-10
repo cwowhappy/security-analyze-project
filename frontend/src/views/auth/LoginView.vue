@@ -185,7 +185,7 @@ onMounted(() => {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #0a1628;
+  background: var(--bg-primary);
 }
 
 .bg-image {
@@ -207,9 +207,9 @@ onMounted(() => {
   padding: 60px 56px 40px;
   background: linear-gradient(
     135deg,
-    rgba(10, 22, 40, 0.85) 0%,
-    rgba(10, 22, 40, 0.4) 60%,
-    rgba(10, 22, 40, 0.7) 100%
+    rgba(13, 15, 20, 0.88) 0%,
+    rgba(13, 15, 20, 0.45) 60%,
+    rgba(13, 15, 20, 0.85) 100%
   );
 }
 
@@ -221,7 +221,7 @@ onMounted(() => {
 
 .brand-icon {
   color: var(--accent-primary);
-  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.4));
+  filter: drop-shadow(0 0 6px rgba(43, 106, 255, 0.25));
 }
 
 .left-brand-title {
@@ -252,7 +252,7 @@ onMounted(() => {
 .login-right {
   width: 480px;
   flex-shrink: 0;
-  background: linear-gradient(180deg, #0a1628 0%, #0d1d33 100%);
+  background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -271,8 +271,8 @@ onMounted(() => {
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(0, 212, 255, 0.2) 30%,
-    rgba(0, 212, 255, 0.2) 70%,
+    rgba(43, 106, 255, 0.15) 30%,
+    rgba(43, 106, 255, 0.15) 70%,
     transparent 100%
   );
 }
@@ -380,12 +380,12 @@ onMounted(() => {
 }
 
 :deep(.el-input__wrapper:hover) {
-  border-color: rgba(0, 212, 255, 0.4) !important;
+  border-color: rgba(43, 106, 255, 0.4) !important;
 }
 
 :deep(.el-input__wrapper.is-focus) {
-  border-color: #00d4ff !important;
-  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.15) !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 2px rgba(43, 106, 255, 0.12) !important;
 }
 
 :deep(.el-input__inner) {
@@ -406,29 +406,30 @@ onMounted(() => {
 }
 
 :deep(.el-button--primary) {
-  background: linear-gradient(135deg, #00a8e8 0%, #0077b6 100%);
-  border: none;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #1D4ED8 100%);
+  border: 1px solid var(--accent-primary);
   font-size: 15px;
   font-weight: 600;
   letter-spacing: 4px;
   height: 46px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  box-shadow: 0 0 0 transparent;
 }
 
 :deep(.el-button--primary:hover) {
-  background: linear-gradient(135deg, #00c3ff 0%, #0096c7 100%);
-  box-shadow: 0 4px 24px rgba(0, 168, 232, 0.35);
+  background: linear-gradient(135deg, #4a7fff 0%, #2563EB 100%);
+  box-shadow: var(--shadow-glow), 0 4px 24px rgba(43, 106, 255, 0.30);
   transform: translateY(-1px);
 }
 
 :deep(.el-link--primary) {
-  color: #00d4ff !important;
+  color: var(--accent-primary) !important;
   font-size: 13px;
 }
 
 :deep(.el-link--primary:hover) {
-  color: #66e5ff !important;
+  color: #7AA3FF !important;
 }
 
 :deep(.el-form-item__error) {

@@ -1,7 +1,7 @@
 package com.example.securityanalyze.industry.infrastructure;
 
-import com.example.securityanalyze.industry.api.TrendDataPoint;
 import com.example.securityanalyze.industry.domain.IndustryTrendGateway;
+import com.example.securityanalyze.industry.domain.IndustryTrendPoint;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -22,13 +22,13 @@ public class IndustryTrendAdapter implements IndustryTrendGateway {
     private final ObjectMapper objectMapper;
 
     @Override
-    public List<TrendDataPoint> fetchTrend(String industryName, String period) {
+    public List<IndustryTrendPoint> fetchTrend(String industryName, String period) {
         try {
             String json = executeScript(industryName, period);
             if (json.isBlank() || (!json.startsWith("[") && !json.startsWith("{"))) {
                 return List.of();
             }
-            return objectMapper.readValue(json, new TypeReference<List<TrendDataPoint>>() {});
+            return objectMapper.readValue(json, new TypeReference<List<IndustryTrendPoint>>() {});
         } catch (Exception e) {
             log.warn("行业趋势脚本执行失败, industry={}, period={}, error={}", industryName, period, e.getMessage());
             return List.of();

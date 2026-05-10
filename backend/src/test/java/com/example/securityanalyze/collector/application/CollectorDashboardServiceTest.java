@@ -1,10 +1,10 @@
 package com.example.securityanalyze.collector.application;
 
-import com.example.securityanalyze.collector.api.CollectorOverviewItem;
+import com.example.securityanalyze.collector.domain.CollectorOverview;
 import com.example.securityanalyze.collector.api.CollectorOverviewResponse;
-import com.example.securityanalyze.collector.api.CollectorTaskItem;
+import com.example.securityanalyze.collector.domain.CollectorTask;
 import com.example.securityanalyze.collector.api.CollectorTaskListResponse;
-import com.example.securityanalyze.collector.infrastructure.CollectorDashboardRepository;
+import com.example.securityanalyze.collector.domain.CollectorDashboardRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,7 +28,7 @@ class CollectorDashboardServiceTest {
 
     @Test
     void shouldGetOverview() {
-        CollectorOverviewItem item = new CollectorOverviewItem();
+        CollectorOverview item = new CollectorOverview();
         item.setDataType("company");
         item.setDataTypeLabel("公司基本信息");
         item.setTotalRows(5000);
@@ -43,7 +43,7 @@ class CollectorDashboardServiceTest {
 
     @Test
     void shouldListTasks() {
-        CollectorTaskItem item = new CollectorTaskItem();
+        CollectorTask item = new CollectorTask();
         item.setId(1L);
         item.setTaskName("公司信息采集");
         item.setStatus("SUCCESS");

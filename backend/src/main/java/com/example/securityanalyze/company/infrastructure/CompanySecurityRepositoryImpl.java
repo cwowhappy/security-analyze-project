@@ -25,8 +25,10 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
 
     private static final String SELECT_SQL = """
             SELECT id, company_id, stock_code, stock_name, market,
-                   security_type, listing_date, listing_status, created_at, updated_at
+                   security_type, listing_date, listing_status, created_at, updated_at,
+                   is_deleted, deleted_at
             FROM company_security
+            WHERE is_deleted = FALSE
             """;
 
     private static final RowMapper<CompanySecurity> ROW_MAPPER = new RowMapper<>() {
@@ -57,6 +59,13 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
                 security.setUpdatedAt(updatedAt.toLocalDateTime());
             }
 
+            security.setIsDeleted(rs.getBoolean("is_deleted"));
+
+            java.sql.Timestamp deletedAt = rs.getTimestamp("deleted_at");
+            if (deletedAt != null) {
+                security.setDeletedAt(deletedAt.toLocalDateTime());
+            }
+
             return security;
         }
     };
@@ -64,7 +73,7 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
     @Override
     public List<CompanySecurity> findByCompanyId(Long companyId) {
         log.debug("根据公司ID查询证券, companyId={}", companyId);
-        String sql = SELECT_SQL + " WHERE company_id = :companyId ORDER BY stock_code ASC";
+        String sql = SELECT_SQL + " AND company_id = :companyId ORDER BY stock_code ASC";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("companyId", companyId);
 
@@ -77,7 +86,7 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
         if (companyIds == null || companyIds.isEmpty()) {
             return List.of();
         }
-        String sql = SELECT_SQL + " WHERE company_id IN (:companyIds) ORDER BY stock_code ASC";
+        String sql = SELECT_SQL + " AND company_id IN (:companyIds) ORDER BY stock_code ASC";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("companyIds", companyIds);
 
@@ -87,7 +96,7 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
     @Override
     public Optional<CompanySecurity> findByStockCode(String stockCode) {
         log.debug("根据股票代码查询证券, stockCode={}", stockCode);
-        String sql = SELECT_SQL + " WHERE stock_code = :stockCode";
+        String sql = SELECT_SQL + " AND stock_code = :stockCode";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("stockCode", stockCode);
 
@@ -104,7 +113,7 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
         params.addValue("limit", limit);
 
         if (keyword != null && !keyword.isBlank()) {
-            sql += " WHERE stock_code = :keyword OR stock_name ILIKE :prefix";
+            sql += " AND (stock_code = :keyword OR stock_name ILIKE :prefix)";
             params.addValue("keyword", keyword.trim());
             params.addValue("prefix", keyword.trim() + "%");
         }
@@ -117,11 +126,11 @@ public class CompanySecurityRepositoryImpl implements CompanySecurityRepository 
     @Override
     public long countByKeyword(String keyword) {
         log.debug("统计证券数量, keyword={}", keyword);
-        String sql = "SELECT COUNT(*) FROM company_security";
+        String sql = "SELECT COUNT(*) FROM company_security WHERE is_deleted = FALSE";
         MapSqlParameterSource params = new MapSqlParameterSource();
 
         if (keyword != null && !keyword.isBlank()) {
-            sql += " WHERE stock_code = :keyword OR stock_name ILIKE :prefix";
+            sql += " AND (stock_code = :keyword OR stock_name ILIKE :prefix)";
             params.addValue("keyword", keyword.trim());
             params.addValue("prefix", keyword.trim() + "%");
         }

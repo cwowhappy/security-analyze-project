@@ -1,7 +1,5 @@
 package com.example.securityanalyze.admin.application;
 
-import com.example.securityanalyze.admin.api.AdminLoginRequest;
-import com.example.securityanalyze.admin.api.AdminRegisterRequest;
 import com.example.securityanalyze.user.application.AuthenticationService;
 import com.example.securityanalyze.user.domain.Role;
 import com.example.securityanalyze.user.domain.User;
@@ -38,9 +36,9 @@ class AdminAuthServiceTest {
 
     @Test
     void shouldLoginAdmin() {
-        AdminLoginRequest request = new AdminLoginRequest();
-        request.setUsername("admin");
-        request.setPassword("admin123");
+        AdminLoginCommand command = new AdminLoginCommand();
+        command.setUsername("admin");
+        command.setPassword("admin123");
 
         User admin = new User();
         admin.setUsername("admin");
@@ -50,15 +48,15 @@ class AdminAuthServiceTest {
         when(authenticationService.authenticate("admin", "admin123")).thenReturn(admin);
         when(authenticationService.generateToken(admin)).thenReturn("admintoken");
 
-        var response = adminAuthService.login(request);
+        var response = adminAuthService.login(command);
         assertEquals("admintoken", response.getToken());
     }
 
     @Test
     void shouldThrowWhenNotAdmin() {
-        AdminLoginRequest request = new AdminLoginRequest();
-        request.setUsername("user");
-        request.setPassword("pass");
+        AdminLoginCommand command = new AdminLoginCommand();
+        command.setUsername("user");
+        command.setPassword("pass");
 
         User user = new User();
         user.setUsername("user");
@@ -68,22 +66,22 @@ class AdminAuthServiceTest {
         when(authenticationService.authenticate("user", "pass")).thenReturn(user);
 
         BadCredentialsException ex = assertThrows(BadCredentialsException.class,
-                () -> adminAuthService.login(request));
+                () -> adminAuthService.login(command));
         assertEquals("您不是管理员，无法登录管理后台", ex.getMessage());
     }
 
     @Test
     void shouldRegisterAdmin() {
-        AdminRegisterRequest request = new AdminRegisterRequest();
-        request.setUsername("newadmin");
-        request.setPassword("pass123");
-        request.setRealName("新管理员");
+        AdminRegisterCommand command = new AdminRegisterCommand();
+        command.setUsername("newadmin");
+        command.setPassword("pass123");
+        command.setRealName("新管理员");
 
         when(userRepository.existsByUsername("newadmin")).thenReturn(false);
         when(passwordEncoder.encode("pass123")).thenReturn("hashed");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        assertDoesNotThrow(() -> adminAuthService.registerAdmin(request));
+        assertDoesNotThrow(() -> adminAuthService.registerAdmin(command));
         verify(userRepository).save(any(User.class));
     }
 }

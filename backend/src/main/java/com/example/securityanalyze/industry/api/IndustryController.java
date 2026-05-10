@@ -1,7 +1,10 @@
 package com.example.securityanalyze.industry.api;
 
 import com.example.securityanalyze.common.util.PageUtils;
+import com.example.securityanalyze.company.api.CompanyListItem;
 import com.example.securityanalyze.company.api.CompanyListResponse;
+import com.example.securityanalyze.industry.application.IndustryCompanyItem;
+import com.example.securityanalyze.industry.application.IndustryCompanyResult;
 import com.example.securityanalyze.industry.application.IndustryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,8 +48,24 @@ public class IndustryController {
 
         log.info("按行业查询公司, standard={}, industryCode={}, parentCode={}, page={}, size={}",
                 standard, industryCode, parentCode, page, size);
-        CompanyListResponse response = industryService.listCompaniesByIndustry(standard, parentCode, industryCode, page, size);
+        IndustryCompanyResult result = industryService.listCompaniesByIndustry(standard, parentCode, industryCode, page, size);
+        CompanyListResponse response = new CompanyListResponse();
+        response.setItems(result.getItems().stream().map(this::toCompanyListItem).toList());
+        response.setTotal(result.getTotal());
+        response.setPage(result.getPage());
+        response.setSize(result.getSize());
         return ResponseEntity.ok(response);
+    }
+
+    private CompanyListItem toCompanyListItem(IndustryCompanyItem item) {
+        CompanyListItem dto = new CompanyListItem();
+        dto.setStockCode(item.getStockCode());
+        dto.setStockName(item.getStockName());
+        dto.setIndustry(item.getIndustry());
+        dto.setRegion(item.getRegion());
+        dto.setListingDate(item.getListingDate());
+        dto.setMarket(item.getMarket());
+        return dto;
     }
 
     @GetMapping("/{industryCode}/trend")

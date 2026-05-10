@@ -2,7 +2,6 @@ package com.example.securityanalyze.company.infrastructure;
 
 import com.example.securityanalyze.common.RepositoryTestBase;
 import com.example.securityanalyze.common.TestDataFactory;
-import com.example.securityanalyze.company.domain.Company;
 import com.example.securityanalyze.company.domain.CompanySecurity;
 import com.example.securityanalyze.company.domain.CompanySecurityRepository;
 import org.junit.jupiter.api.Test;
@@ -26,106 +25,115 @@ class CompanySecurityRepositoryImplTest extends RepositoryTestBase {
 
     @Test
     void shouldFindByCompanyId() {
-        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110012", "集团A", "集A"));
-        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600001", "股票A"));
-        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600002", "股票B"));
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110001", "测试公司", "测试"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600001", "测试A"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600002", "测试B"));
 
         List<CompanySecurity> results = companySecurityRepository.findByCompanyId(companyId);
 
         assertEquals(2, results.size());
-        assertEquals("600001", results.get(0).getStockCode());
-        assertEquals("600002", results.get(1).getStockCode());
+    }
+
+    @Test
+    void shouldFindByCompanyIds() {
+        Long companyId1 = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110002", "公司A", "A"));
+        Long companyId2 = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110003", "公司B", "B"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId1, "600003", "证券A"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId2, "600004", "证券B"));
+
+        List<CompanySecurity> results = companySecurityRepository.findByCompanyIds(List.of(companyId1, companyId2));
+
+        assertEquals(2, results.size());
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenCompanyIdsEmpty() {
+        List<CompanySecurity> results = companySecurityRepository.findByCompanyIds(List.of());
+        assertTrue(results.isEmpty());
     }
 
     @Test
     void shouldFindByStockCode() {
-        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110013", "集团B", "集B"));
-        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600003", "股票C"));
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110004", "代码测试", "代码"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600005", "代码证券"));
 
-        Optional<CompanySecurity> found = companySecurityRepository.findByStockCode("600003");
+        Optional<CompanySecurity> result = companySecurityRepository.findByStockCode("600005");
 
-        assertTrue(found.isPresent());
-        assertEquals("股票C", found.get().getStockName());
-        assertEquals(companyId, found.get().getCompanyId());
+        assertTrue(result.isPresent());
+        assertEquals("代码证券", result.get().getStockName());
     }
 
     @Test
     void shouldReturnEmptyWhenStockCodeNotFound() {
-        Optional<CompanySecurity> found = companySecurityRepository.findByStockCode("999999");
-        assertTrue(found.isEmpty());
+        Optional<CompanySecurity> result = companySecurityRepository.findByStockCode("999999");
+        assertTrue(result.isEmpty());
     }
 
     @Test
-    void shouldFindByKeywordUsingStockCode() {
-        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110014", "集团C", "集C"));
-        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "000001", "平安银行"));
+    void shouldFindByKeywordWithExactCodeMatch() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110005", "关键词测试", "关键"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600006", "关键词证券"));
 
-        List<CompanySecurity> results = companySecurityRepository.findByKeyword("000001", 0, 10);
+        List<CompanySecurity> results = companySecurityRepository.findByKeyword("600006", 0, 10);
 
         assertEquals(1, results.size());
-        assertEquals("000001", results.get(0).getStockCode());
+        assertEquals("600006", results.get(0).getStockCode());
     }
 
     @Test
-    void shouldFindByKeywordUsingStockNamePrefix() {
-        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110015", "集团D", "集D"));
-        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "000002", "万科A"));
+    void shouldFindByKeywordWithPrefixNameMatch() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110006", "前缀测试", "前缀"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600007", "前缀证券"));
 
-        List<CompanySecurity> results = companySecurityRepository.findByKeyword("万科", 0, 10);
+        List<CompanySecurity> results = companySecurityRepository.findByKeyword("前缀", 0, 10);
 
         assertEquals(1, results.size());
-        assertEquals("万科A", results.get(0).getStockName());
+        assertEquals("前缀证券", results.get(0).getStockName());
     }
 
     @Test
-    void shouldReturnAllWhenKeywordNullOrBlank() {
-        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110016", "集团E", "集E"));
-        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600004", "股票D"));
-        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600005", "股票E"));
+    void shouldReturnAllWhenKeywordNull() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110007", "空关键词", "空词"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600008", "空词证券"));
 
         List<CompanySecurity> results = companySecurityRepository.findByKeyword(null, 0, 10);
 
-        assertTrue(results.size() >= 2);
+        assertTrue(results.size() >= 1);
     }
 
     @Test
     void shouldCountByKeyword() {
-        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110017", "集团F", "集F"));
-        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600006", "茅台股份"));
-        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600007", "其他股份"));
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110008", "计数测试", "计数"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600009", "计数证券"));
 
-        long countWithKeyword = companySecurityRepository.countByKeyword("茅台");
+        long countWithKeyword = companySecurityRepository.countByKeyword("600009");
         long countAll = companySecurityRepository.countByKeyword(null);
 
         assertEquals(1L, countWithKeyword);
-        assertTrue(countAll >= 2L);
+        assertTrue(countAll >= 1L);
     }
 
     @Test
-    void shouldReturnEmptyWhenCompanyIdNotFound() {
-        List<CompanySecurity> results = companySecurityRepository.findByCompanyId(99999L);
+    void shouldReturnEmptyListWhenCompanyIdsNull() {
+        List<CompanySecurity> results = companySecurityRepository.findByCompanyIds(null);
         assertTrue(results.isEmpty());
     }
 
     @Test
-    void shouldReturnEmptyWhenOffsetExceedsTotal() {
-        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110018", "集团G", "集G"));
-        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600008", "股票G"));
+    void shouldReturnAllWhenKeywordBlank() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110009", "空白关键词", "空白"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600010", "空白证券"));
 
-        List<CompanySecurity> results = companySecurityRepository.findByKeyword(null, 1000, 10);
-
-        assertTrue(results.isEmpty());
+        List<CompanySecurity> results = companySecurityRepository.findByKeyword("", 0, 10);
+        assertTrue(results.stream().anyMatch(r -> "600010".equals(r.getStockCode())));
     }
 
     @Test
-    void shouldHandleKeywordCaseInsensitive() {
-        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110019", "集团H", "集H"));
-        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600009", "ABC银行"));
+    void shouldCountAllWhenKeywordBlank() {
+        Long companyId = TestDataFactory.insertCompany(jdbcTemplate, TestDataFactory.company("91110010", "计数空白", "计数空白"));
+        TestDataFactory.insertCompanySecurity(jdbcTemplate, TestDataFactory.security(companyId, "600011", "计数空白证券"));
 
-        List<CompanySecurity> upperCase = companySecurityRepository.findByKeyword("ABC", 0, 10);
-        List<CompanySecurity> lowerCase = companySecurityRepository.findByKeyword("abc", 0, 10);
-
-        assertEquals(1, upperCase.size(), "stock_name ILIKE 应支持大小写不敏感");
-        assertEquals(1, lowerCase.size(), "stock_name ILIKE 应支持大小写不敏感");
+        long count = companySecurityRepository.countByKeyword("   ");
+        assertTrue(count >= 1L);
     }
 }

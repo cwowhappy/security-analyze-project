@@ -17,6 +17,7 @@ from collector.monitor import Monitor
 from collector.utils import infer_market
 from collector.models import FinancialReport
 from collector.tasks.base import BaseTask, TaskResult
+from collector.tasks.fundamental_metrics_task import FundamentalMetricsTask
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +71,12 @@ class FinanceTask(BaseTask):
         monitor: Monitor = None,
         max_workers: int = 3,
         batch_concurrent_workers: int = 3,
+        auto_trigger_fundamental_metrics: bool = True,
     ):
         super().__init__(db=db, source=source, monitor=monitor)
         self._max_workers = max_workers
         self._batch_concurrent_workers = batch_concurrent_workers
+        self._auto_trigger_fm = auto_trigger_fundamental_metrics
 
     # ------------------------------------------------------------------
     # BaseTask 接口实现
@@ -112,7 +115,9 @@ class FinanceTask(BaseTask):
             f"Finance task finished. Session: {session_id}, "
             f"Total stocks: {len(pending_codes)}, Created: {created}, Updated: {updated}, Failed: {failed}"
         )
-        return TaskResult(created=created, updated=updated, failed=failed, rows=rows)
+        result = TaskResult(created=created, updated=updated, failed=failed, rows=rows)
+        self._trigger_fundamental_metrics("full", processed_codes=pending_codes)
+        return result
 
     def run_partial(
         self,
@@ -137,14 +142,19 @@ class FinanceTask(BaseTask):
                 logger.error(f"Failed to collect finance for {stock_code}: {e}")
                 total_failed += 1
         rows = total_created + total_updated
-        return TaskResult(created=total_created, updated=total_updated, failed=total_failed, rows=rows)
+        result = TaskResult(created=total_created, updated=total_updated, failed=total_failed, rows=rows)
+        self._trigger_fundamental_metrics("partial", identifiers=identifiers)
+        return result
 
     def run_incremental(
         self,
         batch_size: int = 100,
         **kwargs,
     ) -> TaskResult:
-        """增量采集：仅采集最新报告期之后的新增数据。"""
+        """增量采集：仅采集最新报告期之后的新增数据。
+
+        注意：run_full 内部已自动触发衍生指标计算，此处不再重复触发。
+        """
         return self.run_full(incremental=True, batch_size=batch_size, **kwargs)
 
     def resume_session(
@@ -156,6 +166,40 @@ class FinanceTask(BaseTask):
         """从 Session 断点恢复。"""
         logger.info(f"恢复财务报告采集 Session {session_id}")
         return self.run_full(session_id=session_id, batch_size=batch_size, **kwargs)
+
+    # ------------------------------------------------------------------
+    # 触发衍生指标计算（阶段B）
+    # ------------------------------------------------------------------
+    def _trigger_fundamental_metrics(
+        self,
+        mode: str,
+        identifiers: Optional[List[str]] = None,
+        processed_codes: Optional[List[str]] = None,
+    ) -> None:
+        """在财务报告采集完成后，自动触发基本面衍生指标预计算。
+
+        触发策略：
+        - partial 模式（指定股票列表）：对这些股票做全量指标计算
+        - full / incremental 模式：统一走增量模式，只计算最新年报年度，
+          避免对大量股票做全量历史重算
+        """
+        if not self._auto_trigger_fm:
+            return
+        try:
+            fm_task = FundamentalMetricsTask(
+                db=self.db,
+                source=self.source,
+                monitor=self.monitor,
+            )
+            if mode == "partial" and identifiers:
+                fm_task.execute(mode="partial", identifiers=identifiers)
+            else:
+                # full / incremental / resume 等模式统一走 incremental，
+                # 只计算最新完整年报年度，避免全量历史重算
+                fm_task.execute(mode="incremental")
+            logger.info("[FinanceTask] 衍生指标预计算触发完成")
+        except Exception as e:
+            logger.error(f"[FinanceTask] 衍生指标预计算触发失败: {e}")
 
     # ------------------------------------------------------------------
     # 向后兼容

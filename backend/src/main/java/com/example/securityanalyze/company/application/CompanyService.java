@@ -84,6 +84,24 @@ public class CompanyService {
         return Optional.of(toDetailResponse(company, primarySecurity, securities));
     }
 
+    public List<CompanyListItem> batchQuery(List<String> stockCodes) {
+        log.debug("批量查询公司, stockCodes={}", stockCodes);
+        if (stockCodes == null || stockCodes.isEmpty()) {
+            return List.of();
+        }
+        // 限制批量查询数量，防止过大请求
+        List<String> codes = stockCodes.size() > 50 ? stockCodes.subList(0, 50) : stockCodes;
+
+        return codes.stream()
+                .map(code -> companySecurityRepository.findByStockCode(code).orElse(null))
+                .filter(java.util.Objects::nonNull)
+                .map(sec -> {
+                    Company company = companyRepository.findById(sec.getCompanyId()).orElse(null);
+                    return toListItem(sec, company);
+                })
+                .toList();
+    }
+
     private CompanyListItem toListItem(CompanySecurity security, Company company) {
         CompanyListItem item = new CompanyListItem();
         item.setStockCode(security.getStockCode());

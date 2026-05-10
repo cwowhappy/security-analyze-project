@@ -9,6 +9,7 @@ import {
   TrendCharts,
   Wallet,
   UserFilled,
+  Collection,
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -37,6 +38,10 @@ function goToPortfolios() {
 function goToAdminUsers() {
   router.push('/admin/users')
 }
+
+function goToResearch() {
+  router.push('/research')
+}
 </script>
 
 <template>
@@ -50,25 +55,32 @@ function goToAdminUsers() {
         <div class="section-desc">市场数据查询与分析工具</div>
       </div>
       <div class="card-grid">
-        <ElCard class="entry-card" shadow="hover" @click="goToIndexes">
+        <ElCard class="entry-card card-hover" shadow="hover" @click="goToIndexes">
           <div class="card-content">
             <TrendCharts class="icon" />
             <div class="title">指数信息</div>
             <div class="desc">查看指数基本信息、趋势分析、关联ETF</div>
           </div>
         </ElCard>
-        <ElCard class="entry-card" shadow="hover" @click="goToIndustries">
+        <ElCard class="entry-card card-hover" shadow="hover" @click="goToIndustries">
           <div class="card-content">
             <Grid class="icon" />
             <div class="title">行业信息</div>
             <div class="desc">按行业分类浏览上市公司，查看行业指数走势</div>
           </div>
         </ElCard>
-        <ElCard class="entry-card" shadow="hover" @click="goToCompanies">
+        <ElCard class="entry-card card-hover" shadow="hover" @click="goToCompanies">
           <div class="card-content">
             <OfficeBuilding class="icon" />
             <div class="title">公司信息</div>
             <div class="desc">查询上市公司基本信息、行业分类、上市资料</div>
+          </div>
+        </ElCard>
+        <ElCard class="entry-card card-hover" shadow="hover" @click="goToResearch">
+          <div class="card-content">
+            <Collection class="icon" />
+            <div class="title">投研分析</div>
+            <div class="desc">基本面量化分析、财务指标筛选与研究报告</div>
           </div>
         </ElCard>
       </div>
@@ -81,7 +93,7 @@ function goToAdminUsers() {
         <div class="section-desc">管理投资组合与交易记录</div>
       </div>
       <div class="card-grid single">
-        <ElCard class="entry-card highlight" shadow="hover" @click="goToPortfolios">
+        <ElCard class="entry-card highlight card-hover" shadow="hover" @click="goToPortfolios">
           <div class="card-content">
             <Wallet class="icon" />
             <div class="title">持仓管理</div>
@@ -98,7 +110,7 @@ function goToAdminUsers() {
         <div class="section-desc">系统运维与管理工具</div>
       </div>
       <div class="card-grid">
-        <ElCard class="entry-card" shadow="hover" @click="goToCollectorDashboard">
+        <ElCard class="entry-card card-hover" shadow="hover" @click="goToCollectorDashboard">
           <div class="card-content">
             <DataLine class="icon" />
             <div class="title">采集监控</div>
@@ -107,7 +119,7 @@ function goToAdminUsers() {
         </ElCard>
         <ElCard
           v-if="authStore.isAdmin"
-          class="entry-card"
+          class="entry-card card-hover"
           shadow="hover"
           @click="goToAdminUsers"
         >
@@ -127,7 +139,7 @@ function goToAdminUsers() {
   padding: 8px;
 }
 .page-title {
-  font-size: 28px;
+  font-size: var(--page-title-size);
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 32px;

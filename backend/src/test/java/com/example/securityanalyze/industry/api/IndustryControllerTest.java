@@ -2,6 +2,8 @@ package com.example.securityanalyze.industry.api;
 
 import com.example.securityanalyze.company.api.CompanyListItem;
 import com.example.securityanalyze.company.api.CompanyListResponse;
+import com.example.securityanalyze.industry.application.IndustryCompanyItem;
+import com.example.securityanalyze.industry.application.IndustryCompanyResult;
 import com.example.securityanalyze.industry.application.IndustryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,17 +53,17 @@ class IndustryControllerTest {
 
     @Test
     void shouldListCompaniesByIndustry() throws Exception {
-        CompanyListItem item = new CompanyListItem();
+        IndustryCompanyItem item = new IndustryCompanyItem();
         item.setStockCode("600519");
         item.setStockName("贵州茅台");
 
-        CompanyListResponse response = new CompanyListResponse();
-        response.setItems(List.of(item));
-        response.setTotal(1L);
-        response.setPage(0);
-        response.setSize(20);
+        IndustryCompanyResult result = new IndustryCompanyResult();
+        result.setItems(List.of(item));
+        result.setTotal(1L);
+        result.setPage(0);
+        result.setSize(20);
 
-        when(industryService.listCompaniesByIndustry("EM", null, "BK0428", 0, 20)).thenReturn(response);
+        when(industryService.listCompaniesByIndustry("EM", null, "BK0428", 0, 20)).thenReturn(result);
 
         mockMvc.perform(get("/api/industries/BK0428/companies"))
                 .andExpect(status().isOk())

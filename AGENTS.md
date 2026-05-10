@@ -223,6 +223,13 @@ python main.py finance --stock-code 600519
 - 使用 Element Plus 组件，图标来自 `@element-plus/icons-vue`。
 - 路由采用懒加载 `() => import('@/views/...')`。
 - API baseURL 通过 `import.meta.env.VITE_API_BASE_URL` 读取，开发时留空则 fallback 到 `http://localhost:8080/api`。
+- **主题系统**：采用专业金融科技终端风格的深色主题（参考富途牛牛 APP）。主题变量定义在 `src/styles/theme.css`，全局工具类在 `src/styles/global.css`，特效类在 `src/styles/cyberpunk.css`。ECharts 主题配置在 `src/styles/echarts-theme.ts`。
+- **色彩规范**：
+  - 主强调色 `#2B6AFF`（金融科技蓝），次强调色 `#F59E0B`（琥珀金），第三强调色 `#8B5CF6`（紫罗兰）
+  - 背景层级：`#0D0F14`（主背景）→ `#111318`（次背景）→ `rgba(17,20,28,0.85)`（卡片背景）
+  - 涨跌色：红涨 `#EF4444` / 绿跌 `#10B981`（A股习惯）
+  - 文字层级：`#E8EAED`（主文字）→ `#9CA3AF`（次文字）→ `#6B7280`（辅助文字）
+- **样式原则**：克制精致的科技感，避免花哨动画。卡片使用微妙阴影和边框层次，hover 效果以边框色变化和轻微位移为主。数字数据使用等宽字体 `var(--font-mono)`。
 
 ### 数据采集（Python）
 

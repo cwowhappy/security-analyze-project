@@ -286,6 +286,23 @@ class CompanyTask(BaseTask):
                 short_name=_safe(stock_name) or "",
             )
 
+    @staticmethod
+    def _parse_shares(raw_value: Any) -> Optional[float]:
+        """解析股本字段，统一转换为'股'为单位。akshare 可能返回数值或科学计数法字符串。"""
+        if raw_value is None:
+            return None
+        try:
+            val = float(raw_value)
+        except (ValueError, TypeError):
+            return None
+        if np.isnan(val):
+            return None
+        # akshare stock_individual_info_em 的"总股本"通常以"股"返回，但数值可能很大（如1.2561e+10）。
+        # 如果值小于 1e6，可能是以"亿股"为单位，需要乘 1e8
+        if val > 0 and val < 1_000_000:
+            val = val * 100_000_000
+        return val
+
     def _parse_securities(
         self,
         stock_code: str,
@@ -295,6 +312,10 @@ class CompanyTask(BaseTask):
     ) -> List[SecurityEntity]:
         """解析证券信息列表（支持多市场证券）"""
         securities: List[SecurityEntity] = []
+
+        # 从 EM 详情提取股本信息（如有）
+        total_shares = self._parse_shares(em_detail.get("总股本")) if em_detail else None
+        circulating_shares = self._parse_shares(em_detail.get("流通股")) if em_detail else None
 
         if detail:
             a_code = _safe(detail.get("A股代码")) or stock_code
@@ -308,6 +329,8 @@ class CompanyTask(BaseTask):
                 security_type="A股",
                 listing_date=a_listing,
                 listing_status="listed",
+                total_shares=total_shares,
+                circulating_shares=circulating_shares,
             ))
 
             b_code = _safe(detail.get("B股代码"), "")
@@ -343,6 +366,8 @@ class CompanyTask(BaseTask):
                 security_type="A股",
                 listing_date=listing_date,
                 listing_status="listed",
+                total_shares=total_shares,
+                circulating_shares=circulating_shares,
             ))
         else:
             market = infer_market(stock_code) or "SH"
@@ -401,6 +426,7 @@ class CompanyTask(BaseTask):
                     UPDATE company_security
                     SET company_id = %s, stock_name = %s, market = %s,
                         security_type = %s, listing_date = %s, listing_status = %s,
+                        total_shares = %s, circulating_shares = %s, market_cap = %s,
                         updated_at = NOW()
                     WHERE stock_code = %s
                 """
@@ -410,8 +436,9 @@ class CompanyTask(BaseTask):
                 sql = """
                     INSERT INTO company_security
                     (company_id, stock_code, stock_name, market, security_type,
-                     listing_date, listing_status, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                     listing_date, listing_status, total_shares, circulating_shares, market_cap,
+                     created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
                 """
                 self.db.execute(sql, sec.to_insert_tuple(company_id))
                 total_result = "insert"

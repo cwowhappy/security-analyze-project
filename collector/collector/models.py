@@ -112,6 +112,9 @@ class SecurityEntity(BaseModel):
     security_type: str = "A股"
     listing_date: Optional[str] = None  # YYYY-MM-DD
     listing_status: str = "listed"
+    total_shares: Optional[float] = None
+    circulating_shares: Optional[float] = None
+    market_cap: Optional[float] = None
 
     def to_insert_tuple(self, company_id: int) -> tuple:
         """输出按 company_security INSERT 字段顺序的参数元组（不含 id）"""
@@ -123,6 +126,9 @@ class SecurityEntity(BaseModel):
             self.security_type,
             self.listing_date,
             self.listing_status,
+            self.total_shares,
+            self.circulating_shares,
+            self.market_cap,
         )
 
     def to_update_tuple(self, company_id: int) -> tuple:
@@ -134,6 +140,9 @@ class SecurityEntity(BaseModel):
             self.security_type,
             self.listing_date,
             self.listing_status,
+            self.total_shares,
+            self.circulating_shares,
+            self.market_cap,
             self.stock_code,
         )
 

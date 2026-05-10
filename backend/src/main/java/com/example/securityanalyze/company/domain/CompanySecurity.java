@@ -28,6 +28,16 @@ public class CompanySecurity {
 
     private String listingStatus;
 
+    private java.math.BigDecimal totalShares;
+
+    private java.math.BigDecimal circulatingShares;
+
+    private java.math.BigDecimal marketCap;
+
+    private Boolean isDeleted;
+
+    private LocalDateTime deletedAt;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

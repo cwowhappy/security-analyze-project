@@ -29,6 +29,10 @@ public class Company {
 
     private BigDecimal registeredCapital;
 
+    private Boolean isDeleted;
+
+    private LocalDateTime deletedAt;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

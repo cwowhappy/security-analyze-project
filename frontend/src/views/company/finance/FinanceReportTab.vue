@@ -139,82 +139,89 @@ onMounted(() => {
 
 <template>
   <div class="finance-report-tab" v-loading="loading">
-    <!-- ========== 核心指标趋势分析区域 ========== -->
-    <div class="section trend-section">
-      <div class="section-header">
-        <h4 class="section-title">核心指标趋势分析</h4>
-        <div class="date-range-selector">
-          <ElSelect
-            v-model="trendReportType"
-            placeholder="报告类型"
-            style="width: 120px"
-          >
-            <ElOption
-              v-for="opt in reportTypeOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </ElSelect>
-          <ElSelect
-            v-model="trendStartDate"
-            placeholder="起始报告期"
-            clearable
-            style="width: 180px"
-          >
-            <ElOption
-              v-for="opt in reportDateOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </ElSelect>
-          <span class="range-separator">→</span>
-          <ElSelect
-            v-model="trendEndDate"
-            placeholder="结束报告期"
-            clearable
-            style="width: 180px"
-          >
-            <ElOption
-              v-for="opt in reportDateOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-              :disabled="trendStartDate ? opt.value < trendStartDate : false"
-            />
-          </ElSelect>
+    <!-- 上排：趋势 + 对比并排 -->
+    <div class="top-row">
+      <!-- ========== 核心指标趋势分析区域 ========== -->
+      <div class="section trend-section">
+        <div class="section-header">
+          <h4 class="section-title">核心指标趋势分析</h4>
+          <div class="date-range-selector">
+            <ElSelect
+              v-model="trendReportType"
+              placeholder="报告类型"
+              style="width: 110px"
+              size="small"
+            >
+              <ElOption
+                v-for="opt in reportTypeOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </ElSelect>
+            <ElSelect
+              v-model="trendStartDate"
+              placeholder="起始期"
+              clearable
+              size="small"
+              style="width: 150px"
+            >
+              <ElOption
+                v-for="opt in reportDateOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </ElSelect>
+            <span class="range-separator">→</span>
+            <ElSelect
+              v-model="trendEndDate"
+              placeholder="结束期"
+              clearable
+              size="small"
+              style="width: 150px"
+            >
+              <ElOption
+                v-for="opt in reportDateOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+                :disabled="trendStartDate ? opt.value < trendStartDate : false"
+              />
+            </ElSelect>
+          </div>
         </div>
+        <IndicatorChart :metrics="indicators" />
       </div>
-      <IndicatorChart :metrics="indicators" />
-    </div>
 
-    <!-- ========== 年度报告期对比区域 ========== -->
-    <div class="section comparison-section">
-      <div class="section-header">
-        <h4 class="section-title">年度报告期对比</h4>
-        <div class="year-selector">
-          <ElSelect
-            v-model="comparisonYear"
-            placeholder="选择年份"
-            clearable
-            style="width: 140px"
-          >
-            <ElOption
-              v-for="year in yearOptions"
-              :key="year"
-              :label="`${year}年`"
-              :value="year"
-            />
-          </ElSelect>
+      <!-- ========== 年度报告期对比区域 ========== -->
+      <div class="section comparison-section">
+        <div class="section-header">
+          <h4 class="section-title">年度报告期对比</h4>
+          <div class="year-selector">
+            <ElSelect
+              v-model="comparisonYear"
+              placeholder="选择年份"
+              clearable
+              size="small"
+              style="width: 120px"
+            >
+              <ElOption
+                v-for="year in yearOptions"
+                :key="year"
+                :label="`${year}年`"
+                :value="year"
+              />
+            </ElSelect>
+          </div>
         </div>
+        <IndicatorChart
+          v-if="comparisonYear"
+          :metrics="yearlyIndicators"
+          :x-axis-labels="['一季报', '中报', '三季报', '年报']"
+        />
+        <div v-else class="empty-tip">请选择年份查看对比</div>
       </div>
-      <IndicatorChart
-        v-if="comparisonYear"
-        :metrics="yearlyIndicators"
-        :x-axis-labels="['一季报', '中报', '三季报', '年报']"
-      />
-      <div v-else class="empty-tip">请选择年份查看对比</div>
     </div>
 
     <!-- ========== 选定报告期详情区域 ========== -->
@@ -222,7 +229,7 @@ onMounted(() => {
       <div class="section-header">
         <h4 class="section-title">选定报告期详情</h4>
         <div class="report-selector">
-          <ElSelect v-model="selectedReportId" placeholder="选择报告期" style="width: 200px">
+          <ElSelect v-model="selectedReportId" placeholder="选择报告期" size="small" style="width: 200px">
             <ElOption
               v-for="report in reports"
               :key="report.id"
@@ -236,7 +243,7 @@ onMounted(() => {
       <div v-if="reportDetail">
         <ReportSummaryCards :summary="reportDetail.summary" />
 
-        <ElTabs v-model="activeSheetTab" type="border-card">
+        <ElTabs v-model="activeSheetTab" class="sheet-tabs">
           <ElTabPane label="资产负债表" name="balance">
             <BalanceSheetTable :data="reportDetail.balanceSheet" />
           </ElTabPane>
@@ -256,38 +263,80 @@ onMounted(() => {
 
 <style scoped>
 .finance-report-tab {
-  padding: 16px 0;
+  padding: 4px 0;
 }
+
+/* 上排并排布局 */
+.top-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 1100px) {
+  .top-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .section {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: var(--radius-md);
+  padding: 16px;
   background: var(--bg-card);
   backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--transition-base);
 }
+
+.section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-primary), transparent 70%);
+  opacity: 0.6;
+  transition: opacity var(--transition-base);
+}
+
+.section:hover::before {
+  opacity: 1;
+}
+
+.section:hover {
+  border-color: var(--border-color-light);
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
 }
+
 .section-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: 0.3px;
 }
+
 .date-range-selector {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 .range-separator {
   color: var(--text-tertiary);
-  font-size: 14px;
+  font-size: 13px;
 }
 .year-selector {
   display: flex;
@@ -303,5 +352,11 @@ onMounted(() => {
   color: var(--text-tertiary);
   padding: 40px 0;
   text-align: center;
+  font-size: 13px;
+}
+
+/* 财务报表子 Tab */
+.sheet-tabs :deep(.el-tabs__header) {
+  margin-bottom: 12px;
 }
 </style>

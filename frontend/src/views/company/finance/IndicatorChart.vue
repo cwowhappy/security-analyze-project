@@ -6,6 +6,7 @@ import { LineChart, BarChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 import type { IndicatorMetric } from '@/types/finance'
+import { applyChartTheme } from '@/styles/echarts-theme'
 
 use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent])
 
@@ -33,59 +34,36 @@ const chartOption = computed(() => {
     }
   })
 
-  return {
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'cross' },
-      backgroundColor: 'rgba(15,21,37,0.9)',
-      borderColor: 'rgba(255,255,255,0.1)',
-      textStyle: { color: '#e5e7eb' },
-    },
+  return applyChartTheme({
     legend: {
       data: props.metrics.map((m) => m.label),
-      bottom: 0,
-      textStyle: { color: '#9ca3af' },
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '15%',
-      containLabel: true,
     },
     xAxis: {
       type: 'category',
       data: xData,
-      axisLabel: { rotate: 30, color: '#9ca3af' },
-      axisLine: { lineStyle: { color: '#4b5563' } },
+      axisLabel: { rotate: 30 },
     },
     yAxis: [
       {
         type: 'value',
         name: '金额（元）',
-        nameTextStyle: { color: '#9ca3af' },
         axisLabel: {
-          color: '#9ca3af',
           formatter: (value: number) => {
             if (value >= 1e8) return (value / 1e8).toFixed(0) + '亿'
             if (value >= 1e4) return (value / 1e4).toFixed(0) + '万'
             return value
           },
         },
-        axisLine: { lineStyle: { color: '#4b5563' } },
-        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
       },
       {
         type: 'value',
         name: '比率（%）',
-        nameTextStyle: { color: '#9ca3af' },
-        axisLabel: { formatter: '{value}%', color: '#9ca3af' },
-        axisLine: { lineStyle: { color: '#4b5563' } },
+        axisLabel: { formatter: '{value}%' },
         splitLine: { show: false },
       },
     ],
     series,
-  }
+  })
 })
 </script>
 

@@ -1,5 +1,6 @@
 package com.example.securityanalyze.portfolio.application;
 
+import com.example.securityanalyze.portfolio.domain.InsufficientPositionException;
 import com.example.securityanalyze.portfolio.domain.Position;
 import com.example.securityanalyze.portfolio.domain.TradeType;
 import com.example.securityanalyze.portfolio.domain.TransactionRecord;
@@ -44,7 +45,7 @@ public class PositionCalculationService {
                 }
                 case SELL -> {
                     if (position.getCurrentQuantity().compareTo(qty) < 0) {
-                        throw new IllegalStateException("卖出股数超过当前持仓数量");
+                        throw new InsufficientPositionException("卖出股数超过当前持仓数量");
                     }
                     BigDecimal sellCost = position.getAvgCost().multiply(qty);
                     BigDecimal sellProceeds = price.multiply(qty);

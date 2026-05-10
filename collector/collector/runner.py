@@ -36,6 +36,8 @@ class TaskRunner:
             max_retries=self.cfg.source_max_retries,
             retry_delay=self.cfg.source_retry_delay,
             retry_backoff=self.cfg.source_retry_backoff,
+            request_delay_min=self.cfg.source_request_delay_min,
+            request_delay_max=self.cfg.source_request_delay_max,
         )
 
     def run(self, task_cls: Type[BaseTask], mode: str = "full", **kwargs) -> TaskResult:

@@ -51,6 +51,10 @@ public final class TestDataFactory {
     }
 
     public static CompanySecurity security(Long companyId, String stockCode, String stockName) {
+        return security(companyId, stockCode, stockName, new BigDecimal("1000000000"));
+    }
+
+    public static CompanySecurity security(Long companyId, String stockCode, String stockName, BigDecimal totalShares) {
         CompanySecurity s = new CompanySecurity();
         s.setCompanyId(companyId);
         s.setStockCode(stockCode);
@@ -59,6 +63,8 @@ public final class TestDataFactory {
         s.setSecurityType("A股");
         s.setListingDate(LocalDate.of(2010, 6, 1));
         s.setListingStatus("上市");
+        s.setTotalShares(totalShares);
+        s.setCirculatingShares(totalShares);
         return s;
     }
 
@@ -71,8 +77,25 @@ public final class TestDataFactory {
         r.setNoticeDate(reportDate.plusMonths(1));
         r.setCurrency("CNY");
         r.setTotalAssets(new BigDecimal("100000000"));
+        r.setTotalLiabilities(new BigDecimal("40000000"));
+        r.setTotalEquity(new BigDecimal("60000000"));
+        r.setTotalCurrentAssets(new BigDecimal("60000000"));
+        r.setTotalNoncurrentAssets(new BigDecimal("40000000"));
         r.setTotalRevenue(new BigDecimal("50000000"));
-        r.setNetProfit(new BigDecimal("5000000"));
+        r.setOperateIncome(new BigDecimal("48000000"));
+        r.setOperateCost(new BigDecimal("24000000"));
+        r.setSaleExpense(new BigDecimal("3000000"));
+        r.setManageExpense(new BigDecimal("4000000"));
+        r.setResearchExpense(new BigDecimal("2000000"));
+        r.setFinanceExpense(new BigDecimal("1000000"));
+        r.setOperateProfit(new BigDecimal("8000000"));
+        r.setTotalProfit(new BigDecimal("8500000"));
+        r.setNetProfit(new BigDecimal("6000000"));
+        r.setParentNetProfit(new BigDecimal("5000000"));
+        r.setOperatingCashFlow(new BigDecimal("4500000"));
+        r.setInvestingCashFlow(new BigDecimal("-1500000"));
+        r.setFinancingCashFlow(new BigDecimal("-2000000"));
+        r.setEndCce(new BigDecimal("12000000"));
         r.setBalanceSheet(Map.of("key", "value"));
         return r;
     }
@@ -118,9 +141,11 @@ public final class TestDataFactory {
     public static Long insertCompanySecurity(NamedParameterJdbcTemplate jdbc, CompanySecurity security) {
         String sql = """
                 INSERT INTO company_security (company_id, stock_code, stock_name, market, security_type,
-                                              listing_date, listing_status, created_at, updated_at)
+                                              listing_date, listing_status, total_shares, circulating_shares,
+                                              created_at, updated_at)
                 VALUES (:companyId, :stockCode, :stockName, :market, :securityType,
-                        :listingDate, :listingStatus, :createdAt, :updatedAt)
+                        :listingDate, :listingStatus, :totalShares, :circulatingShares,
+                        :createdAt, :updatedAt)
                 """;
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("companyId", security.getCompanyId());
@@ -130,6 +155,8 @@ public final class TestDataFactory {
         params.addValue("securityType", security.getSecurityType());
         params.addValue("listingDate", security.getListingDate());
         params.addValue("listingStatus", security.getListingStatus());
+        params.addValue("totalShares", security.getTotalShares());
+        params.addValue("circulatingShares", security.getCirculatingShares());
         LocalDateTime now = LocalDateTime.now();
         params.addValue("createdAt", security.getCreatedAt() != null ? security.getCreatedAt() : now);
         params.addValue("updatedAt", security.getUpdatedAt() != null ? security.getUpdatedAt() : now);
@@ -578,6 +605,84 @@ public final class TestDataFactory {
         params.addValue("createdAt", LocalDateTime.now());
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(sql, params, keyHolder, new String[]{"stock_code"});
+        return 1L;
+    }
+
+    public static Long insertStockValuationMetrics(NamedParameterJdbcTemplate jdbc, String stockCode,
+                                                    java.time.LocalDate tradeDate, BigDecimal closePrice,
+                                                    BigDecimal peTtm, BigDecimal peLyr, BigDecimal pb,
+                                                    BigDecimal psTtm, BigDecimal pePercentile,
+                                                    BigDecimal pbPercentile, BigDecimal psPercentile) {
+        String sql = """
+                INSERT INTO stock_valuation_metrics
+                (stock_code, trade_date, close_price, pe_ttm, pe_lyr, pb, ps_ttm,
+                 pe_ttm_percentile, pb_percentile, ps_ttm_percentile, created_at, updated_at)
+                VALUES (:stockCode, :tradeDate, :closePrice, :peTtm, :peLyr, :pb, :psTtm,
+                        :peTtmPercentile, :pbPercentile, :psTtmPercentile, :createdAt, :updatedAt)
+                ON CONFLICT (stock_code, trade_date) DO UPDATE
+                SET close_price = EXCLUDED.close_price, pe_ttm = EXCLUDED.pe_ttm,
+                    pe_lyr = EXCLUDED.pe_lyr, pb = EXCLUDED.pb, ps_ttm = EXCLUDED.ps_ttm,
+                    pe_ttm_percentile = EXCLUDED.pe_ttm_percentile,
+                    pb_percentile = EXCLUDED.pb_percentile,
+                    ps_ttm_percentile = EXCLUDED.ps_ttm_percentile
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("stockCode", stockCode);
+        params.addValue("tradeDate", tradeDate);
+        params.addValue("closePrice", closePrice);
+        params.addValue("peTtm", peTtm);
+        params.addValue("peLyr", peLyr);
+        params.addValue("pb", pb);
+        params.addValue("psTtm", psTtm);
+        params.addValue("peTtmPercentile", pePercentile);
+        params.addValue("pbPercentile", pbPercentile);
+        params.addValue("psTtmPercentile", psPercentile);
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        params.addValue("createdAt", now);
+        params.addValue("updatedAt", now);
+
+        org.springframework.jdbc.support.KeyHolder keyHolder = new org.springframework.jdbc.support.GeneratedKeyHolder();
+        jdbc.update(sql, params, keyHolder, new String[]{"stock_code"});
+        return 1L;
+    }
+
+    public static Long insertStockFundamentalMetrics(NamedParameterJdbcTemplate jdbc, String stockCode,
+                                                      int reportYear, BigDecimal roe, BigDecimal revenueYoy,
+                                                      BigDecimal profitYoy, BigDecimal cashflowProfitRatio,
+                                                      BigDecimal periodExpenseRate) {
+        String sql = """
+                INSERT INTO stock_fundamental_metrics
+                (stock_code, report_year, revenue_yoy, profit_yoy, asset_growth_rate,
+                 roe, roa, asset_turnover, equity_multiplier, current_ratio, quick_ratio,
+                 cashflow_profit_ratio, period_expense_rate, is_deleted, created_at, updated_at)
+                VALUES (:stockCode, :reportYear, :revenueYoy, :profitYoy, :assetGrowthRate,
+                        :roe, :roa, :assetTurnover, :equityMultiplier, :currentRatio, :quickRatio,
+                        :cashflowProfitRatio, :periodExpenseRate, FALSE, :createdAt, :updatedAt)
+                ON CONFLICT (stock_code, report_year) DO UPDATE
+                SET revenue_yoy = EXCLUDED.revenue_yoy, profit_yoy = EXCLUDED.profit_yoy,
+                    roe = EXCLUDED.roe, cashflow_profit_ratio = EXCLUDED.cashflow_profit_ratio,
+                    period_expense_rate = EXCLUDED.period_expense_rate
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("stockCode", stockCode);
+        params.addValue("reportYear", reportYear);
+        params.addValue("revenueYoy", revenueYoy);
+        params.addValue("profitYoy", profitYoy);
+        params.addValue("assetGrowthRate", BigDecimal.ZERO);
+        params.addValue("roe", roe);
+        params.addValue("roa", BigDecimal.ZERO);
+        params.addValue("assetTurnover", BigDecimal.ZERO);
+        params.addValue("equityMultiplier", BigDecimal.ZERO);
+        params.addValue("currentRatio", BigDecimal.ZERO);
+        params.addValue("quickRatio", BigDecimal.ZERO);
+        params.addValue("cashflowProfitRatio", cashflowProfitRatio);
+        params.addValue("periodExpenseRate", periodExpenseRate);
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        params.addValue("createdAt", now);
+        params.addValue("updatedAt", now);
+
+        org.springframework.jdbc.support.KeyHolder keyHolder = new org.springframework.jdbc.support.GeneratedKeyHolder();
         jdbc.update(sql, params, keyHolder, new String[]{"stock_code"});
         return 1L;
     }

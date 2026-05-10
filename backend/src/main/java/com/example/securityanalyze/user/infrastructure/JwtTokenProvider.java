@@ -5,6 +5,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import com.example.securityanalyze.user.domain.TokenProvider;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -12,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
-public class JwtTokenProvider {
+public class JwtTokenProvider implements TokenProvider {
 
     @Value("${jwt.secret:security-analyze-default-secret-key-2026}")
     private String jwtSecret;

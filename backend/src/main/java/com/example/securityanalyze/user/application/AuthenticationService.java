@@ -1,8 +1,8 @@
 package com.example.securityanalyze.user.application;
 
+import com.example.securityanalyze.user.domain.TokenProvider;
 import com.example.securityanalyze.user.domain.User;
 import com.example.securityanalyze.user.domain.UserRepository;
-import com.example.securityanalyze.user.infrastructure.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -16,7 +16,7 @@ public class AuthenticationService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final TokenProvider tokenProvider;
 
     /**
      * 验证用户名密码，返回认证后的用户对象
@@ -50,6 +50,6 @@ public class AuthenticationService {
      * @return JWT Token
      */
     public String generateToken(User user) {
-        return jwtTokenProvider.generateToken(user.getUsername(), user.getRole().name());
+        return tokenProvider.generateToken(user.getUsername(), user.getRole().name());
     }
 }

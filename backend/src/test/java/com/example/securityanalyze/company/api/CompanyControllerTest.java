@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -93,5 +94,22 @@ class CompanyControllerTest {
 
         mockMvc.perform(get("/api/companies?page=-1&size=0"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldBatchQueryCompanies() throws Exception {
+        CompanyListItem item1 = new CompanyListItem();
+        item1.setStockCode("600519");
+        item1.setStockName("贵州茅台");
+        item1.setIndustry("白酒");
+
+        when(companyService.batchQuery(List.of("600519", "000001")))
+                .thenReturn(List.of(item1));
+
+        mockMvc.perform(post("/api/companies/batch")
+                        .contentType("application/json")
+                        .content("[\"600519\",\"000001\"]"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].stockCode").value("600519"));
     }
 }

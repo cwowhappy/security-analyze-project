@@ -1,7 +1,5 @@
 package com.example.securityanalyze.industry.application;
 
-import com.example.securityanalyze.company.api.CompanyListItem;
-import com.example.securityanalyze.company.api.CompanyListResponse;
 import com.example.securityanalyze.company.domain.Company;
 import com.example.securityanalyze.company.domain.CompanyRepository;
 import com.example.securityanalyze.company.domain.CompanySecurity;
@@ -11,7 +9,7 @@ import com.example.securityanalyze.industry.api.IndustryListResponse;
 import com.example.securityanalyze.industry.api.IndustryTrendResponse;
 import com.example.securityanalyze.industry.api.TrendDataPoint;
 import com.example.securityanalyze.industry.domain.*;
-import com.example.securityanalyze.industry.infrastructure.IndustryRepository;
+import com.example.securityanalyze.industry.domain.IndustryQueryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,7 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class IndustryService {
 
-    private final IndustryRepository industryRepository;
+    private final IndustryQueryRepository industryQueryRepository;
     private final IndustryCategoryRepository industryCategoryRepository;
     private final CompanyIndustryMappingRepository companyIndustryMappingRepository;
     private final CompanyRepository companyRepository;
@@ -68,7 +66,7 @@ public class IndustryService {
         return response;
     }
 
-    public CompanyListResponse listCompaniesByIndustry(String standardCode, String level1Code, String level2Code, int page, int size) {
+    public IndustryCompanyResult listCompaniesByIndustry(String standardCode, String level1Code, String level2Code, int page, int size) {
         int offset = page * size;
 
         List<Long> companyIds;
@@ -86,7 +84,7 @@ public class IndustryService {
         int toIndex = Math.min(offset + size, companyIds.size());
         List<Long> pageIds = companyIds.subList(fromIndex, toIndex);
 
-        List<CompanyListItem> items = new ArrayList<>();
+        List<IndustryCompanyItem> items = new ArrayList<>();
         if (!pageIds.isEmpty()) {
             List<Company> companies = companyRepository.findAllById(pageIds);
             List<CompanySecurity> securities = companySecurityRepository.findByCompanyIds(pageIds);
@@ -97,12 +95,12 @@ public class IndustryService {
             }
         }
 
-        CompanyListResponse response = new CompanyListResponse();
-        response.setItems(items);
-        response.setTotal(total);
-        response.setPage(page);
-        response.setSize(size);
-        return response;
+        IndustryCompanyResult result = new IndustryCompanyResult();
+        result.setItems(items);
+        result.setTotal(total);
+        result.setPage(page);
+        result.setSize(size);
+        return result;
     }
 
     public IndustryTrendResponse getIndustryTrend(String standardCode, String industryCode, String period) {
@@ -118,9 +116,9 @@ public class IndustryService {
 
         // EM 标准：使用现有东财趋势网关
         if ("EM".equals(standardCode)) {
-            List<TrendDataPoint> realData = industryTrendGateway.fetchTrend(industryName, period);
+            List<IndustryTrendPoint> realData = industryTrendGateway.fetchTrend(industryName, period);
             if (!realData.isEmpty()) {
-                response.setData(realData);
+                response.setData(realData.stream().map(this::toTrendDataPoint).toList());
                 response.setFallback(false);
                 return response;
             }
@@ -143,8 +141,8 @@ public class IndustryService {
         return dto;
     }
 
-    private CompanyListItem toListItem(Company company, CompanySecurity security) {
-        CompanyListItem item = new CompanyListItem();
+    private IndustryCompanyItem toListItem(Company company, CompanySecurity security) {
+        IndustryCompanyItem item = new IndustryCompanyItem();
         if (security != null) {
             item.setStockCode(security.getStockCode());
             item.setStockName(security.getStockName());
@@ -157,6 +155,14 @@ public class IndustryService {
         item.setIndustry(company.getIndustry());
         item.setRegion(company.getRegion());
         return item;
+    }
+
+    private TrendDataPoint toTrendDataPoint(IndustryTrendPoint point) {
+        TrendDataPoint dto = new TrendDataPoint();
+        dto.setDate(point.getDate());
+        dto.setClose(point.getClose());
+        dto.setChangePercent(point.getChangePercent());
+        return dto;
     }
 
     private List<TrendDataPoint> generateFallbackTrend(String period) {

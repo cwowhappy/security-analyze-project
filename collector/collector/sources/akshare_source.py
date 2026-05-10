@@ -1,4 +1,5 @@
 import logging
+import random
 import re
 import time
 from typing import List, Dict, Any, Optional
@@ -21,7 +22,14 @@ COL_CURRENCY = "CURRENCY"
 class AkshareSource(BaseDataSource):
     """akshare 数据源封装"""
 
-    def __init__(self, max_retries: int = 3, retry_delay: float = 2.0, retry_backoff: float = 2.0):
+    def __init__(
+        self,
+        max_retries: int = 5,
+        retry_delay: float = 3.0,
+        retry_backoff: float = 2.0,
+        request_delay_min: float = 0.8,
+        request_delay_max: float = 2.0,
+    ):
         try:
             import akshare as ak
             self._ak = ak
@@ -29,6 +37,8 @@ class AkshareSource(BaseDataSource):
             self._max_retries = max_retries
             self._retry_delay = retry_delay
             self._retry_backoff = retry_backoff
+            self._request_delay_min = request_delay_min
+            self._request_delay_max = request_delay_max
             logger.info("Akshare source initialized")
         except ImportError:
             logger.error("akshare not installed")
@@ -44,9 +54,17 @@ class AkshareSource(BaseDataSource):
         return self._stock_list
 
     # ------------------------------------------------------------------
+    # 请求延迟（缓解服务端限流）
+    # ------------------------------------------------------------------
+    def _pre_request_delay(self) -> None:
+        """每次请求前随机延迟，降低被东方财富限流的概率。"""
+        delay = random.uniform(self._request_delay_min, self._request_delay_max)
+        time.sleep(delay)
+
+    # ------------------------------------------------------------------
     # 公司信息（带重试的原始获取 + 异常安全包装）
     # ------------------------------------------------------------------
-    @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    @retry(max_retries=5, delay=3.0, backoff=2.0, exceptions=(Exception,))
     def _fetch_company_detail(self, stock_code: str):
         """原始调用 stock_profile_cninfo（由 @retry 保护）"""
         return self._ak.stock_profile_cninfo(symbol=stock_code)
@@ -68,9 +86,10 @@ class AkshareSource(BaseDataSource):
             for key, val in row.items()
         }
 
-    @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    @retry(max_retries=5, delay=3.0, backoff=2.0, exceptions=(Exception,))
     def _fetch_company_info_em(self, stock_code: str):
         """原始调用 stock_individual_info_em（由 @retry 保护）"""
+        self._pre_request_delay()
         return self._ak.stock_individual_info_em(symbol=stock_code)
 
     def get_company_info_em(self, stock_code: str) -> Optional[Dict[str, Any]]:
@@ -88,7 +107,7 @@ class AkshareSource(BaseDataSource):
     # ------------------------------------------------------------------
     # 日行情
     # ------------------------------------------------------------------
-    @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    @retry(max_retries=5, delay=3.0, backoff=2.0, exceptions=(Exception,))
     def get_stock_daily_quote(
         self,
         stock_code: str,
@@ -103,6 +122,7 @@ class AkshareSource(BaseDataSource):
             end_date: 结束日期，YYYYMMDD 格式
         """
         try:
+            self._pre_request_delay()
             if start_date is None:
                 start_date = time.strftime("%Y%m%d")
             if end_date is None:
@@ -125,12 +145,13 @@ class AkshareSource(BaseDataSource):
     # ------------------------------------------------------------------
     # 财务报表
     # ------------------------------------------------------------------
-    @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    @retry(max_retries=5, delay=3.0, backoff=2.0, exceptions=(Exception,))
     def get_balance_sheet(
         self, symbol: str, start_year: Optional[int] = None, end_year: Optional[int] = None
     ) -> Optional[pd.DataFrame]:
         """获取资产负债表（东方财富，按报告期）"""
         try:
+            self._pre_request_delay()
             df = self._ak.stock_balance_sheet_by_report_em(symbol=symbol)
             if df is None or df.empty:
                 logger.warning(f"Empty balance sheet for {symbol}")
@@ -140,12 +161,13 @@ class AkshareSource(BaseDataSource):
             logger.debug(f"Failed to get balance sheet for {symbol}: {e}")
             return None
 
-    @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    @retry(max_retries=5, delay=3.0, backoff=2.0, exceptions=(Exception,))
     def get_profit_sheet(
         self, symbol: str, start_year: Optional[int] = None, end_year: Optional[int] = None
     ) -> Optional[pd.DataFrame]:
         """获取利润表（东方财富，按报告期）"""
         try:
+            self._pre_request_delay()
             df = self._ak.stock_profit_sheet_by_report_em(symbol=symbol)
             if df is None or df.empty:
                 logger.warning(f"Empty profit sheet for {symbol}")
@@ -155,12 +177,13 @@ class AkshareSource(BaseDataSource):
             logger.debug(f"Failed to get profit sheet for {symbol}: {e}")
             return None
 
-    @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    @retry(max_retries=5, delay=3.0, backoff=2.0, exceptions=(Exception,))
     def get_cash_flow_sheet(
         self, symbol: str, start_year: Optional[int] = None, end_year: Optional[int] = None
     ) -> Optional[pd.DataFrame]:
         """获取现金流量表（东方财富，按报告期）"""
         try:
+            self._pre_request_delay()
             df = self._ak.stock_cash_flow_sheet_by_report_em(symbol=symbol)
             if df is None or df.empty:
                 logger.warning(f"Empty cash flow sheet for {symbol}")
@@ -243,7 +266,7 @@ class AkshareSource(BaseDataSource):
         df = self._ak.index_stock_info()
         return df.to_dict(orient="records")
 
-    @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    @retry(max_retries=5, delay=3.0, backoff=2.0, exceptions=(Exception,))
     def get_index_history(
         self,
         symbol: str,
@@ -253,6 +276,7 @@ class AkshareSource(BaseDataSource):
     ) -> Optional[pd.DataFrame]:
         """获取指数历史行情，支持 daily/weekly/monthly"""
         try:
+            self._pre_request_delay()
             if start_date is None:
                 start_date = "19000101"
             if end_date is None:
@@ -276,10 +300,11 @@ class AkshareSource(BaseDataSource):
         df = self._ak.fund_etf_spot_em()
         return df.to_dict(orient="records")
 
-    @retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
+    @retry(max_retries=5, delay=3.0, backoff=2.0, exceptions=(Exception,))
     def get_etf_fund_info(self, fund_code: str) -> Optional[pd.DataFrame]:
         """获取 ETF 历史净值信息"""
         try:
+            self._pre_request_delay()
             df = self._ak.fund_etf_fund_info_em(fund=fund_code)
             if df is None or df.empty:
                 logger.warning(f"Empty fund info for ETF {fund_code}")

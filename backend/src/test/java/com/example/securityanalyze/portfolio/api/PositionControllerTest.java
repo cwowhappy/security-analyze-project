@@ -3,6 +3,7 @@ package com.example.securityanalyze.portfolio.api;
 import com.example.securityanalyze.portfolio.application.PortfolioService;
 import com.example.securityanalyze.portfolio.application.TransactionService;
 import com.example.securityanalyze.portfolio.domain.Portfolio;
+import com.example.securityanalyze.portfolio.domain.PortfolioAccessDeniedException;
 import com.example.securityanalyze.portfolio.domain.TradeType;
 import com.example.securityanalyze.portfolio.domain.TransactionRecord;
 import org.junit.jupiter.api.Test;
