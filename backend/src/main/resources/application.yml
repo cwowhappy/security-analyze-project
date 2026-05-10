@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: security-analyze-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/db-security-analyze
+    username: ${DB_USER:user-security-analyze}
+    password: ${DB_PASSWORD:SecurityAnalyze@2026}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
