@@ -22,3 +22,8 @@ management:
   endpoint:
     health:
       show-details: always
+
+logging:
+  level:
+    org.cwowhappy.securityanalyze: DEBUG
+    org.springframework.jdbc: DEBUG

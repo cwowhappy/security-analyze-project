@@ -2,7 +2,7 @@
 .kimi/
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -11,21 +11,29 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # Frontend
-node_modules
-dist
-dist-ssr
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
 *.local
 
 # Backend
 backend/.gradle/
 backend/build/
+backend/logs/
 
 # Collector
-backend/.pytest_cache/
-backend/__pycache__/
 collector/.pytest_cache/
+collector/.ruff_cache/
 collector/__pycache__/
+collector/src/**/__pycache__/
+collector/tests/**/__pycache__/
 *.pyc
+*.pyo
+
+# Environment
+.env
+.env.local
+.env.*.local
 
 # Editor directories and files
 .vscode/*
