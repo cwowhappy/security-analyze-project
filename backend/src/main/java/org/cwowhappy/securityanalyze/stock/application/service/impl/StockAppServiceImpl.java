@@ -2,6 +2,8 @@ package org.cwowhappy.securityanalyze.stock.application.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.cwowhappy.securityanalyze.shared.dto.PageQuery;
+import org.cwowhappy.securityanalyze.shared.dto.PageResult;
 import org.cwowhappy.securityanalyze.stock.application.dto.StockDTO;
 import org.cwowhappy.securityanalyze.stock.application.service.StockAppService;
 import org.cwowhappy.securityanalyze.stock.domain.model.Stock;
@@ -26,9 +28,9 @@ public class StockAppServiceImpl implements StockAppService {
     private final StockRepository stockRepository;
 
     @Override
-    public Optional<StockDTO> findBySymbol(String symbol) {
-        log.debug("查询股票: symbol={}", symbol);
-        return stockRepository.findBySymbol(symbol)
+    public Optional<StockDTO> findByStockCode(String stockCode) {
+        log.debug("查询股票: stockCode={}", stockCode);
+        return stockRepository.findByStockCode(stockCode)
                 .map(this::toDTO);
     }
 
@@ -41,16 +43,45 @@ public class StockAppServiceImpl implements StockAppService {
     }
 
     @Override
+    public PageResult<StockDTO> findByPage(PageQuery query) {
+        log.debug("分页查询股票: page={}, size={}", query.getPage(), query.getSize());
+        PageResult<Stock> pageResult = stockRepository.findByPage(query);
+        List<StockDTO> dtos = pageResult.getList().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+        return PageResult.<StockDTO>builder()
+                .list(dtos)
+                .total(pageResult.getTotal())
+                .page(pageResult.getPage())
+                .size(pageResult.getSize())
+                .build();
+    }
+
+    @Override
+    public List<StockDTO> findByIndustry(String industry) {
+        log.debug("按行业查询股票: industry={}", industry);
+        return stockRepository.findByIndustry(industry).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public String createStock(StockDTO dto) {
-        log.info("创建股票: symbol={}", dto.getSymbol());
+        log.info("创建股票: stockCode={}", dto.getStockCode());
         Stock stock = Stock.builder()
                 .id(StockId.generate())
-                .symbol(dto.getSymbol())
+                .stockCode(dto.getStockCode())
                 .name(dto.getName())
                 .market(dto.getMarket())
-                .currentPrice(dto.getCurrentPrice())
-                .changePercent(dto.getChangePercent())
+                .tsCode(dto.getTsCode())
+                .fullName(dto.getFullName())
+                .exchange(dto.getExchange())
+                .listDate(dto.getListDate())
+                .industry(dto.getIndustry())
+                .area(dto.getArea())
+                .totalShares(dto.getTotalShares())
+                .floatShares(dto.getFloatShares())
                 .build();
         StockId id = stockRepository.save(stock);
         log.info("股票创建成功: id={}", id);
@@ -60,11 +91,18 @@ public class StockAppServiceImpl implements StockAppService {
     private StockDTO toDTO(Stock stock) {
         return StockDTO.builder()
                 .id(stock.getId().getValue())
-                .symbol(stock.getSymbol())
+                .stockCode(stock.getStockCode())
                 .name(stock.getName())
                 .market(stock.getMarket())
-                .currentPrice(stock.getCurrentPrice())
-                .changePercent(stock.getChangePercent())
+                .tsCode(stock.getTsCode())
+                .fullName(stock.getFullName())
+                .exchange(stock.getExchange())
+                .listDate(stock.getListDate())
+                .industry(stock.getIndustry())
+                .area(stock.getArea())
+                .totalShares(stock.getTotalShares())
+                .floatShares(stock.getFloatShares())
+                .createdAt(stock.getCreatedAt())
                 .updatedAt(stock.getUpdatedAt())
                 .build();
     }

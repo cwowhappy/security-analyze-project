@@ -3,7 +3,7 @@ package org.cwowhappy.securityanalyze.stock.domain.model;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -15,22 +15,17 @@ import java.time.LocalDateTime;
 public class Stock {
 
     private final StockId id;
-    private String symbol;
+    private String stockCode;
     private String name;
     private String market;
-    private BigDecimal currentPrice;
-    private BigDecimal changePercent;
+    private String tsCode;
+    private String fullName;
+    private String exchange;
+    private LocalDate listDate;
+    private String industry;
+    private String area;
+    private Long totalShares;
+    private Long floatShares;
+    private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-    /**
-     * 更新价格。
-     */
-    public void updatePrice(BigDecimal newPrice, BigDecimal newChangePercent) {
-        if (newPrice == null || newPrice.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("价格不能为负数");
-        }
-        this.currentPrice = newPrice;
-        this.changePercent = newChangePercent;
-        this.updatedAt = LocalDateTime.now();
-    }
 }

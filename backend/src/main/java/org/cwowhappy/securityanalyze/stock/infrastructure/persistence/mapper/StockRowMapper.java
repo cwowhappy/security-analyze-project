@@ -17,11 +17,21 @@ public class StockRowMapper implements RowMapper<StockEntity> {
     public StockEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
         StockEntity entity = new StockEntity();
         entity.setId(rs.getString("id"));
-        entity.setSymbol(rs.getString("symbol"));
+        entity.setStockCode(rs.getString("stock_code"));
         entity.setName(rs.getString("name"));
         entity.setMarket(rs.getString("market"));
-        entity.setCurrentPrice(rs.getBigDecimal("current_price"));
-        entity.setChangePercent(rs.getBigDecimal("change_percent"));
+        entity.setTsCode(rs.getString("ts_code"));
+        entity.setFullName(rs.getString("full_name"));
+        entity.setExchange(rs.getString("exchange"));
+        java.sql.Date listDate = rs.getDate("list_date");
+        entity.setListDate(listDate != null ? listDate.toLocalDate() : null);
+        entity.setIndustry(rs.getString("industry"));
+        entity.setArea(rs.getString("area"));
+        entity.setTotalShares(rs.getObject("total_shares", Long.class));
+        entity.setFloatShares(rs.getObject("float_shares", Long.class));
+        entity.setCreatedAt(rs.getTimestamp("created_at") != null
+                ? rs.getTimestamp("created_at").toLocalDateTime()
+                : null);
         entity.setUpdatedAt(rs.getTimestamp("updated_at") != null
                 ? rs.getTimestamp("updated_at").toLocalDateTime()
                 : null);

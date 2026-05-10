@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,7 +41,7 @@ class StockControllerTest {
         // Arrange
         StockDTO dto = StockDTO.builder()
                 .id("stk001")
-                .symbol("000001")
+                .stockCode("000001")
                 .name("平安银行")
                 .build();
         when(stockAppService.findAll()).thenReturn(List.of(dto));
@@ -51,34 +50,33 @@ class StockControllerTest {
         mockMvc.perform(get("/api/stocks"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].symbol").value("000001"));
+                .andExpect(jsonPath("$.data[0].stockCode").value("000001"));
     }
 
     @Test
-    void shouldReturnStockWhenFoundBySymbol() throws Exception {
+    void shouldReturnStockWhenFoundByStockCode() throws Exception {
         // Arrange
         StockDTO dto = StockDTO.builder()
                 .id("stk001")
-                .symbol("000001")
+                .stockCode("000001")
                 .name("平安银行")
                 .build();
-        when(stockAppService.findBySymbol("000001")).thenReturn(Optional.of(dto));
+        when(stockAppService.findByStockCode("000001")).thenReturn(Optional.of(dto));
 
         // Act & Assert
         mockMvc.perform(get("/api/stocks/000001"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.symbol").value("000001"));
+                .andExpect(jsonPath("$.data.stockCode").value("000001"));
     }
 
     @Test
     void shouldCreateStockWhenRequestValid() throws Exception {
         // Arrange
         CreateStockRequest request = new CreateStockRequest();
-        request.setSymbol("000002");
+        request.setStockCode("000002");
         request.setName("万科A");
         request.setMarket("SZ");
-        request.setCurrentPrice(new BigDecimal("15.00"));
 
         when(stockAppService.createStock(any(StockDTO.class))).thenReturn("stk002");
 
@@ -92,12 +90,11 @@ class StockControllerTest {
     }
 
     @Test
-    void shouldReturnBadRequestWhenSymbolBlank() throws Exception {
+    void shouldReturnBadRequestWhenStockCodeBlank() throws Exception {
         // Arrange
         CreateStockRequest request = new CreateStockRequest();
-        request.setSymbol("");
+        request.setStockCode("");
         request.setName("万科A");
-        request.setCurrentPrice(new BigDecimal("15.00"));
 
         // Act & Assert
         mockMvc.perform(post("/api/stocks")

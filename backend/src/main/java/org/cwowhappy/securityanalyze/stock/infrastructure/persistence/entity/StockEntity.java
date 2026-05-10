@@ -2,20 +2,27 @@ package org.cwowhappy.securityanalyze.stock.infrastructure.persistence.entity;
 
 import lombok.Data;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * JDBC 持久化实体，与数据库表 stock 映射。
+ * JDBC 持久化实体，与数据库表 tb_stock_basic 映射。
  */
 @Data
 public class StockEntity {
 
     private String id;
-    private String symbol;
+    private String stockCode;
     private String name;
     private String market;
-    private BigDecimal currentPrice;
-    private BigDecimal changePercent;
+    private String tsCode;
+    private String fullName;
+    private String exchange;
+    private LocalDate listDate;
+    private String industry;
+    private String area;
+    private Long totalShares;
+    private Long floatShares;
+    private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

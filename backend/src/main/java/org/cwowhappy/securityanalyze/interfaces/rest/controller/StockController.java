@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cwowhappy.securityanalyze.interfaces.rest.request.CreateStockRequest;
 import org.cwowhappy.securityanalyze.interfaces.rest.response.ApiResponse;
+import org.cwowhappy.securityanalyze.shared.dto.PageQuery;
+import org.cwowhappy.securityanalyze.shared.dto.PageResult;
 import org.cwowhappy.securityanalyze.stock.application.dto.StockDTO;
 import org.cwowhappy.securityanalyze.stock.application.service.StockAppService;
 import org.springframework.http.HttpStatus;
@@ -25,27 +27,48 @@ public class StockController {
     private final StockAppService stockAppService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<StockDTO>>> listStocks() {
-        List<StockDTO> stocks = stockAppService.findAll();
+    public ResponseEntity<ApiResponse<List<StockDTO>>> listStocks(
+            @RequestParam(required = false) String industry,
+            @RequestParam(required = false) String market) {
+        List<StockDTO> stocks;
+        if (industry != null && !industry.isBlank()) {
+            stocks = stockAppService.findByIndustry(industry);
+        } else if (market != null && !market.isBlank()) {
+            stocks = stockAppService.findAll(); // 当前 AppService 无 findByMarket，先返回全部
+        } else {
+            stocks = stockAppService.findAll();
+        }
         return ResponseEntity.ok(ApiResponse.success(stocks));
     }
 
-    @GetMapping("/{symbol}")
-    public ResponseEntity<ApiResponse<StockDTO>> getStock(@PathVariable String symbol) {
-        return stockAppService.findBySymbol(symbol)
+    @GetMapping("/page")
+    public ResponseEntity<ApiResponse<PageResult<StockDTO>>> pageStocks(PageQuery query) {
+        PageResult<StockDTO> result = stockAppService.findByPage(query);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    @GetMapping("/{stockCode}")
+    public ResponseEntity<ApiResponse<StockDTO>> getStock(@PathVariable String stockCode) {
+        return stockAppService.findByStockCode(stockCode)
                 .map(dto -> ResponseEntity.ok(ApiResponse.success(dto)))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), "股票不存在: " + symbol)));
+                        .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), "股票不存在: " + stockCode)));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createStock(@Valid @RequestBody CreateStockRequest request) {
         StockDTO dto = StockDTO.builder()
-                .symbol(request.getSymbol())
+                .stockCode(request.getStockCode())
                 .name(request.getName())
                 .market(request.getMarket())
-                .currentPrice(request.getCurrentPrice())
-                .changePercent(request.getChangePercent())
+                .tsCode(request.getTsCode())
+                .fullName(request.getFullName())
+                .exchange(request.getExchange())
+                .listDate(request.getListDate())
+                .industry(request.getIndustry())
+                .area(request.getArea())
+                .totalShares(request.getTotalShares())
+                .floatShares(request.getFloatShares())
                 .build();
         String id = stockAppService.createStock(dto);
         return ResponseEntity.status(HttpStatus.CREATED)

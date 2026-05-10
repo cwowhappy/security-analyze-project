@@ -3,7 +3,7 @@ package org.cwowhappy.securityanalyze.stock.application.dto;
 import lombok.Builder;
 import lombok.Data;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -14,10 +14,17 @@ import java.time.LocalDateTime;
 public class StockDTO {
 
     private String id;
-    private String symbol;
+    private String stockCode;
     private String name;
     private String market;
-    private BigDecimal currentPrice;
-    private BigDecimal changePercent;
+    private String tsCode;
+    private String fullName;
+    private String exchange;
+    private LocalDate listDate;
+    private String industry;
+    private String area;
+    private Long totalShares;
+    private Long floatShares;
+    private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

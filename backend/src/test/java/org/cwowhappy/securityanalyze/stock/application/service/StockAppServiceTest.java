@@ -12,7 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,40 +37,38 @@ class StockAppServiceTest {
     void setUp() {
         sampleStock = Stock.builder()
                 .id(StockId.of("stk001"))
-                .symbol("000001")
+                .stockCode("000001")
                 .name("平安银行")
                 .market("SZ")
-                .currentPrice(new BigDecimal("12.50"))
-                .changePercent(new BigDecimal("1.23"))
                 .build();
     }
 
     @Test
-    void shouldReturnStockWhenFoundBySymbol() {
+    void shouldReturnStockWhenFoundByStockCode() {
         // Arrange
-        when(stockRepository.findBySymbol("000001")).thenReturn(Optional.of(sampleStock));
+        when(stockRepository.findByStockCode("000001")).thenReturn(Optional.of(sampleStock));
 
         // Act
-        Optional<StockDTO> result = stockAppService.findBySymbol("000001");
+        Optional<StockDTO> result = stockAppService.findByStockCode("000001");
 
         // Assert
         assertThat(result).isPresent();
-        assertThat(result.get().getSymbol()).isEqualTo("000001");
+        assertThat(result.get().getStockCode()).isEqualTo("000001");
         assertThat(result.get().getName()).isEqualTo("平安银行");
-        verify(stockRepository, times(1)).findBySymbol("000001");
+        verify(stockRepository, times(1)).findByStockCode("000001");
     }
 
     @Test
-    void shouldReturnEmptyWhenStockNotFoundBySymbol() {
+    void shouldReturnEmptyWhenStockNotFoundByStockCode() {
         // Arrange
-        when(stockRepository.findBySymbol("999999")).thenReturn(Optional.empty());
+        when(stockRepository.findByStockCode("999999")).thenReturn(Optional.empty());
 
         // Act
-        Optional<StockDTO> result = stockAppService.findBySymbol("999999");
+        Optional<StockDTO> result = stockAppService.findByStockCode("999999");
 
         // Assert
         assertThat(result).isEmpty();
-        verify(stockRepository, times(1)).findBySymbol("999999");
+        verify(stockRepository, times(1)).findByStockCode("999999");
     }
 
     @Test
@@ -84,17 +81,16 @@ class StockAppServiceTest {
 
         // Assert
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getSymbol()).isEqualTo("000001");
+        assertThat(result.get(0).getStockCode()).isEqualTo("000001");
     }
 
     @Test
     void shouldCreateStockAndReturnId() {
         // Arrange
         StockDTO dto = StockDTO.builder()
-                .symbol("000002")
+                .stockCode("000002")
                 .name("万科A")
                 .market("SZ")
-                .currentPrice(new BigDecimal("15.00"))
                 .build();
         when(stockRepository.save(any(Stock.class))).thenAnswer(inv -> {
             Stock stock = inv.getArgument(0);
