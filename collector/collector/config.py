@@ -34,15 +34,20 @@ class CollectorConfig:
     db_pool_max_idle: float = 300.0
     db_pool_max_lifetime: float = 3600.0
     # 采集重试配置
-    source_max_retries: int = 3
-    source_retry_delay: float = 2.0
+    source_max_retries: int = 5
+    source_retry_delay: float = 3.0
     source_retry_backoff: float = 2.0
+    # 请求间随机延迟（秒），用于缓解东方财富限流
+    source_request_delay_min: float = 0.8
+    source_request_delay_max: float = 2.0
     # 财务采集默认批次
     finance_batch_size: int = 100
     # 并发配置（单只股票三张报表并发）
-    finance_max_workers: int = 3
+    # 注意：东方财富对并发敏感，建议保持 1
+    finance_max_workers: int = 1
     # 批次内多股票并发配置
-    finance_batch_concurrent_workers: int = 3
+    # 注意：东方财富对并发敏感，建议保持 1
+    finance_batch_concurrent_workers: int = 1
 
     @classmethod
     def from_env(cls) -> "CollectorConfig":
@@ -52,10 +57,12 @@ class CollectorConfig:
             db_pool_max_size=int(os.getenv("DB_POOL_MAX_SIZE", "5")),
             db_pool_max_idle=float(os.getenv("DB_POOL_MAX_IDLE", "300")),
             db_pool_max_lifetime=float(os.getenv("DB_POOL_MAX_LIFETIME", "3600")),
-            source_max_retries=int(os.getenv("SOURCE_MAX_RETRIES", "3")),
-            source_retry_delay=float(os.getenv("SOURCE_RETRY_DELAY", "2.0")),
+            source_max_retries=int(os.getenv("SOURCE_MAX_RETRIES", "5")),
+            source_retry_delay=float(os.getenv("SOURCE_RETRY_DELAY", "3.0")),
             source_retry_backoff=float(os.getenv("SOURCE_RETRY_BACKOFF", "2.0")),
+            source_request_delay_min=float(os.getenv("SOURCE_REQUEST_DELAY_MIN", "0.8")),
+            source_request_delay_max=float(os.getenv("SOURCE_REQUEST_DELAY_MAX", "2.0")),
             finance_batch_size=int(os.getenv("FINANCE_BATCH_SIZE", "100")),
-            finance_max_workers=int(os.getenv("FINANCE_MAX_WORKERS", "3")),
-            finance_batch_concurrent_workers=int(os.getenv("FINANCE_BATCH_CONCURRENT_WORKERS", "3")),
+            finance_max_workers=int(os.getenv("FINANCE_MAX_WORKERS", "1")),
+            finance_batch_concurrent_workers=int(os.getenv("FINANCE_BATCH_CONCURRENT_WORKERS", "1")),
         )
