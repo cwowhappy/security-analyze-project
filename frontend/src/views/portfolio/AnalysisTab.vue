@@ -42,16 +42,16 @@ const industryPieData = computed(() => {
 
 const industryPieOption = computed(() => ({
   backgroundColor: 'transparent',
-  title: { text: '行业分布（按市值）', left: 'center', textStyle: { color: '#e5e7eb' } },
-  tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)', backgroundColor: 'rgba(15,21,37,0.9)', borderColor: 'rgba(255,255,255,0.1)', textStyle: { color: '#e5e7eb' } },
-  legend: { textStyle: { color: '#9ca3af' } },
+  title: { text: '行业分布（按市值）', left: 'center', textStyle: { color: '#E8EAED' } },
+  tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)', backgroundColor: 'rgba(17, 19, 24, 0.95)', borderColor: 'rgba(43, 106, 255, 0.20)', textStyle: { color: '#E8EAED' } },
+  legend: { textStyle: { color: '#9CA3AF' } },
   series: [{
     type: 'pie',
     radius: ['40%', '70%'],
     avoidLabelOverlap: false,
-    itemStyle: { borderRadius: 10, borderColor: '#0a0e1a', borderWidth: 2 },
+    itemStyle: { borderRadius: 10, borderColor: '#0D0F14', borderWidth: 2 },
     label: { show: false, position: 'center' },
-    emphasis: { label: { show: true, fontSize: 20, fontWeight: 'bold', color: '#e5e7eb' } },
+    emphasis: { label: { show: true, fontSize: 20, fontWeight: 'bold', color: '#E8EAED' } },
     data: industryPieData.value,
   }],
 }))
@@ -73,23 +73,23 @@ const pnlTrendData = computed(() => {
 
 const pnlTrendOption = computed(() => ({
   backgroundColor: 'transparent',
-  title: { text: '已实现盈亏趋势', left: 'center', textStyle: { color: '#e5e7eb' } },
-  tooltip: { trigger: 'axis', backgroundColor: 'rgba(15,21,37,0.9)', borderColor: 'rgba(255,255,255,0.1)', textStyle: { color: '#e5e7eb' } },
-  xAxis: { type: 'category', data: pnlTrendData.value.dates, axisLine: { lineStyle: { color: '#4b5563' } }, axisLabel: { color: '#9ca3af' } },
-  yAxis: { type: 'value', name: '盈亏', axisLine: { lineStyle: { color: '#4b5563' } }, axisLabel: { color: '#9ca3af' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
+  title: { text: '已实现盈亏趋势', left: 'center', textStyle: { color: '#E8EAED' } },
+  tooltip: { trigger: 'axis', backgroundColor: 'rgba(17, 19, 24, 0.95)', borderColor: 'rgba(43, 106, 255, 0.20)', textStyle: { color: '#E8EAED' } },
+  xAxis: { type: 'category', data: pnlTrendData.value.dates, axisLine: { lineStyle: { color: '#4B5563' } }, axisLabel: { color: '#9CA3AF' } },
+  yAxis: { type: 'value', name: '盈亏', axisLine: { lineStyle: { color: '#4B5563' } }, axisLabel: { color: '#9CA3AF' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
   series: [{
     data: pnlTrendData.value.values,
     type: 'line',
     smooth: true,
-    lineStyle: { color: '#00d4ff' },
-    itemStyle: { color: '#00d4ff' },
+    lineStyle: { color: '#2B6AFF' },
+    itemStyle: { color: '#2B6AFF' },
     areaStyle: {
       color: {
         type: 'linear',
         x: 0, y: 0, x2: 0, y2: 1,
         colorStops: [
-          { offset: 0, color: 'rgba(0,212,255,0.3)' },
-          { offset: 1, color: 'rgba(0,212,255,0.05)' },
+          { offset: 0, color: 'rgba(43,106,255,0.25)' },
+          { offset: 1, color: 'rgba(43,106,255,0.04)' },
         ],
       },
     },

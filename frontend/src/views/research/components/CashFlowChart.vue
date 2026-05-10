@@ -6,6 +6,7 @@ import { LineChart, BarChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 import type { AnnualMetric } from '@/types/research'
+import { NEON_COLORS } from '@/styles/echarts-theme'
 
 use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent])
 
@@ -20,13 +21,13 @@ const chartOption = computed(() => {
 
   return {
     backgroundColor: 'transparent',
-    title: { text: '现金流健康度', left: 'center', textStyle: { color: '#e5e7eb', fontSize: 14 } },
+    title: { text: '现金流健康度', left: 'center', textStyle: { color: '#E8EAED', fontSize: 14 } },
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'cross' },
-      backgroundColor: 'rgba(15,21,37,0.9)',
-      borderColor: 'rgba(255,255,255,0.1)',
-      textStyle: { color: '#e5e7eb' },
+      backgroundColor: 'rgba(17, 19, 24, 0.95)',
+      borderColor: 'rgba(43, 106, 255, 0.20)',
+      textStyle: { color: '#E8EAED' },
       formatter: (params: any[]) => {
         let html = `<div style="font-weight:600;margin-bottom:4px">${params[0].axisValue}</div>`
         params.forEach((p: any) => {
@@ -51,21 +52,21 @@ const chartOption = computed(() => {
         return html
       },
     },
-    legend: { data: ['经营现金流', '投资现金流', '筹资现金流', '期末现金余额', '现金流/净利润比'], bottom: 0, textStyle: { color: '#9ca3af' } },
+    legend: { data: ['经营现金流', '投资现金流', '筹资现金流', '期末现金余额', '现金流/净利润比'], bottom: 0, textStyle: { color: '#9CA3AF' } },
     grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
     xAxis: {
       type: 'category',
       data: xData.value,
-      axisLabel: { color: '#9ca3af' },
-      axisLine: { lineStyle: { color: '#4b5563' } },
+      axisLabel: { color: '#9CA3AF' },
+      axisLine: { lineStyle: { color: '#4B5563' } },
     },
     yAxis: [
       {
         type: 'value',
         name: '金额（元）',
-        nameTextStyle: { color: '#9ca3af' },
+        nameTextStyle: { color: '#9CA3AF' },
         axisLabel: {
-          color: '#9ca3af',
+          color: '#9CA3AF',
           formatter: (value: number) => {
             const abs = Math.abs(value)
             if (abs >= 1e8) return (value / 1e8).toFixed(0) + '亿'
@@ -73,24 +74,24 @@ const chartOption = computed(() => {
             return value
           },
         },
-        axisLine: { lineStyle: { color: '#4b5563' } },
+        axisLine: { lineStyle: { color: '#4B5563' } },
         splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
       },
       {
         type: 'value',
         name: '比率（%）',
-        nameTextStyle: { color: '#9ca3af' },
-        axisLabel: { formatter: '{value}%', color: '#9ca3af' },
-        axisLine: { lineStyle: { color: '#4b5563' } },
+        nameTextStyle: { color: '#9CA3AF' },
+        axisLabel: { formatter: '{value}%', color: '#9CA3AF' },
+        axisLine: { lineStyle: { color: '#4B5563' } },
         splitLine: { show: false },
       },
     ],
     series: [
-      { name: '经营现金流', type: 'bar', data: props.metrics.map(m => m.operatingCashFlow), yAxisIndex: 0, itemStyle: { color: '#67c23a' } },
-      { name: '投资现金流', type: 'bar', data: props.metrics.map(m => m.investingCashFlow), yAxisIndex: 0, itemStyle: { color: '#f56c6c' } },
-      { name: '筹资现金流', type: 'bar', data: props.metrics.map(m => m.financingCashFlow), yAxisIndex: 0, itemStyle: { color: '#409eff' } },
-      { name: '期末现金余额', type: 'line', data: props.metrics.map(m => m.endCce), yAxisIndex: 0, smooth: true, itemStyle: { color: '#e6a23c' } },
-      { name: '现金流/净利润比', type: 'line', data: props.metrics.map(m => m.cashflowProfitRatio), yAxisIndex: 1, smooth: true, itemStyle: { color: '#ff9500' } },
+      { name: '经营现金流', type: 'bar', data: props.metrics.map(m => m.operatingCashFlow), yAxisIndex: 0, itemStyle: { color: NEON_COLORS[3] } },
+      { name: '投资现金流', type: 'bar', data: props.metrics.map(m => m.investingCashFlow), yAxisIndex: 0, itemStyle: { color: NEON_COLORS[6] } },
+      { name: '筹资现金流', type: 'bar', data: props.metrics.map(m => m.financingCashFlow), yAxisIndex: 0, itemStyle: { color: NEON_COLORS[0] } },
+      { name: '期末现金余额', type: 'line', data: props.metrics.map(m => m.endCce), yAxisIndex: 0, smooth: true, itemStyle: { color: NEON_COLORS[4] } },
+      { name: '现金流/净利润比', type: 'line', data: props.metrics.map(m => m.cashflowProfitRatio), yAxisIndex: 1, smooth: true, itemStyle: { color: NEON_COLORS[2] } },
     ],
   }
 })

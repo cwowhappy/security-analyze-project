@@ -242,14 +242,14 @@ onMounted(() => {
         <ElTableColumn prop="market" label="市场" width="80" />
         <ElTableColumn label="操作" width="100" align="center">
           <template #default="{ row }">
-            <ElButton
-              link
-              :type="isFavorite(row.stockCode) ? 'warning' : 'info'"
-              :icon="isFavorite(row.stockCode) ? StarFilled : Star"
+            <button
+              class="fav-btn"
+              :class="{ active: isFavorite(row.stockCode) }"
               @click.stop="toggleFavorite(row)"
             >
-              {{ isFavorite(row.stockCode) ? '已关注' : '关注' }}
-            </ElButton>
+              <el-icon><component :is="isFavorite(row.stockCode) ? StarFilled : Star" /></el-icon>
+              <span>{{ isFavorite(row.stockCode) ? '已关注' : '关注' }}</span>
+            </button>
           </template>
         </ElTableColumn>
       </ElTable>
@@ -317,7 +317,30 @@ onMounted(() => {
 
 <style scoped>
 .company-search {
-  padding: 8px;
+  padding: var(--page-padding);
+}
+
+.fav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+.fav-btn:hover {
+  border-color: var(--accent-warm);
+  color: var(--accent-warm);
+}
+.fav-btn.active {
+  background: var(--accent-warm-dim);
+  border-color: var(--accent-warm);
+  color: var(--accent-warm);
 }
 .page-title {
   font-size: 24px;
@@ -336,7 +359,8 @@ onMounted(() => {
   padding: 32px 24px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
+  transition: border-color var(--transition-base);
 }
 .search-box {
   display: flex;

@@ -43,7 +43,7 @@ defineProps<{
   }
 }
 .dashboard-card {
-  background: var(--card-bg, rgba(255,255,255,0.03));
+  background: var(--card-bg);
   border-radius: 8px;
   padding: 16px;
   text-align: center;
@@ -68,13 +68,13 @@ defineProps<{
   gap: 2px;
 }
 .dashboard-yoy.up {
-  color: #f56c6c;
+  color: var(--up-color);
 }
 .dashboard-yoy.down {
-  color: #67c23a;
+  color: var(--down-color);
 }
 .dashboard-yoy.flat {
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 .yoy-arrow {
   font-size: 10px;

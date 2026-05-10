@@ -2,6 +2,9 @@ package com.example.securityanalyze.research.application;
 
 import com.example.securityanalyze.common.util.PageUtils;
 import com.example.securityanalyze.research.api.AnnualMetricDto;
+import com.example.securityanalyze.research.api.CompositeScoreDto;
+import com.example.securityanalyze.research.api.DcfRequest;
+import com.example.securityanalyze.research.api.DcfResponse;
 import com.example.securityanalyze.research.api.FundamentalOverviewResponse;
 import com.example.securityanalyze.research.api.FundamentalScreenResponse;
 import com.example.securityanalyze.research.api.IndustryPeersResponse;
@@ -9,14 +12,22 @@ import com.example.securityanalyze.research.api.IndustryRankItemDto;
 import com.example.securityanalyze.research.api.IndustryRankResponse;
 import com.example.securityanalyze.research.api.PeerMetricDto;
 import com.example.securityanalyze.research.api.ScreenCompanyItemResponse;
+import com.example.securityanalyze.research.api.ValuationHistoryItemDto;
+import com.example.securityanalyze.research.api.ValuationHistoryResponse;
+import com.example.securityanalyze.research.api.ValuationOverviewResponse;
+import com.example.securityanalyze.research.api.ValuationWarningDto;
 import com.example.securityanalyze.research.domain.AnnualMetric;
+import com.example.securityanalyze.research.domain.CompanyBasicInfo;
 import com.example.securityanalyze.research.domain.FundamentalMetrics;
 import com.example.securityanalyze.research.domain.FundamentalMetricsRepository;
 import com.example.securityanalyze.research.domain.IndustryRankItem;
+import com.example.securityanalyze.research.domain.MetricStats;
 import com.example.securityanalyze.research.domain.PeerMetric;
 import com.example.securityanalyze.research.domain.ScreenCompanyItem;
 import com.example.securityanalyze.research.domain.StockFundamentalMetrics;
 import com.example.securityanalyze.research.domain.StockFundamentalMetricsRepository;
+import com.example.securityanalyze.research.domain.ValuationMetrics;
+import com.example.securityanalyze.research.domain.ValuationMetricsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,6 +47,7 @@ public class FundamentalAnalysisService {
 
     private final FundamentalMetricsRepository fundamentalMetricsRepository;
     private final StockFundamentalMetricsRepository stockFundamentalMetricsRepository;
+    private final ValuationMetricsRepository valuationMetricsRepository;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -90,7 +102,8 @@ public class FundamentalAnalysisService {
 
         List<IndustryRankItem> items = fundamentalMetricsRepository.findIndustryRankItems(industry);
 
-        // 本地排序
+        // 本地排序（复制为可变列表避免 UnsupportedOperationException）
+        items = new java.util.ArrayList<>(items);
         items.sort((a, b) -> compareForRank(a, b, sortBy, order));
 
         // 计算目标公司排名
@@ -311,5 +324,259 @@ public class FundamentalAnalysisService {
             }
         }
         return sum;
+    }
+
+    // ========== 阶段C：估值分析 ==========
+
+    public Optional<ValuationOverviewResponse> getValuationOverview(String stockCode) {
+        log.debug("获取估值概览, stockCode={}", stockCode);
+        Optional<ValuationMetrics> vmOpt = valuationMetricsRepository.findLatestByStockCode(stockCode);
+        if (vmOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        CompanyBasicInfo info = valuationMetricsRepository.findCompanyBasicInfo(stockCode);
+        ValuationMetrics vm = vmOpt.get();
+
+        ValuationOverviewResponse response = new ValuationOverviewResponse();
+        response.setStockCode(stockCode);
+        response.setStockName(info != null ? info.getStockName() : stockCode);
+        response.setCurrentPrice(vm.getClosePrice());
+        response.setMarketCap(calculateMarketCap(vm.getClosePrice(), info != null ? info.getTotalShares() : null));
+        response.setPeTtm(vm.getPeTtm());
+        response.setPeTtmPercentile(vm.getPeTtmPercentile());
+        response.setPeLyr(vm.getPeLyr());
+        response.setPb(vm.getPb());
+        response.setPbPercentile(vm.getPbPercentile());
+        response.setPsTtm(vm.getPsTtm());
+        response.setPsTtmPercentile(vm.getPsTtmPercentile());
+
+        // 综合评分
+        response.setCompositeScore(calculateCompositeScore(stockCode, vm));
+
+        // 预警
+        response.setWarnings(generateWarnings(vm));
+
+        return Optional.of(response);
+    }
+
+    public ValuationHistoryResponse getValuationHistory(String stockCode) {
+        log.debug("获取估值历史, stockCode={}", stockCode);
+        java.time.LocalDate endDate = java.time.LocalDate.now();
+        java.time.LocalDate startDate = endDate.minusYears(5);
+
+        List<ValuationMetrics> history = valuationMetricsRepository.findHistoryByStockCode(stockCode, startDate, endDate);
+        CompanyBasicInfo info = valuationMetricsRepository.findCompanyBasicInfo(stockCode);
+
+        ValuationHistoryResponse response = new ValuationHistoryResponse();
+        response.setStockCode(stockCode);
+        response.setStockName(info != null ? info.getStockName() : stockCode);
+        response.setItems(history.stream().map(this::toHistoryItemDto).toList());
+        return response;
+    }
+
+    public DcfResponse calculateDcf(String stockCode, DcfRequest request) {
+        log.debug("DCF估值计算, stockCode={}, request={}", stockCode, request);
+        CompanyBasicInfo info = valuationMetricsRepository.findCompanyBasicInfo(stockCode);
+        BigDecimal totalShares = info != null ? info.getTotalShares() : null;
+
+        // 获取自由现金流基数
+        BigDecimal baseCashFlow = request.getBaseCashFlow();
+        if (baseCashFlow == null) {
+            baseCashFlow = valuationMetricsRepository.findLatestOperatingCashFlow(stockCode);
+        }
+
+        // 获取当前股价（用于计算 upside）
+        Optional<ValuationMetrics> vmOpt = valuationMetricsRepository.findLatestByStockCode(stockCode);
+        BigDecimal currentPrice = vmOpt.map(ValuationMetrics::getClosePrice).orElse(null);
+
+        // 默认参数
+        BigDecimal growthRate = request.getGrowthRate() != null ? request.getGrowthRate() : new BigDecimal("0.10");
+        BigDecimal discountRate = request.getDiscountRate() != null ? request.getDiscountRate() : new BigDecimal("0.08");
+        BigDecimal terminalGrowthRate = request.getTerminalGrowthRate() != null ? request.getTerminalGrowthRate() : new BigDecimal("0.03");
+        int projectionYears = request.getProjectionYears() != null ? request.getProjectionYears() : 10;
+
+        BigDecimal fairPrice = computeDcfFairPrice(baseCashFlow, totalShares, growthRate, discountRate, terminalGrowthRate, projectionYears);
+
+        // 敏感性分析：增长率 ±2%，折现率 ±1%
+        BigDecimal fairPriceLow = computeDcfFairPrice(baseCashFlow, totalShares, growthRate.subtract(new BigDecimal("0.02")), discountRate.add(new BigDecimal("0.01")), terminalGrowthRate, projectionYears);
+        BigDecimal fairPriceHigh = computeDcfFairPrice(baseCashFlow, totalShares, growthRate.add(new BigDecimal("0.02")), discountRate.subtract(new BigDecimal("0.01")), terminalGrowthRate, projectionYears);
+
+        DcfResponse response = new DcfResponse();
+        response.setFairPrice(fairPrice);
+        response.setFairPriceRangeLow(fairPriceLow);
+        response.setFairPriceRangeHigh(fairPriceHigh);
+
+        if (currentPrice != null && fairPrice != null && currentPrice.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal upside = safeDivide(fairPrice.subtract(currentPrice), currentPrice, 4);
+            response.setUpsidePercent(upside != null ? upside.multiply(BigDecimal.valueOf(100)) : null);
+        }
+
+        DcfRequest applied = new DcfRequest();
+        applied.setGrowthRate(growthRate);
+        applied.setDiscountRate(discountRate);
+        applied.setTerminalGrowthRate(terminalGrowthRate);
+        applied.setProjectionYears(projectionYears);
+        applied.setBaseCashFlow(baseCashFlow);
+        response.setAppliedAssumptions(applied);
+
+        return response;
+    }
+
+    private BigDecimal calculateMarketCap(BigDecimal price, BigDecimal totalShares) {
+        if (price == null || totalShares == null) {
+            return null;
+        }
+        return price.multiply(totalShares);
+    }
+
+    private CompositeScoreDto calculateCompositeScore(String stockCode, ValuationMetrics vm) {
+        Optional<StockFundamentalMetrics> fmOpt = valuationMetricsRepository.findLatestFundamentalMetrics(stockCode);
+        StockFundamentalMetrics fm = fmOpt.orElse(null);
+
+        // 财务健康分（阶段B指标加权）
+        int financialHealthScore = calculateFinancialHealthScore(fm);
+
+        // 估值吸引力分（分位倒序）
+        int valuationAppealScore = calculateValuationAppealScore(vm);
+
+        // 综合得分
+        int overallScore = (financialHealthScore + valuationAppealScore) / 2;
+
+        CompositeScoreDto score = new CompositeScoreDto();
+        score.setFinancialHealthScore(financialHealthScore);
+        score.setValuationAppealScore(valuationAppealScore);
+        score.setOverallScore(overallScore);
+        return score;
+    }
+
+    private int calculateFinancialHealthScore(StockFundamentalMetrics fm) {
+        if (fm == null) {
+            return 50; // 默认中等分
+        }
+        // ROE 30% + 毛利率(无直接字段，用ROE代理) + 资产负债率 20% + 现金流/净利润比 20% + 营收增速 10%
+        // 简化：使用已有字段映射到 0-100
+        int roeScore = scoreByValue(fm.getRoe(), new BigDecimal("5"), new BigDecimal("25")); // 5%~25% 映射
+        int debtScore = scoreByValueReverse(fm.getPeriodExpenseRate(), new BigDecimal("5"), new BigDecimal("30")); // 费用率越低越好
+        int cashflowScore = scoreByValue(fm.getCashflowProfitRatio(), new BigDecimal("50"), new BigDecimal("150")); // 50%~150%
+        int growthScore = scoreByValue(fm.getRevenueYoy(), new BigDecimal("-10"), new BigDecimal("50")); // -10%~50%
+
+        // 加权：ROE 40% + debt 20% + cashflow 20% + growth 20%
+        return (roeScore * 40 + debtScore * 20 + cashflowScore * 20 + growthScore * 20) / 100;
+    }
+
+    private int calculateValuationAppealScore(ValuationMetrics vm) {
+        if (vm == null) {
+            return 50;
+        }
+        // PE分位倒序 40% + PB分位倒序 30% + PS分位倒序 30%
+        BigDecimal peP = vm.getPeTtmPercentile() != null ? vm.getPeTtmPercentile() : BigDecimal.valueOf(0.5);
+        BigDecimal pbP = vm.getPbPercentile() != null ? vm.getPbPercentile() : BigDecimal.valueOf(0.5);
+        BigDecimal psP = vm.getPsTtmPercentile() != null ? vm.getPsTtmPercentile() : BigDecimal.valueOf(0.5);
+
+        int peScore = (int) ((1 - peP.doubleValue()) * 100);
+        int pbScore = (int) ((1 - pbP.doubleValue()) * 100);
+        int psScore = (int) ((1 - psP.doubleValue()) * 100);
+
+        return (peScore * 40 + pbScore * 30 + psScore * 30) / 100;
+    }
+
+    /**
+     * 将数值线性映射到 0-100 分数（值越大分数越高）
+     */
+    private int scoreByValue(BigDecimal value, BigDecimal min, BigDecimal max) {
+        if (value == null) return 50;
+        if (value.compareTo(min) <= 0) return 0;
+        if (value.compareTo(max) >= 0) return 100;
+        BigDecimal range = max.subtract(min);
+        if (range.compareTo(BigDecimal.ZERO) == 0) return 50;
+        return value.subtract(min).divide(range, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).intValue();
+    }
+
+    /**
+     * 将数值线性映射到 0-100 分数（值越小分数越高）
+     */
+    private int scoreByValueReverse(BigDecimal value, BigDecimal min, BigDecimal max) {
+        if (value == null) return 50;
+        if (value.compareTo(min) <= 0) return 100;
+        if (value.compareTo(max) >= 0) return 0;
+        BigDecimal range = max.subtract(min);
+        if (range.compareTo(BigDecimal.ZERO) == 0) return 50;
+        return BigDecimal.ONE.subtract(value.subtract(min).divide(range, 4, RoundingMode.HALF_UP)).multiply(BigDecimal.valueOf(100)).intValue();
+    }
+
+    private List<ValuationWarningDto> generateWarnings(ValuationMetrics vm) {
+        java.util.List<ValuationWarningDto> warnings = new java.util.ArrayList<>();
+        if (vm.getPeTtmPercentile() != null) {
+            double p = vm.getPeTtmPercentile().doubleValue();
+            if (p > 0.90) {
+                warnings.add(createWarning("PE_TTM", "high",
+                        String.format("PE(TTM)处于历史%.0f%%分位，估值偏高", p * 100)));
+            } else if (p > 0.70) {
+                warnings.add(createWarning("PE_TTM", "medium",
+                        String.format("PE(TTM)处于历史%.0f%%分位，估值偏贵", p * 100)));
+            }
+        }
+        if (vm.getPbPercentile() != null) {
+            double p = vm.getPbPercentile().doubleValue();
+            if (p > 0.90) {
+                warnings.add(createWarning("PB", "high",
+                        String.format("PB处于历史%.0f%%分位，估值偏高", p * 100)));
+            }
+        }
+        return warnings;
+    }
+
+    private ValuationWarningDto createWarning(String metric, String level, String message) {
+        ValuationWarningDto w = new ValuationWarningDto();
+        w.setMetric(metric);
+        w.setLevel(level);
+        w.setMessage(message);
+        return w;
+    }
+
+    private ValuationHistoryItemDto toHistoryItemDto(ValuationMetrics vm) {
+        ValuationHistoryItemDto dto = new ValuationHistoryItemDto();
+        dto.setTradeDate(vm.getTradeDate() != null ? vm.getTradeDate().format(DATE_FORMATTER) : null);
+        dto.setClosePrice(vm.getClosePrice());
+        dto.setPeTtm(vm.getPeTtm());
+        dto.setPeLyr(vm.getPeLyr());
+        dto.setPb(vm.getPb());
+        dto.setPsTtm(vm.getPsTtm());
+        return dto;
+    }
+
+    private BigDecimal computeDcfFairPrice(BigDecimal baseCashFlow, BigDecimal totalShares,
+                                            BigDecimal growthRate, BigDecimal discountRate,
+                                            BigDecimal terminalGrowthRate, int years) {
+        if (baseCashFlow == null || totalShares == null ||
+            growthRate == null || discountRate == null || terminalGrowthRate == null) {
+            return null;
+        }
+        if (totalShares.compareTo(BigDecimal.ZERO) == 0) {
+            return null;
+        }
+
+        double cf = baseCashFlow.doubleValue();
+        double r = discountRate.doubleValue();
+        double g = growthRate.doubleValue();
+        double tg = terminalGrowthRate.doubleValue();
+        double shares = totalShares.doubleValue();
+
+        if (r <= tg) {
+            return null;
+        }
+
+        double pv = 0.0;
+        for (int t = 1; t <= years; t++) {
+            double cfT = cf * Math.pow(1 + g, t);
+            pv += cfT / Math.pow(1 + r, t);
+        }
+
+        double cfN = cf * Math.pow(1 + g, years);
+        double terminalValue = cfN * (1 + tg) / (r - tg);
+        pv += terminalValue / Math.pow(1 + r, years);
+
+        return BigDecimal.valueOf(pv / shares).setScale(4, RoundingMode.HALF_UP);
     }
 }

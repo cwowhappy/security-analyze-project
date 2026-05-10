@@ -31,7 +31,7 @@ function handleLogout() {
             <el-button link size="small" class="nav-link" @click="router.push('/indexes')">指数信息</el-button>
             <el-button link size="small" class="nav-link" @click="router.push('/industries')">行业信息</el-button>
             <el-button link size="small" class="nav-link" @click="router.push('/companies')">公司信息</el-button>
-            <el-button link size="small" class="nav-link" @click="router.push('/research/fundamental')">投研分析</el-button>
+            <el-button link size="small" class="nav-link" @click="router.push('/research')">投研分析</el-button>
             <el-divider direction="vertical" class="nav-divider" />
             <!-- 个人持仓 -->
             <el-button link size="small" class="nav-link" @click="router.push('/portfolios')">持仓管理</el-button>
@@ -90,7 +90,6 @@ function handleLogout() {
 .brand-icon {
   font-size: 20px;
   color: var(--accent-primary);
-  text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
 }
 .nav-right {
   display: flex;

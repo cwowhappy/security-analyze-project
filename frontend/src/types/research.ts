@@ -105,3 +105,64 @@ export interface IndustryRankResponse {
   order: string
   items: IndustryRankItem[]
 }
+
+// ==================== 阶段C：估值分析 ====================
+
+export interface CompositeScore {
+  financialHealthScore: number
+  valuationAppealScore: number
+  overallScore: number
+}
+
+export interface ValuationWarning {
+  metric: string
+  level: 'high' | 'medium' | 'low'
+  message: string
+}
+
+export interface ValuationOverview {
+  stockCode: string
+  stockName: string
+  currentPrice: number
+  marketCap: number
+  peTtm?: number
+  peTtmPercentile?: number
+  peLyr?: number
+  pb?: number
+  pbPercentile?: number
+  psTtm?: number
+  psTtmPercentile?: number
+  compositeScore: CompositeScore
+  warnings: ValuationWarning[]
+}
+
+export interface ValuationHistoryItem {
+  tradeDate: string
+  closePrice: number
+  peTtm?: number
+  peLyr?: number
+  pb?: number
+  psTtm?: number
+}
+
+export interface ValuationHistoryResponse {
+  stockCode: string
+  stockName: string
+  items: ValuationHistoryItem[]
+}
+
+export interface DcfRequest {
+  growthRate?: number
+  discountRate?: number
+  terminalGrowthRate?: number
+  projectionYears?: number
+  baseCashFlow?: number
+}
+
+export interface DcfResponse {
+  fairPrice: number
+  fairPriceRangeLow?: number
+  fairPriceRangeHigh?: number
+  upsidePercent?: number
+  appliedAssumptions: DcfRequest
+}

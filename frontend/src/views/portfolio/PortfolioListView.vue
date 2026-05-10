@@ -167,7 +167,7 @@ onMounted(fetchData)
   transition: all 0.3s ease;
 }
 .portfolio-card:hover {
-  border-color: var(--accent-primary);
+  border-color: var(--border-color-accent);
   box-shadow: var(--shadow-glow);
 }
 .card-header {

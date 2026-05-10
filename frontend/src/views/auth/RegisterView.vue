@@ -83,7 +83,7 @@ async function handleRegister() {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #0a1628;
+  background: var(--bg-primary);
   overflow: hidden;
   z-index: 1;
 }
@@ -101,9 +101,9 @@ async function handleRegister() {
   inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(10, 22, 40, 0.88) 0%,
-    rgba(10, 22, 40, 0.65) 50%,
-    rgba(10, 22, 40, 0.88) 100%
+    rgba(13, 15, 20, 0.88) 0%,
+    rgba(13, 15, 20, 0.65) 50%,
+    rgba(13, 15, 20, 0.88) 100%
   );
 }
 

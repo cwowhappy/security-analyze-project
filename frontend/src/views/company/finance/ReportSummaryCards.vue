@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ElCard } from 'element-plus'
 import type { FinanceSummary } from '@/types/finance'
+import { getChartColor } from '@/utils/colors'
 
 const props = defineProps<{
   summary: FinanceSummary
@@ -15,11 +16,11 @@ function formatMoney(val?: number): string {
 }
 
 const cards = [
-  { label: '营业总收入', key: 'totalRevenue' as const, color: '#00d4ff' },
-  { label: '归母净利润', key: 'parentNetProfit' as const, color: '#67c23a' },
-  { label: '总资产', key: 'totalAssets' as const, color: '#ff9500' },
-  { label: '净资产', key: 'totalEquity' as const, color: '#f56c6c' },
-  { label: '经营现金流', key: 'operatingCashFlow' as const, color: '#9ca3af' },
+  { label: '营业总收入', key: 'totalRevenue' as const, color: getChartColor(0) },
+  { label: '归母净利润', key: 'parentNetProfit' as const, color: getChartColor(1) },
+  { label: '总资产', key: 'totalAssets' as const, color: getChartColor(2) },
+  { label: '净资产', key: 'totalEquity' as const, color: getChartColor(3) },
+  { label: '经营现金流', key: 'operatingCashFlow' as const, color: getChartColor(7) },
 ]
 </script>
 

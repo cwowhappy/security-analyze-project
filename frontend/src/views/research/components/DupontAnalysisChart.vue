@@ -6,6 +6,7 @@ import { TreeChart } from 'echarts/charts'
 import { TooltipComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 import type { AnnualMetric } from '@/types/research'
+import { NEON_COLORS } from '@/styles/echarts-theme'
 
 use([CanvasRenderer, TreeChart, TooltipComponent])
 
@@ -51,7 +52,7 @@ const chartOption = computed(() => {
   const m = latestMetric.value
   if (!m) {
     return {
-      title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#9ca3af' } },
+      title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#9CA3AF' } },
     }
   }
 
@@ -68,31 +69,31 @@ const chartOption = computed(() => {
 
   const data = {
     name: `ROE\n${fmtRatio(roe, '%')}`,
-    itemStyle: { color: '#e6a23c' },
+    itemStyle: { color: NEON_COLORS[4] },
     label: { fontSize: 14, fontWeight: 'bold' },
     children: [
       {
         name: `净利率\n${fmtPercent(netMargin)}`,
-        itemStyle: { color: '#67c23a' },
+        itemStyle: { color: NEON_COLORS[3] },
         children: [
-          { name: `归母净利润\n${fmtMoney(m.parentNetProfit)}`, itemStyle: { color: '#95d475' } },
-          { name: `营业收入\n${fmtMoney(m.operateIncome)}`, itemStyle: { color: '#95d475' } },
+          { name: `归母净利润\n${fmtMoney(m.parentNetProfit)}`, itemStyle: { color: NEON_COLORS[3] + 'aa' } },
+          { name: `营业收入\n${fmtMoney(m.operateIncome)}`, itemStyle: { color: NEON_COLORS[3] + 'aa' } },
         ],
       },
       {
         name: `资产周转率\n${fmtRatio(assetTurnover, '次')}`,
-        itemStyle: { color: '#409eff' },
+        itemStyle: { color: NEON_COLORS[0] },
         children: [
-          { name: `营业收入\n${fmtMoney(m.operateIncome)}`, itemStyle: { color: '#a0cfff' } },
-          { name: `总资产\n${fmtMoney(m.totalAssets)}`, itemStyle: { color: '#a0cfff' } },
+          { name: `营业收入\n${fmtMoney(m.operateIncome)}`, itemStyle: { color: NEON_COLORS[0] + 'aa' } },
+          { name: `总资产\n${fmtMoney(m.totalAssets)}`, itemStyle: { color: NEON_COLORS[0] + 'aa' } },
         ],
       },
       {
         name: `权益乘数\n${fmtRatio(equityMultiplier)}`,
-        itemStyle: { color: '#ff9500' },
+        itemStyle: { color: NEON_COLORS[2] },
         children: [
-          { name: `总资产\n${fmtMoney(m.totalAssets)}`, itemStyle: { color: '#fcd98f' } },
-          { name: `股东权益\n${fmtMoney(m.totalEquity)}`, itemStyle: { color: '#fcd98f' } },
+          { name: `总资产\n${fmtMoney(m.totalAssets)}`, itemStyle: { color: NEON_COLORS[2] + 'aa' } },
+          { name: `股东权益\n${fmtMoney(m.totalEquity)}`, itemStyle: { color: NEON_COLORS[2] + 'aa' } },
         ],
       },
     ],
@@ -103,9 +104,9 @@ const chartOption = computed(() => {
     tooltip: {
       trigger: 'item',
       triggerOn: 'mousemove',
-      backgroundColor: 'rgba(15,21,37,0.9)',
-      borderColor: 'rgba(255,255,255,0.1)',
-      textStyle: { color: '#e5e7eb' },
+      backgroundColor: 'rgba(17, 19, 24, 0.95)',
+      borderColor: 'rgba(43, 106, 255, 0.20)',
+      textStyle: { color: '#E8EAED' },
       formatter: (params: any) => {
         const name = params.name.replace('\n', ': ')
         return `<div style="font-size:13px">${name}</div>`
@@ -126,7 +127,7 @@ const chartOption = computed(() => {
           verticalAlign: 'middle',
           align: 'center',
           fontSize: 12,
-          color: '#e5e7eb',
+          color: '#E8EAED',
           lineHeight: 16,
         },
         leaves: {
@@ -135,7 +136,7 @@ const chartOption = computed(() => {
             verticalAlign: 'middle',
             align: 'center',
             fontSize: 11,
-            color: '#9ca3af',
+            color: '#9CA3AF',
           },
         },
         emphasis: {
@@ -165,9 +166,9 @@ const chartOption = computed(() => {
 <style scoped>
 .dupont-chart-wrapper {
   height: 360px;
-  background: var(--card-bg, rgba(255, 255, 255, 0.03));
-  border-radius: 8px;
-  padding: 16px;
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  padding: var(--card-padding);
   position: relative;
 }
 .chart-title {

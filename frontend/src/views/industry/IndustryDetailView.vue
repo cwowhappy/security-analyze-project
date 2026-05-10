@@ -65,9 +65,9 @@ const chartOption = computed(() => {
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'cross' },
-      backgroundColor: 'rgba(15,21,37,0.9)',
-      borderColor: 'rgba(255,255,255,0.1)',
-      textStyle: { color: '#e5e7eb' },
+      backgroundColor: 'rgba(17, 19, 24, 0.95)',
+      borderColor: 'rgba(43, 106, 255, 0.20)',
+      textStyle: { color: '#E8EAED' },
       formatter: (params: any[]) => {
         const close = params[0]?.value ?? 0
         const change = params[1]?.value ?? 0
@@ -76,14 +76,14 @@ const chartOption = computed(() => {
     },
     grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
     dataZoom: [{ type: 'inside' }, { type: 'slider', bottom: 0, textStyle: { color: '#9ca3af' } }],
-    xAxis: { type: 'category', data: xData, axisLine: { lineStyle: { color: '#4b5563' } }, axisLabel: { color: '#9ca3af', rotate: 30 } },
+    xAxis: { type: 'category', data: xData, axisLine: { lineStyle: { color: '#4B5563' } }, axisLabel: { color: '#9CA3AF', rotate: 30 } },
     yAxis: [
-      { type: 'value', name: '收盘', position: 'left', axisLine: { lineStyle: { color: '#4b5563' } }, axisLabel: { color: '#9ca3af' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
-      { type: 'value', name: '涨跌幅(%)', position: 'right', axisLabel: { formatter: '{value}%', color: '#9ca3af' }, axisLine: { lineStyle: { color: '#4b5563' } }, splitLine: { show: false } },
+      { type: 'value', name: '收盘', position: 'left', axisLine: { lineStyle: { color: '#4B5563' } }, axisLabel: { color: '#9CA3AF' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
+      { type: 'value', name: '涨跌幅(%)', position: 'right', axisLabel: { formatter: '{value}%', color: '#9CA3AF' }, axisLine: { lineStyle: { color: '#4B5563' } }, splitLine: { show: false } },
     ],
     series: [
-      { name: '收盘', type: 'line', data: closeData, smooth: true, yAxisIndex: 0, lineStyle: { color: '#00d4ff' }, itemStyle: { color: '#00d4ff' }, areaStyle: { opacity: 0.1, color: 'rgba(0,212,255,0.2)' } },
-      { name: '涨跌幅', type: 'line', data: changeData, smooth: true, yAxisIndex: 1, lineStyle: { type: 'dashed', color: '#ff9500' }, itemStyle: { color: '#ff9500' } },
+      { name: '收盘', type: 'line', data: closeData, smooth: true, yAxisIndex: 0, lineStyle: { color: '#2B6AFF' }, itemStyle: { color: '#2B6AFF' }, areaStyle: { opacity: 0.1, color: 'rgba(43,106,255,0.2)' } },
+      { name: '涨跌幅', type: 'line', data: changeData, smooth: true, yAxisIndex: 1, lineStyle: { type: 'dashed', color: '#F59E0B' }, itemStyle: { color: '#F59E0B' } },
     ],
   }
 })

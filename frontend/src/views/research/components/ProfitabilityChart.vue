@@ -6,6 +6,7 @@ import { LineChart, BarChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 import type { AnnualMetric } from '@/types/research'
+import { NEON_COLORS } from '@/styles/echarts-theme'
 
 use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent])
 
@@ -20,13 +21,13 @@ const chartOption = computed(() => {
 
   return {
     backgroundColor: 'transparent',
-    title: { text: '盈利能力趋势', left: 'center', textStyle: { color: '#e5e7eb', fontSize: 14 } },
+    title: { text: '盈利能力趋势', left: 'center', textStyle: { color: '#E8EAED', fontSize: 14 } },
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'cross' },
-      backgroundColor: 'rgba(15,21,37,0.9)',
-      borderColor: 'rgba(255,255,255,0.1)',
-      textStyle: { color: '#e5e7eb' },
+      backgroundColor: 'rgba(17, 19, 24, 0.95)',
+      borderColor: 'rgba(43, 106, 255, 0.20)',
+      textStyle: { color: '#E8EAED' },
       formatter: (params: any[]) => {
         let html = `<div style="font-weight:600;margin-bottom:4px">${params[0].axisValue}</div>`
         params.forEach((p: any) => {
@@ -51,21 +52,21 @@ const chartOption = computed(() => {
         return html
       },
     },
-    legend: { data: ['营业总收入', '归母净利润', '营业成本', '毛利率', '净利率', 'ROE'], bottom: 0, textStyle: { color: '#9ca3af' } },
+    legend: { data: ['营业总收入', '归母净利润', '营业成本', '毛利率', '净利率', 'ROE'], bottom: 0, textStyle: { color: '#9CA3AF' } },
     grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
     xAxis: {
       type: 'category',
       data: xData.value,
-      axisLabel: { color: '#9ca3af' },
-      axisLine: { lineStyle: { color: '#4b5563' } },
+      axisLabel: { color: '#9CA3AF' },
+      axisLine: { lineStyle: { color: '#4B5563' } },
     },
     yAxis: [
       {
         type: 'value',
         name: '金额（元）',
-        nameTextStyle: { color: '#9ca3af' },
+        nameTextStyle: { color: '#9CA3AF' },
         axisLabel: {
-          color: '#9ca3af',
+          color: '#9CA3AF',
           formatter: (value: number) => {
             const abs = Math.abs(value)
             if (abs >= 1e8) return (value / 1e8).toFixed(0) + '亿'
@@ -73,25 +74,25 @@ const chartOption = computed(() => {
             return value
           },
         },
-        axisLine: { lineStyle: { color: '#4b5563' } },
+        axisLine: { lineStyle: { color: '#4B5563' } },
         splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
       },
       {
         type: 'value',
         name: '比率（%）',
-        nameTextStyle: { color: '#9ca3af' },
-        axisLabel: { formatter: '{value}%', color: '#9ca3af' },
-        axisLine: { lineStyle: { color: '#4b5563' } },
+        nameTextStyle: { color: '#9CA3AF' },
+        axisLabel: { formatter: '{value}%', color: '#9CA3AF' },
+        axisLine: { lineStyle: { color: '#4B5563' } },
         splitLine: { show: false },
       },
     ],
     series: [
-      { name: '营业总收入', type: 'bar', data: props.metrics.map(m => m.totalRevenue), yAxisIndex: 0, itemStyle: { color: '#00d4ff' } },
-      { name: '归母净利润', type: 'bar', data: props.metrics.map(m => m.parentNetProfit), yAxisIndex: 0, itemStyle: { color: '#67c23a' } },
-      { name: '营业成本', type: 'bar', data: props.metrics.map(m => m.operateCost), yAxisIndex: 0, itemStyle: { color: '#f56c6c' } },
-      { name: '毛利率', type: 'line', data: props.metrics.map(m => m.grossMargin), yAxisIndex: 1, smooth: true, itemStyle: { color: '#ff9500' } },
-      { name: '净利率', type: 'line', data: props.metrics.map(m => m.netMargin), yAxisIndex: 1, smooth: true, itemStyle: { color: '#9ca3af' } },
-      { name: 'ROE', type: 'line', data: props.metrics.map(m => m.roe), yAxisIndex: 1, smooth: true, itemStyle: { color: '#e6a23c' } },
+      { name: '营业总收入', type: 'bar', data: props.metrics.map(m => m.totalRevenue), yAxisIndex: 0, itemStyle: { color: NEON_COLORS[0] } },
+      { name: '归母净利润', type: 'bar', data: props.metrics.map(m => m.parentNetProfit), yAxisIndex: 0, itemStyle: { color: NEON_COLORS[3] } },
+      { name: '营业成本', type: 'bar', data: props.metrics.map(m => m.operateCost), yAxisIndex: 0, itemStyle: { color: NEON_COLORS[6] } },
+      { name: '毛利率', type: 'line', data: props.metrics.map(m => m.grossMargin), yAxisIndex: 1, smooth: true, itemStyle: { color: NEON_COLORS[2] } },
+      { name: '净利率', type: 'line', data: props.metrics.map(m => m.netMargin), yAxisIndex: 1, smooth: true, itemStyle: { color: NEON_COLORS[7] } },
+      { name: 'ROE', type: 'line', data: props.metrics.map(m => m.roe), yAxisIndex: 1, smooth: true, itemStyle: { color: NEON_COLORS[4] } },
     ],
   }
 })

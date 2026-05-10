@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS company_security (
     security_type VARCHAR(20),
     listing_date DATE,
     listing_status VARCHAR(20) DEFAULT 'listed',
+    total_shares DECIMAL(20,4),        -- 总股本（股）
+    circulating_shares DECIMAL(20,4),  -- 流通股本（股）
+    market_cap DECIMAL(20,4),          -- 总市值（元）
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -283,3 +286,28 @@ CREATE INDEX IF NOT EXISTS idx_sfm_stock_code ON stock_fundamental_metrics(stock
 CREATE INDEX IF NOT EXISTS idx_sfm_report_year ON stock_fundamental_metrics(report_year);
 CREATE INDEX IF NOT EXISTS idx_sfm_is_deleted ON stock_fundamental_metrics(is_deleted);
 CREATE INDEX IF NOT EXISTS idx_sfm_stock_year_deleted ON stock_fundamental_metrics(stock_code, report_year, is_deleted);
+
+-- --------------------------------------------------------------
+-- 9. 股票估值指标表（阶段C）
+-- --------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS stock_valuation_metrics (
+    id BIGSERIAL PRIMARY KEY,
+    stock_code VARCHAR(20) NOT NULL,
+    trade_date DATE NOT NULL,
+    close_price DECIMAL(18,4),
+    pe_ttm DECIMAL(10,4),
+    pe_lyr DECIMAL(10,4),
+    pb DECIMAL(10,4),
+    ps_ttm DECIMAL(10,4),
+    pe_ttm_percentile DECIMAL(5,4),
+    pb_percentile DECIMAL(5,4),
+    ps_ttm_percentile DECIMAL(5,4),
+    dcf_fair_price DECIMAL(18,4),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_valuation_metrics UNIQUE (stock_code, trade_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_val_stock ON stock_valuation_metrics(stock_code);
+CREATE INDEX IF NOT EXISTS idx_val_date ON stock_valuation_metrics(trade_date);
+CREATE INDEX IF NOT EXISTS idx_val_stock_date ON stock_valuation_metrics(stock_code, trade_date);

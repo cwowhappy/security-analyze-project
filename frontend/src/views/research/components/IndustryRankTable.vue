@@ -119,7 +119,7 @@ const sortedData = computed(() => {
   color: var(--text-primary, #e5e7eb);
 }
 .rank-table thead th.active {
-  color: #409eff;
+  color: var(--accent-primary);
 }
 .sort-icon {
   font-size: 10px;
@@ -136,10 +136,10 @@ const sortedData = computed(() => {
   transition: background 0.15s;
 }
 .rank-table tbody tr:hover {
-  background: var(--card-hover-bg, rgba(255,255,255,0.04));
+  background: var(--card-hover-bg);
 }
 .rank-table tbody tr.highlight {
-  background: rgba(64, 158, 255, 0.1);
+  background: var(--accent-primary-dim);
 }
 .rank-table tbody tr.highlight td {
   font-weight: 600;

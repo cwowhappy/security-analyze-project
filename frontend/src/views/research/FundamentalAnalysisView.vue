@@ -1,46 +1,140 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, ElCollapse, ElCollapseItem, ElLink, ElEmpty, ElBreadcrumb, ElBreadcrumbItem, ElSelect, ElOption } from 'element-plus'
-import { getFundamentalOverview, getIndustryPeers, getIndustryRank } from '@/api/research'
-import type { FundamentalOverview, AnnualMetric, PeerMetric, IndustryRankItem } from '@/types/research'
-import FundamentalScreener from './components/FundamentalScreener.vue'
-import MetricDashboard from './components/MetricDashboard.vue'
-import IndustryPeersTable from './components/IndustryPeersTable.vue'
-import IndustryRankTable from './components/IndustryRankTable.vue'
-import ProfitabilityChart from './components/ProfitabilityChart.vue'
-import CostExpenseChart from './components/CostExpenseChart.vue'
-import BalanceSheetChart from './components/BalanceSheetChart.vue'
-import CashFlowChart from './components/CashFlowChart.vue'
-import DupontAnalysisChart from './components/DupontAnalysisChart.vue'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import {
+  ElMessage,
+  ElLink,
+  ElBreadcrumb,
+  ElBreadcrumbItem,
+  ElTabs,
+  ElTabPane,
+  ElAutocomplete,
+  ElButton,
+} from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
+import { getCompanyList } from '@/api/company'
+import type { CompanyListResponse } from '@/types/company'
+import FundamentalChartsTab from './tabs/FundamentalChartsTab.vue'
+import ValuationAnalysisTab from './tabs/ValuationAnalysisTab.vue'
+import PeerComparisonTab from './tabs/PeerComparisonTab.vue'
 
 const router = useRouter()
+const route = useRoute()
 
 const selectedStock = ref('')
+const stockName = ref('')
+const industry = ref('')
+const market = ref('')
 const loading = ref(false)
-const overview = ref<FundamentalOverview | null>(null)
-const peers = ref<PeerMetric[]>([])
-const rankData = ref<IndustryRankItem[]>([])
-const rankSortBy = ref('roe')
-const rankOrder = ref('desc')
-const activeCollapse = ref<string[]>([])
-const selectedYear = ref<number | null>(null)
+const activeTab = ref('fundamental')
+const searchKeyword = ref('')
 
 // 对比池（最多5家）
 const comparePool = ref<{ stockCode: string; stockName: string }[]>([])
 
-function addToCompare(stockCode: string) {
+interface SuggestItem {
+  value: string
+  stockCode: string
+  stockName: string
+  market?: string
+}
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+function fetchSuggestions(queryString: string, callback: (data: SuggestItem[]) => void) {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(async () => {
+    const trimmed = queryString.trim()
+    if (!trimmed) {
+      callback([])
+      return
+    }
+    try {
+      const res: CompanyListResponse = await getCompanyList({
+        keyword: trimmed,
+        page: 0,
+        size: 10,
+      })
+      const items = res.items.map((item) => ({
+        value: `${item.stockCode} ${item.stockName}`,
+        stockCode: item.stockCode,
+        stockName: item.stockName,
+        market: item.market,
+      }))
+      callback(items)
+    } catch {
+      callback([])
+    }
+  }, 200)
+}
+
+async function onAnalyze(stockCode?: string) {
+  const code = stockCode || searchKeyword.value.trim().split(' ')[0]
+  if (!code) {
+    ElMessage.warning('请输入股票代码或公司名称')
+    return
+  }
+  await loadCompany(code)
+}
+
+async function loadCompany(stockCode: string) {
+  loading.value = true
+  try {
+    const res: CompanyListResponse = await getCompanyList({
+      keyword: stockCode,
+      page: 0,
+      size: 1,
+    })
+    const company = res.items.find((c) => c.stockCode === stockCode) || res.items[0]
+    if (!company) {
+      ElMessage.error('未找到该公司')
+      return
+    }
+    selectedStock.value = company.stockCode
+    stockName.value = company.stockName
+    industry.value = company.industry || ''
+    market.value = company.market || ''
+    searchKeyword.value = `${company.stockCode} ${company.stockName}`
+
+    // 更新 URL，便于分享
+    const url = new URL(window.location.href)
+    url.searchParams.set('stockCode', company.stockCode)
+    window.history.replaceState({}, '', url.toString())
+  } catch (err) {
+    ElMessage.error('加载公司信息失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+function handleSelect(item: SuggestItem) {
+  onAnalyze(item.stockCode)
+}
+
+function backToEntry() {
+  selectedStock.value = ''
+  stockName.value = ''
+  industry.value = ''
+  market.value = ''
+  searchKeyword.value = ''
+  comparePool.value = []
+  activeTab.value = 'fundamental'
+
+  const url = new URL(window.location.href)
+  url.searchParams.delete('stockCode')
+  window.history.replaceState({}, '', url.toString())
+}
+
+function addToCompare(stockCode: string, name?: string) {
   if (comparePool.value.length >= 5) {
     ElMessage.warning('对比池最多支持5家公司')
     return
   }
-  if (comparePool.value.some(c => c.stockCode === stockCode)) {
+  if (comparePool.value.some((c) => c.stockCode === stockCode)) {
     ElMessage.info('该公司已在对比池中')
     return
   }
-  // 尝试从 peers 或 company list 中获取名称
-  const name = peers.value.find(p => p.stockCode === stockCode)?.stockName || stockCode
-  comparePool.value.push({ stockCode, stockName: name })
+  comparePool.value.push({ stockCode, stockName: name || stockCode })
 }
 
 function removeFromCompare(index: number) {
@@ -51,195 +145,117 @@ function clearCompare() {
   comparePool.value = []
 }
 
-const availableYears = computed(() => {
-  if (!overview.value?.metrics?.length) return []
-  return overview.value.metrics.map(m => m.reportYear)
-})
+function onPeerSelect(stockCode: string) {
+  loadCompany(stockCode)
+}
 
-const selectedMetric = computed<AnnualMetric | null>(() => {
-  if (!overview.value?.metrics?.length) return null
-  if (selectedYear.value != null) {
-    return overview.value.metrics.find(m => m.reportYear === selectedYear.value) || null
+onMounted(() => {
+  const queryCode = route.query.stockCode as string
+  if (queryCode) {
+    loadCompany(queryCode)
   }
-  return overview.value.metrics[overview.value.metrics.length - 1]
 })
-
-
-
-function getYoyInfo(val?: number): { value?: number; direction?: 'up' | 'down' | 'flat' } {
-  if (val == null) return {}
-  if (val > 0.01) return { value: val, direction: 'up' }
-  if (val < -0.01) return { value: val, direction: 'down' }
-  return { value: val, direction: 'flat' }
-}
-
-const metricCards = computed(() => {
-  const m = selectedMetric.value
-  if (!m) return []
-  const revenueYoy = getYoyInfo(m.revenueYoy)
-  const profitYoy = getYoyInfo(m.profitYoy)
-  return [
-    { label: '营业总收入', value: formatMoney(m.totalRevenue), color: '#00d4ff', yoyValue: revenueYoy.value, yoyDirection: revenueYoy.direction },
-    { label: '归母净利润', value: formatMoney(m.parentNetProfit), color: '#67c23a', yoyValue: profitYoy.value, yoyDirection: profitYoy.direction },
-    { label: '毛利率', value: formatPercent(m.grossMargin), color: '#409eff' },
-    { label: '净利率', value: formatPercent(m.netMargin), color: '#67c23a' },
-    { label: 'ROE', value: formatPercent(m.roe), color: '#e6a23c' },
-    { label: '总资产', value: formatMoney(m.totalAssets), color: '#ff9500' },
-    { label: '资产负债率', value: formatPercent(m.debtRatio), color: '#f56c6c' },
-    { label: '经营现金流/净利润', value: formatPercent(m.cashflowProfitRatio), color: '#9ca3af' },
-  ]
-})
-
-async function onRankSort(field: string) {
-  const nextOrder = rankSortBy.value === field && rankOrder.value === 'desc' ? 'asc' : 'desc'
-  rankSortBy.value = field
-  rankOrder.value = nextOrder
-  try {
-    const res = await getIndustryRank(selectedStock.value, field, nextOrder)
-    rankData.value = res.items
-  } catch (err) {
-    ElMessage.error('排序加载失败')
-  }
-}
-
-async function onSelectCompany(stockCode: string) {
-  selectedStock.value = stockCode
-  loading.value = true
-  try {
-    const [overviewRes, peersRes, rankRes] = await Promise.all([
-      getFundamentalOverview(stockCode),
-      getIndustryPeers(stockCode),
-      getIndustryRank(stockCode),
-    ])
-    overview.value = overviewRes
-    peers.value = peersRes.peers
-    rankData.value = rankRes.items
-    // 默认选中最新年份
-    if (overviewRes.metrics?.length) {
-      selectedYear.value = overviewRes.metrics[overviewRes.metrics.length - 1].reportYear
-    } else {
-      selectedYear.value = null
-    }
-  } catch (err) {
-    ElMessage.error('加载数据失败')
-    overview.value = null
-    peers.value = []
-    rankData.value = []
-    selectedYear.value = null
-  } finally {
-    loading.value = false
-  }
-}
-
-function formatMoney(val?: number): string {
-  if (val == null) return '-'
-  const abs = Math.abs(val)
-  if (abs >= 1e8) return (val / 1e8).toFixed(2) + ' 亿'
-  if (abs >= 1e4) return (val / 1e4).toFixed(2) + ' 万'
-  return val.toLocaleString()
-}
-
-function formatPercent(val?: number): string {
-  if (val == null) return '-'
-  return val.toFixed(2) + '%'
-}
 </script>
 
 <template>
   <div class="research-page">
-    <ElBreadcrumb separator="/" class="page-breadcrumb">
-      <ElBreadcrumbItem :to="{ path: '/' }">首页</ElBreadcrumbItem>
-      <ElBreadcrumbItem>投研分析</ElBreadcrumbItem>
-    </ElBreadcrumb>
+    <!-- ========== 入口视图：未选中公司 ========== -->
+    <template v-if="!selectedStock">
+      <ElBreadcrumb separator="/" class="page-breadcrumb">
+        <ElBreadcrumbItem :to="{ path: '/' }">首页</ElBreadcrumbItem>
+        <ElBreadcrumbItem>投研分析</ElBreadcrumbItem>
+      </ElBreadcrumb>
 
-    <div class="research-layout">
-      <!-- 左侧边栏 -->
-      <aside class="research-sidebar">
-        <FundamentalScreener @select="onSelectCompany" @add-compare="addToCompare" />
-      </aside>
+      <h2 class="page-title">投研分析</h2>
 
-      <!-- 右侧主区域 -->
-      <main class="research-main" v-loading="loading">
-        <!-- 引导态 -->
-      <ElEmpty v-if="!selectedStock" description="请输入股票代码或选择左侧筛选条件开始分析" />
+      <div class="search-section">
+        <div class="search-box">
+          <ElAutocomplete
+            v-model="searchKeyword"
+            :fetch-suggestions="fetchSuggestions"
+            placeholder="输入股票代码或公司名称"
+            clearable
+            style="width: 480px"
+            :highlight-first-item="false"
+            @select="handleSelect"
+            @keyup.enter="onAnalyze()"
+          >
+            <template #prefix>
+              <Search style="width: 16px; height: 16px; color: var(--text-tertiary)" />
+            </template>
+            <template #default="{ item }">
+              <div class="suggest-item">
+                <span class="suggest-code">{{ item.stockCode }}</span>
+                <span class="suggest-name">{{ item.stockName }}</span>
+                <span v-if="item.market" class="suggest-market">[{{ item.market }}]</span>
+              </div>
+            </template>
+          </ElAutocomplete>
+          <ElButton type="primary" @click="onAnalyze()">开始分析</ElButton>
+        </div>
+        <div class="search-hint">
+          例如：600519（贵州茅台）、000001（平安银行）、002594（比亚迪）
+        </div>
+      </div>
+    </template>
 
-      <template v-else-if="overview">
-        <!-- 公司信息栏 -->
-        <div class="company-header">
-          <div class="company-title">
-            <span class="title-name">{{ overview.stockName }}</span>
-            <span class="title-code">({{ overview.stockCode }})</span>
-            <span class="title-tags">
-              <span class="tag">{{ overview.industry || '-' }}</span>
-              <span class="tag">{{ overview.market || '-' }}</span>
-            </span>
-          </div>
-          <ElLink type="primary" @click="router.push(`/companies/${overview.stockCode}`)">
-            查看公司详情 →
+    <!-- ========== 分析视图：已选中公司 ========== -->
+    <template v-else>
+      <ElBreadcrumb separator="/" class="page-breadcrumb">
+        <ElBreadcrumbItem :to="{ path: '/' }">首页</ElBreadcrumbItem>
+        <ElBreadcrumbItem>
+          <ElLink type="primary" :underline="false" @click="backToEntry">
+            投研分析
           </ElLink>
+        </ElBreadcrumbItem>
+        <ElBreadcrumbItem>{{ stockName }}</ElBreadcrumbItem>
+      </ElBreadcrumb>
+
+      <!-- 公司信息栏 -->
+      <div class="company-header">
+        <div class="company-title">
+          <span class="title-name">{{ stockName }}</span>
+          <span class="title-code">({{ selectedStock }})</span>
+          <span class="title-tags">
+            <span class="tag">{{ industry || '-' }}</span>
+            <span class="tag">{{ market || '-' }}</span>
+          </span>
         </div>
+        <ElLink type="primary" @click="router.push(`/companies/${selectedStock}`)">
+          查看公司详情 →
+        </ElLink>
+      </div>
 
-        <!-- 年份筛选 -->
-        <div class="year-filter-bar">
-          <span class="year-filter-label">数据年份：</span>
-          <ElSelect v-model="selectedYear" placeholder="选择年份" size="small" style="width: 120px">
-            <ElOption
-              v-for="year in availableYears"
-              :key="year"
-              :label="year + ' 年'"
-              :value="year"
-            />
-          </ElSelect>
+      <!-- 对比池 -->
+      <div v-if="comparePool.length > 0" class="compare-pool-bar">
+        <span class="compare-label">对比池：</span>
+        <div class="compare-tags">
+          <span
+            v-for="(item, idx) in comparePool"
+            :key="item.stockCode"
+            class="compare-tag"
+          >
+            {{ item.stockName }}
+            <span class="compare-remove" @click="removeFromCompare(idx)">×</span>
+          </span>
         </div>
+        <button class="compare-clear" @click="clearCompare">清空</button>
+      </div>
 
-        <MetricDashboard :cards="metricCards" />
+      <ElTabs v-model="activeTab" type="border-card" class="research-tabs">
+        <ElTabPane label="公司基本面数据图表" name="fundamental">
+          <FundamentalChartsTab :stock-code="selectedStock" />
+        </ElTabPane>
 
-        <!-- 对比池 -->
-        <div v-if="comparePool.length > 0" class="compare-pool-bar">
-          <span class="compare-label">对比池：</span>
-          <div class="compare-tags">
-            <span
-              v-for="(item, idx) in comparePool"
-              :key="item.stockCode"
-              class="compare-tag"
-            >
-              {{ item.stockName }}
-              <span class="compare-remove" @click="removeFromCompare(idx)">×</span>
-            </span>
-          </div>
-          <button class="compare-clear" @click="clearCompare">清空</button>
-        </div>
+        <ElTabPane label="估值分析" name="valuation">
+          <ValuationAnalysisTab :stock-code="selectedStock" />
+        </ElTabPane>
 
-        <!-- 图表区 -->
-        <div class="charts-container">
-          <ProfitabilityChart :metrics="overview.metrics" />
-          <CostExpenseChart :metrics="overview.metrics" />
-          <BalanceSheetChart :metrics="overview.metrics" />
-          <CashFlowChart :metrics="overview.metrics" />
-          <DupontAnalysisChart :metrics="overview.metrics" />
-        </div>
-
-        <!-- 同行业公司速览 + 行业排名 -->
-        <ElCollapse v-model="activeCollapse" style="margin-top: 24px">
-          <ElCollapseItem title="同行业公司速览" name="peers">
-            <IndustryPeersTable :peers="peers" @select="onSelectCompany" />
-          </ElCollapseItem>
-          <ElCollapseItem title="行业排名" name="rank">
-            <IndustryRankTable
-              :data="rankData"
-              :current-stock-code="selectedStock"
-              :sort-by="rankSortBy"
-              :order="rankOrder"
-              @select="onSelectCompany"
-              @sort="onRankSort"
-            />
-          </ElCollapseItem>
-        </ElCollapse>
-      </template>
-
-      <ElEmpty v-else description="暂无数据" />
-      </main>
-    </div>
+        <ElTabPane label="同行对比分析" name="peer">
+          <PeerComparisonTab :stock-code="selectedStock" @select="onPeerSelect" />
+        </ElTabPane>
+      </ElTabs>
+    </template>
   </div>
 </template>
 
@@ -249,42 +265,70 @@ function formatPercent(val?: number): string {
   flex-direction: column;
   height: calc(100vh - 64px);
   overflow: hidden;
+  padding: 0 16px 16px;
 }
 .page-breadcrumb {
-  padding: 16px 16px 0;
+  padding: 16px 0 0;
   flex-shrink: 0;
 }
-.research-layout {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 16px;
+
+/* 入口视图 */
+.page-title {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 16px 0;
+}
+
+/* 搜索区域：参考公司信息页面 */
+.search-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 32px 0 40px;
+  padding: 32px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.search-hint {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+.suggest-code {
+  font-weight: 600;
+  color: var(--accent-primary);
+  min-width: 80px;
+}
+.suggest-name {
   flex: 1;
-  overflow: hidden;
+  color: var(--text-primary);
 }
-.research-sidebar {
-  overflow-y: auto;
-  border-right: 1px solid var(--border-color, rgba(255,255,255,0.06));
-  padding: 16px;
+.suggest-market {
+  color: var(--text-tertiary);
+  font-size: 12px;
 }
-.research-main {
-  overflow-y: auto;
-  padding: 16px;
-}
+
+/* 分析视图 */
 .company-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-}
-.year-filter-bar {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-  gap: 8px;
-}
-.year-filter-label {
-  font-size: 14px;
-  color: var(--text-secondary, #9ca3af);
+  margin: 16px 0;
+  flex-shrink: 0;
 }
 .company-title {
   display: flex;
@@ -308,14 +352,9 @@ function formatPercent(val?: number): string {
 .tag {
   font-size: 12px;
   color: var(--text-secondary, #9ca3af);
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   padding: 2px 8px;
   border-radius: 4px;
-}
-.charts-container {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
 }
 .compare-pool-bar {
   display: flex;
@@ -323,6 +362,7 @@ function formatPercent(val?: number): string {
   gap: 8px;
   margin-bottom: 16px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 .compare-label {
   font-size: 13px;
@@ -340,9 +380,9 @@ function formatPercent(val?: number): string {
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 4px;
-  background: rgba(64, 158, 255, 0.12);
-  color: #409eff;
-  border: 1px solid rgba(64, 158, 255, 0.25);
+  background: var(--accent-primary-dim);
+  color: var(--accent-primary);
+  border: 1px solid var(--border-color-neon);
 }
 .compare-remove {
   cursor: pointer;
@@ -362,17 +402,32 @@ function formatPercent(val?: number): string {
   margin-left: auto;
 }
 .compare-clear:hover {
-  color: #f56c6c;
+  color: var(--danger-color);
 }
+.research-tabs {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.research-tabs :deep(.el-tabs__content) {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
 @media (max-width: 768px) {
-  .research-layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+  .search-section {
+    margin: 16px 0 24px;
+    padding: 24px 16px;
   }
-  .research-sidebar {
-    border-right: none;
-    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.06));
-    max-height: 300px;
+  .search-box {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .search-box .el-autocomplete {
+    width: 100% !important;
   }
 }
 </style>

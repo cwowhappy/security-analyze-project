@@ -158,16 +158,16 @@ onBeforeUnmount(() => {
 .company-item {
   padding: 12px;
   border-radius: 8px;
-  background: var(--card-bg, rgba(255,255,255,0.03));
+  background: var(--card-bg);
   cursor: pointer;
   transition: background 0.2s;
 }
 .company-item:hover {
-  background: var(--card-hover-bg, rgba(255,255,255,0.06));
+  background: var(--card-hover-bg);
 }
 .company-item.active {
-  background: rgba(64, 158, 255, 0.15);
-  border: 1px solid rgba(64, 158, 255, 0.3);
+  background: var(--accent-primary-dim);
+  border: 1px solid var(--border-color-neon);
 }
 .company-header {
   display: flex;
@@ -208,8 +208,8 @@ onBeforeUnmount(() => {
 }
 .action-btn {
   background: transparent;
-  border: 1px solid rgba(64, 158, 255, 0.4);
-  color: #409eff;
+  border: 1px solid var(--border-color-neon);
+  color: var(--accent-primary);
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 4px;
@@ -217,7 +217,7 @@ onBeforeUnmount(() => {
   transition: all 0.2s;
 }
 .action-btn:hover {
-  background: rgba(64, 158, 255, 0.1);
-  border-color: #409eff;
+  background: var(--accent-primary-dim);
+  border-color: var(--accent-primary);
 }
 </style>

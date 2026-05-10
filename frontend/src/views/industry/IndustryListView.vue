@@ -211,7 +211,7 @@ onMounted(() => {
 }
 .industry-card:hover {
   transform: translateY(-4px);
-  border-color: var(--accent-primary);
+  border-color: var(--border-color-accent);
   box-shadow: var(--shadow-glow);
 }
 .card-content {

@@ -78,6 +78,6 @@ function formatPercent(val?: number): string {
   cursor: pointer;
 }
 .peer-row:hover {
-  background: rgba(255,255,255,0.03);
+  background: var(--bg-card);
 }
 </style>

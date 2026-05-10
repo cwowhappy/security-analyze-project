@@ -1,14 +1,23 @@
 package com.example.securityanalyze.research.application;
 
+import com.example.securityanalyze.research.api.DcfRequest;
+import com.example.securityanalyze.research.api.DcfResponse;
 import com.example.securityanalyze.research.api.FundamentalOverviewResponse;
 import com.example.securityanalyze.research.api.FundamentalScreenResponse;
 import com.example.securityanalyze.research.api.IndustryPeersResponse;
+import com.example.securityanalyze.research.api.ValuationHistoryResponse;
+import com.example.securityanalyze.research.api.ValuationOverviewResponse;
 import com.example.securityanalyze.research.domain.AnnualMetric;
+import com.example.securityanalyze.research.domain.CompanyBasicInfo;
 import com.example.securityanalyze.research.domain.FundamentalMetrics;
 import com.example.securityanalyze.research.domain.FundamentalMetricsRepository;
+import com.example.securityanalyze.research.domain.IndustryRankItem;
 import com.example.securityanalyze.research.domain.PeerMetric;
 import com.example.securityanalyze.research.domain.ScreenCompanyItem;
+import com.example.securityanalyze.research.domain.StockFundamentalMetrics;
 import com.example.securityanalyze.research.domain.StockFundamentalMetricsRepository;
+import com.example.securityanalyze.research.domain.ValuationMetrics;
+import com.example.securityanalyze.research.domain.ValuationMetricsRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,6 +30,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +43,9 @@ class FundamentalAnalysisServiceTest {
 
     @Mock
     private StockFundamentalMetricsRepository stockFundamentalMetricsRepository;
+
+    @Mock
+    private ValuationMetricsRepository valuationMetricsRepository;
 
     @InjectMocks
     private FundamentalAnalysisService service;
@@ -208,5 +223,279 @@ class FundamentalAnalysisServiceTest {
 
         metrics.setAnnualMetrics(List.of(m));
         return metrics;
+    }
+
+    // ========== 阶段C：估值分析测试 ==========
+
+    @Test
+    void shouldGetValuationOverview() {
+        ValuationMetrics vm = new ValuationMetrics();
+        vm.setStockCode("600519");
+        vm.setTradeDate(LocalDate.of(2024, 1, 2));
+        vm.setClosePrice(new BigDecimal("1680.50"));
+        vm.setPeTtm(new BigDecimal("28.5"));
+        vm.setPeTtmPercentile(new BigDecimal("0.72"));
+        vm.setPb(new BigDecimal("8.3"));
+        vm.setPbPercentile(new BigDecimal("0.65"));
+
+        CompanyBasicInfo info = new CompanyBasicInfo();
+        info.setStockCode("600519");
+        info.setStockName("贵州茅台");
+        info.setTotalShares(new BigDecimal("1000000000"));
+
+        when(valuationMetricsRepository.findLatestByStockCode("600519")).thenReturn(Optional.of(vm));
+        when(valuationMetricsRepository.findCompanyBasicInfo("600519")).thenReturn(info);
+        when(valuationMetricsRepository.findLatestFundamentalMetrics("600519")).thenReturn(Optional.empty());
+
+        Optional<ValuationOverviewResponse> result = service.getValuationOverview("600519");
+
+        assertTrue(result.isPresent());
+        assertEquals("600519", result.get().getStockCode());
+        assertEquals("贵州茅台", result.get().getStockName());
+        assertEquals(0, new BigDecimal("1680.50").compareTo(result.get().getCurrentPrice()));
+        assertNotNull(result.get().getCompositeScore());
+        assertNotNull(result.get().getWarnings());
+    }
+
+    @Test
+    void shouldReturnEmptyWhenValuationNotFound() {
+        when(valuationMetricsRepository.findLatestByStockCode("999999")).thenReturn(Optional.empty());
+
+        Optional<ValuationOverviewResponse> result = service.getValuationOverview("999999");
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void shouldGetValuationHistory() {
+        ValuationMetrics vm = new ValuationMetrics();
+        vm.setStockCode("600519");
+        vm.setTradeDate(LocalDate.of(2024, 1, 2));
+        vm.setClosePrice(new BigDecimal("1680.50"));
+        vm.setPeTtm(new BigDecimal("28.5"));
+
+        CompanyBasicInfo info = new CompanyBasicInfo();
+        info.setStockCode("600519");
+        info.setStockName("贵州茅台");
+
+        when(valuationMetricsRepository.findHistoryByStockCode(eq("600519"), any(), any()))
+                .thenReturn(List.of(vm));
+        when(valuationMetricsRepository.findCompanyBasicInfo("600519")).thenReturn(info);
+
+        ValuationHistoryResponse result = service.getValuationHistory("600519");
+
+        assertEquals("600519", result.getStockCode());
+        assertEquals(1, result.getItems().size());
+    }
+
+    @Test
+    void shouldCalculateDcfWithDefaultParams() {
+        CompanyBasicInfo info = new CompanyBasicInfo();
+        info.setStockCode("600519");
+        info.setTotalShares(new BigDecimal("1000000000"));
+
+        ValuationMetrics vm = new ValuationMetrics();
+        vm.setClosePrice(new BigDecimal("100"));
+
+        when(valuationMetricsRepository.findCompanyBasicInfo("600519")).thenReturn(info);
+        when(valuationMetricsRepository.findLatestOperatingCashFlow("600519"))
+                .thenReturn(new BigDecimal("10000000000"));
+        when(valuationMetricsRepository.findLatestByStockCode("600519")).thenReturn(Optional.of(vm));
+
+        DcfRequest request = new DcfRequest();
+        DcfResponse result = service.calculateDcf("600519", request);
+
+        assertNotNull(result.getFairPrice());
+        assertNotNull(result.getFairPriceRangeLow());
+        assertNotNull(result.getFairPriceRangeHigh());
+        assertNotNull(result.getAppliedAssumptions());
+    }
+
+    @Test
+    void shouldCalculateDcfWithCustomParams() {
+        CompanyBasicInfo info = new CompanyBasicInfo();
+        info.setTotalShares(new BigDecimal("1000000000"));
+
+        ValuationMetrics vm = new ValuationMetrics();
+        vm.setClosePrice(new BigDecimal("100"));
+
+        when(valuationMetricsRepository.findCompanyBasicInfo("600519")).thenReturn(info);
+        when(valuationMetricsRepository.findLatestByStockCode("600519")).thenReturn(Optional.of(vm));
+
+        DcfRequest request = new DcfRequest();
+        request.setGrowthRate(new BigDecimal("0.15"));
+        request.setDiscountRate(new BigDecimal("0.10"));
+        request.setTerminalGrowthRate(new BigDecimal("0.05"));
+        request.setProjectionYears(5);
+        request.setBaseCashFlow(new BigDecimal("5000000000"));
+
+        DcfResponse result = service.calculateDcf("600519", request);
+
+        assertNotNull(result.getFairPrice());
+        assertNotNull(result.getUpsidePercent());
+        assertEquals(new BigDecimal("0.15"), result.getAppliedAssumptions().getGrowthRate());
+    }
+
+    @Test
+    void shouldHandleDcfWhenTotalSharesIsNull() {
+        CompanyBasicInfo info = new CompanyBasicInfo();
+        info.setTotalShares(null);
+
+        when(valuationMetricsRepository.findCompanyBasicInfo("600519")).thenReturn(info);
+
+        DcfRequest request = new DcfRequest();
+        request.setBaseCashFlow(new BigDecimal("1000000000"));
+
+        DcfResponse result = service.calculateDcf("600519", request);
+
+        // totalShares 为空时，无法计算 fairPrice
+        assertNull(result.getFairPrice());
+    }
+
+    @Test
+    void shouldGenerateHighPeWarning() {
+        ValuationMetrics vm = new ValuationMetrics();
+        vm.setPeTtmPercentile(new BigDecimal("0.95"));
+        vm.setPbPercentile(new BigDecimal("0.92"));
+
+        CompanyBasicInfo info = new CompanyBasicInfo();
+        info.setStockName("测试");
+        info.setTotalShares(BigDecimal.ONE);
+
+        when(valuationMetricsRepository.findLatestByStockCode("600001")).thenReturn(Optional.of(vm));
+        when(valuationMetricsRepository.findCompanyBasicInfo("600001")).thenReturn(info);
+        when(valuationMetricsRepository.findLatestFundamentalMetrics("600001")).thenReturn(Optional.empty());
+
+        Optional<ValuationOverviewResponse> result = service.getValuationOverview("600001");
+
+        assertTrue(result.isPresent());
+        assertFalse(result.get().getWarnings().isEmpty());
+        assertEquals("high", result.get().getWarnings().get(0).getLevel());
+    }
+
+    @Test
+    void shouldGenerateMediumPeWarning() {
+        ValuationMetrics vm = new ValuationMetrics();
+        vm.setPeTtmPercentile(new BigDecimal("0.75"));
+        vm.setPbPercentile(new BigDecimal("0.50"));
+
+        CompanyBasicInfo info = new CompanyBasicInfo();
+        info.setStockName("测试");
+        info.setTotalShares(BigDecimal.ONE);
+
+        when(valuationMetricsRepository.findLatestByStockCode("600002")).thenReturn(Optional.of(vm));
+        when(valuationMetricsRepository.findCompanyBasicInfo("600002")).thenReturn(info);
+        when(valuationMetricsRepository.findLatestFundamentalMetrics("600002")).thenReturn(Optional.empty());
+
+        Optional<ValuationOverviewResponse> result = service.getValuationOverview("600002");
+
+        assertTrue(result.isPresent());
+        assertFalse(result.get().getWarnings().isEmpty());
+        assertEquals("medium", result.get().getWarnings().get(0).getLevel());
+    }
+
+    @Test
+    void shouldNotGenerateWarningWhenPeIsLow() {
+        ValuationMetrics vm = new ValuationMetrics();
+        vm.setPeTtmPercentile(new BigDecimal("0.20"));
+        vm.setPbPercentile(new BigDecimal("0.30"));
+
+        CompanyBasicInfo info = new CompanyBasicInfo();
+        info.setStockName("测试");
+        info.setTotalShares(BigDecimal.ONE);
+
+        when(valuationMetricsRepository.findLatestByStockCode("600003")).thenReturn(Optional.of(vm));
+        when(valuationMetricsRepository.findCompanyBasicInfo("600003")).thenReturn(info);
+        when(valuationMetricsRepository.findLatestFundamentalMetrics("600003")).thenReturn(Optional.empty());
+
+        Optional<ValuationOverviewResponse> result = service.getValuationOverview("600003");
+
+        assertTrue(result.isPresent());
+        assertTrue(result.get().getWarnings().isEmpty());
+    }
+
+    @Test
+    void shouldCalculateCompositeScoreWithFundamentalMetrics() {
+        ValuationMetrics vm = new ValuationMetrics();
+        vm.setPeTtmPercentile(new BigDecimal("0.50"));
+        vm.setPbPercentile(new BigDecimal("0.50"));
+        vm.setPsTtmPercentile(new BigDecimal("0.50"));
+
+        CompanyBasicInfo info = new CompanyBasicInfo();
+        info.setStockName("测试");
+        info.setTotalShares(BigDecimal.ONE);
+
+        StockFundamentalMetrics fm = new StockFundamentalMetrics();
+        fm.setRoe(new BigDecimal("15"));
+        fm.setRevenueYoy(new BigDecimal("20"));
+        fm.setCashflowProfitRatio(new BigDecimal("100"));
+        fm.setPeriodExpenseRate(new BigDecimal("15"));
+
+        when(valuationMetricsRepository.findLatestByStockCode("600004")).thenReturn(Optional.of(vm));
+        when(valuationMetricsRepository.findCompanyBasicInfo("600004")).thenReturn(info);
+        when(valuationMetricsRepository.findLatestFundamentalMetrics("600004")).thenReturn(Optional.of(fm));
+
+        Optional<ValuationOverviewResponse> result = service.getValuationOverview("600004");
+
+        assertTrue(result.isPresent());
+        assertNotNull(result.get().getCompositeScore());
+        assertTrue(result.get().getCompositeScore().getFinancialHealthScore() > 0);
+        assertTrue(result.get().getCompositeScore().getValuationAppealScore() > 0);
+    }
+
+    @Test
+    void shouldGetIndustryRank() {
+        IndustryRankItem item1 = new IndustryRankItem();
+        item1.setStockCode("600001");
+        item1.setStockName("公司A");
+        item1.setIndustry("信息技术");
+        item1.setRoe(new BigDecimal("15"));
+        item1.setTotalRevenue(new BigDecimal("100000000"));
+
+        IndustryRankItem item2 = new IndustryRankItem();
+        item2.setStockCode("600002");
+        item2.setStockName("公司B");
+        item2.setIndustry("信息技术");
+        item2.setRoe(new BigDecimal("10"));
+        item2.setTotalRevenue(new BigDecimal("80000000"));
+
+        when(repository.findIndustryByStockCode("600001")).thenReturn("信息技术");
+        when(repository.findIndustryRankItems("信息技术")).thenReturn(List.of(item1, item2));
+
+        var response = service.getIndustryRank("600001", "roe", "desc");
+
+        assertEquals(1, response.getRank());
+        assertEquals(2, response.getTotal());
+        assertEquals("roe", response.getSortBy());
+    }
+
+    @Test
+    void shouldReturnEmptyIndustryRankWhenIndustryNotFound() {
+        when(repository.findIndustryByStockCode("999999")).thenReturn(null);
+
+        var response = service.getIndustryRank("999999", "roe", "desc");
+
+        assertEquals(0, response.getRank());
+        assertEquals(0, response.getTotal());
+        assertTrue(response.getItems().isEmpty());
+    }
+
+    @Test
+    void shouldSortIndustryRankByRevenue() {
+        IndustryRankItem item1 = new IndustryRankItem();
+        item1.setStockCode("600001");
+        item1.setTotalRevenue(new BigDecimal("100"));
+
+        IndustryRankItem item2 = new IndustryRankItem();
+        item2.setStockCode("600002");
+        item2.setTotalRevenue(new BigDecimal("200"));
+
+        when(repository.findIndustryByStockCode("600001")).thenReturn("信息技术");
+        when(repository.findIndustryRankItems("信息技术")).thenReturn(List.of(item1, item2));
+
+        var response = service.getIndustryRank("600001", "revenue", "asc");
+
+        assertEquals(1, response.getRank());
+        assertEquals("600001", response.getItems().get(0).getStockCode());
     }
 }

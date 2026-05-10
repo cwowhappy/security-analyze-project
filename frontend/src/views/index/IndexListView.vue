@@ -244,7 +244,8 @@ onMounted(() => {
   padding: 32px 24px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
+  transition: border-color var(--transition-base);
 }
 .search-box {
   display: flex;
@@ -278,7 +279,7 @@ onMounted(() => {
 }
 .index-card:hover {
   transform: translateY(-2px);
-  border-color: var(--accent-primary);
+  border-color: var(--border-color-accent);
   box-shadow: var(--shadow-glow);
 }
 .card-header {

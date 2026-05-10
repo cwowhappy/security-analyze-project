@@ -57,6 +57,9 @@ CREATE TABLE IF NOT EXISTS company_security (
     security_type VARCHAR(20),                    -- 证券类型：A股 / B股 / H股 / 优先股 / ADR
     listing_date DATE,                            -- 在该市场的上市日期
     listing_status VARCHAR(20) DEFAULT 'listed',  -- 上市状态：listed / suspended / delisted
+    total_shares DECIMAL(20,4),                   -- 总股本（股）
+    circulating_shares DECIMAL(20,4),             -- 流通股本（股）
+    market_cap DECIMAL(20,4),                     -- 总市值（元）
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -413,7 +416,28 @@ CREATE TABLE IF NOT EXISTS daily_quote (
 );
 
 -- ============================================================
--- 21. 索引
+-- 21. 股票估值指标表（阶段C）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS stock_valuation_metrics (
+    id BIGSERIAL PRIMARY KEY,
+    stock_code VARCHAR(20) NOT NULL,
+    trade_date DATE NOT NULL,
+    close_price DECIMAL(18,4),
+    pe_ttm DECIMAL(10,4),
+    pe_lyr DECIMAL(10,4),
+    pb DECIMAL(10,4),
+    ps_ttm DECIMAL(10,4),
+    pe_ttm_percentile DECIMAL(5,4),
+    pb_percentile DECIMAL(5,4),
+    ps_ttm_percentile DECIMAL(5,4),
+    dcf_fair_price DECIMAL(18,4),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_valuation_metrics UNIQUE (stock_code, trade_date)
+);
+
+-- ============================================================
+-- 22. 索引
 -- ============================================================
 
 -- company 索引
@@ -509,8 +533,14 @@ CREATE INDEX IF NOT EXISTS idx_position_stock ON position(stock_code);
 CREATE INDEX IF NOT EXISTS idx_position_deleted ON position(is_deleted);
 
 -- daily_quote 索引
+-- daily_quote 索引
 CREATE INDEX IF NOT EXISTS idx_quote_date ON daily_quote(trade_date);
 CREATE INDEX IF NOT EXISTS idx_quote_stock ON daily_quote(stock_code);
+
+-- stock_valuation_metrics 索引
+CREATE INDEX IF NOT EXISTS idx_val_stock ON stock_valuation_metrics(stock_code);
+CREATE INDEX IF NOT EXISTS idx_val_date ON stock_valuation_metrics(trade_date);
+CREATE INDEX IF NOT EXISTS idx_val_stock_date ON stock_valuation_metrics(stock_code, trade_date);
 
 -- ============================================================
 -- 22. 数据库对象注释
@@ -526,6 +556,9 @@ COMMENT ON TABLE company_security IS '上市证券表（支持 A股/B股/H股 �
 COMMENT ON COLUMN company_security.stock_code IS '股票代码，全局唯一';
 COMMENT ON COLUMN company_security.market IS '市场板块：SH / SZ / BJ / HK';
 COMMENT ON COLUMN company_security.listing_status IS '上市状态：listed / suspended / delisted';
+COMMENT ON COLUMN company_security.total_shares IS '总股本（股），用于计算市值和估值指标';
+COMMENT ON COLUMN company_security.circulating_shares IS '流通股本（股）';
+COMMENT ON COLUMN company_security.market_cap IS '总市值（元），可由股价×总股本实时计算，也可缓存';
 
 COMMENT ON TABLE financial_report IS '财务报表数据表（资产负债表/利润表/现金流量表）';
 COMMENT ON COLUMN financial_report.stock_code IS '股票代码';
@@ -614,3 +647,16 @@ COMMENT ON COLUMN stock_fundamental_metrics.current_ratio IS '流动比率';
 COMMENT ON COLUMN stock_fundamental_metrics.quick_ratio IS '速动比率';
 COMMENT ON COLUMN stock_fundamental_metrics.cashflow_profit_ratio IS '经营现金流/净利润比 %';
 COMMENT ON COLUMN stock_fundamental_metrics.period_expense_rate IS '期间费用率 %';
+
+COMMENT ON TABLE stock_valuation_metrics IS '股票估值指标表（阶段C），存储每日PE/PB/PS及历史分位数';
+COMMENT ON COLUMN stock_valuation_metrics.stock_code IS '股票代码';
+COMMENT ON COLUMN stock_valuation_metrics.trade_date IS '行情日期';
+COMMENT ON COLUMN stock_valuation_metrics.close_price IS '当日收盘价';
+COMMENT ON COLUMN stock_valuation_metrics.pe_ttm IS '滚动市盈率 TTM';
+COMMENT ON COLUMN stock_valuation_metrics.pe_lyr IS '静态市盈率 LYR（最近年报）';
+COMMENT ON COLUMN stock_valuation_metrics.pb IS '市净率';
+COMMENT ON COLUMN stock_valuation_metrics.ps_ttm IS '滚动市销率 TTM';
+COMMENT ON COLUMN stock_valuation_metrics.pe_ttm_percentile IS 'PE_TTM 近5年历史分位数 0~1';
+COMMENT ON COLUMN stock_valuation_metrics.pb_percentile IS 'PB 近5年历史分位数 0~1';
+COMMENT ON COLUMN stock_valuation_metrics.ps_ttm_percentile IS 'PS_TTM 近5年历史分位数 0~1';
+COMMENT ON COLUMN stock_valuation_metrics.dcf_fair_price IS '简易DCF默认参数下的公允价';

@@ -83,8 +83,8 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/research/fundamental',
-      name: 'fundamental-analysis',
+      path: '/research',
+      name: 'research',
       component: () => import('@/views/research/FundamentalAnalysisView.vue'),
       meta: { requiresAuth: true },
     },

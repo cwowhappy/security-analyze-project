@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -64,6 +66,32 @@ public class ResearchController {
             @RequestParam(defaultValue = "desc") String order) {
         log.info("查询行业排名, stockCode={}, sortBy={}, order={}", stockCode, sortBy, order);
         IndustryRankResponse response = fundamentalAnalysisService.getIndustryRank(stockCode, sortBy, order);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/fundamental/valuation/{stockCode}")
+    public ResponseEntity<ValuationOverviewResponse> getValuationOverview(
+            @PathVariable String stockCode) {
+        log.info("查询估值概览, stockCode={}", stockCode);
+        return fundamentalAnalysisService.getValuationOverview(stockCode)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/fundamental/valuation-history/{stockCode}")
+    public ResponseEntity<ValuationHistoryResponse> getValuationHistory(
+            @PathVariable String stockCode) {
+        log.info("查询估值历史, stockCode={}", stockCode);
+        ValuationHistoryResponse response = fundamentalAnalysisService.getValuationHistory(stockCode);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/fundamental/dcf/{stockCode}")
+    public ResponseEntity<DcfResponse> calculateDcf(
+            @PathVariable String stockCode,
+            @RequestBody DcfRequest request) {
+        log.info("DCF估值计算, stockCode={}", stockCode);
+        DcfResponse response = fundamentalAnalysisService.calculateDcf(stockCode, request);
         return ResponseEntity.ok(response);
     }
 }

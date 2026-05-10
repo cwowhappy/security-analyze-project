@@ -31,6 +31,7 @@ from collector.tasks.index_history_task import IndexHistoryTask
 from collector.tasks.etf_basic_task import EtfBasicTask
 from collector.tasks.industry_task import IndustryTask
 from collector.tasks.fundamental_metrics_task import FundamentalMetricsTask
+from collector.tasks.valuation_metrics_task import ValuationMetricsTask
 
 load_dotenv()
 
@@ -303,7 +304,18 @@ def _dispatch_command(args, runner: TaskRunner) -> None:
             runner.run(QuoteTask, mode="full", **kwargs)
 
     # ------------------------------------------------------------------
-    # schedule
+    # valuation-metrics
+    # ------------------------------------------------------------------
+    elif cmd == "valuation-metrics":
+        if args.stock_code:
+            runner.run(ValuationMetricsTask, mode="partial", identifiers=[args.stock_code])
+        elif args.incremental:
+            runner.run(ValuationMetricsTask, mode="incremental")
+        else:
+            runner.run(ValuationMetricsTask, mode="full")
+
+    # ------------------------------------------------------------------
+    # fundamental-metrics
     # ------------------------------------------------------------------
     elif cmd == "fundamental-metrics":
         if args.stock_code:

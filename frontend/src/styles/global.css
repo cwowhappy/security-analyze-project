@@ -1,5 +1,5 @@
 /* ================================================================
-   全局样式
+   全局样式 — 金融科技终端
    ================================================================ */
 
 @import './theme.css';
@@ -9,9 +9,7 @@
 }
 
 html {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial,
-    sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -27,13 +25,17 @@ html.dark body {
   min-height: 100vh;
 }
 
-/* 数字等宽 */
+/* ========================================
+   数字等宽
+   ======================================== */
 .num-font {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
-/* 涨跌色 */
+/* ========================================
+   涨跌色
+   ======================================== */
 .up {
   color: var(--up-color) !important;
 }
@@ -42,31 +44,42 @@ html.dark body {
   color: var(--down-color) !important;
 }
 
-/* 玻璃态卡片 */
+/* ========================================
+   玻璃态卡片 — 金融科技风格
+   ======================================== */
 .glass-card {
   background: var(--bg-card);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
-/* 数据指标卡片 */
+.glass-card:hover {
+  border-color: var(--border-color-accent);
+}
+
+/* ========================================
+   数据指标卡片
+   ======================================== */
 .metric-card {
   background: var(--bg-card);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 16px;
-  transition: box-shadow 0.2s ease;
+  padding: var(--card-padding);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
 }
 
 .metric-card:hover {
+  border-color: var(--border-color-accent);
   box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
 }
 
 .metric-label {
-  font-size: 13px;
+  font-size: var(--caption-size);
   color: var(--text-tertiary);
   margin-bottom: 8px;
 }
@@ -78,15 +91,20 @@ html.dark body {
   font-family: var(--font-mono);
 }
 
-/* 页面标题 */
+/* ========================================
+   页面标题 — 统一规范
+   ======================================== */
 .page-title {
-  font-size: 20px;
+  font-size: var(--page-title-size);
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 20px;
+  letter-spacing: 0.3px;
 }
 
-/* 工具栏 */
+/* ========================================
+   工具栏
+   ======================================== */
 .toolbar {
   display: flex;
   align-items: center;
@@ -94,23 +112,29 @@ html.dark body {
   gap: 8px;
 }
 
-/* 分页 */
+/* ========================================
+   分页
+   ======================================== */
 .pagination {
   margin-top: 16px;
   justify-content: flex-end;
 }
 
-/* 表格中的数字列 */
+/* ========================================
+   表格中的数字列
+   ======================================== */
 html.dark .el-table .cell-num {
   font-family: var(--font-mono);
 }
 
-/* 小标签 */
+/* ========================================
+   小标签
+   ======================================== */
 .badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--small-size);
   font-weight: 500;
 }
 
@@ -124,7 +148,29 @@ html.dark .el-table .cell-num {
   color: var(--down-color);
 }
 
-/* 滚动条暗色 */
+.badge-success {
+  background: var(--success-color-dim);
+  color: var(--success-color);
+}
+
+.badge-warning {
+  background: var(--warning-color-dim);
+  color: var(--warning-color);
+}
+
+.badge-danger {
+  background: var(--danger-color-dim);
+  color: var(--danger-color);
+}
+
+.badge-info {
+  background: var(--info-color-dim);
+  color: var(--info-color);
+}
+
+/* ========================================
+   滚动条暗色 + 科技风
+   ======================================== */
 html.dark ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -137,8 +183,65 @@ html.dark ::-webkit-scrollbar-track {
 html.dark ::-webkit-scrollbar-thumb {
   background: var(--text-muted);
   border-radius: 3px;
+  transition: background var(--transition-base);
 }
 
 html.dark ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-tertiary);
+  background: var(--accent-primary);
+}
+
+/* ========================================
+   专业科技风基础工具类
+   ======================================== */
+
+/* 强调边框 */
+.accent-border {
+  border-color: var(--border-color-accent);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.accent-border:hover {
+  border-color: var(--border-color-accent-strong);
+  box-shadow: var(--shadow-glow);
+}
+
+/* 卡片 hover 效果 */
+.card-hover {
+  transition: transform var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-color-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+/* 简洁分割线 */
+.ft-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-color-light), transparent);
+}
+
+/* 数据高亮文字 */
+.data-highlight {
+  color: var(--accent-primary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+/* 统一 section 标题 */
+.section-heading {
+  font-size: var(--section-title-size);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--accent-primary);
 }
