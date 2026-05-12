@@ -20,6 +20,7 @@ class Stock:
     area: str | None = None
     total_shares: int | None = None
     float_shares: int | None = None
+    company_id: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -44,6 +45,7 @@ class Stock:
             "area": self.area,
             "total_shares": self.total_shares,
             "float_shares": self.float_shares,
+            "company_id": self.company_id,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
@@ -64,6 +66,7 @@ class Stock:
             area=data.get("area"),
             total_shares=data.get("total_shares"),
             float_shares=data.get("float_shares"),
+            company_id=data.get("company_id"),
             created_at=data.get("created_at"),
             updated_at=data.get("updated_at"),
         )

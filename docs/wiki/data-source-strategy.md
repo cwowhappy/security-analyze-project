@@ -1,6 +1,7 @@
-# 数据源策略与降级设计
+# 数据源策略 v2
 
-> 本文档描述 akshare 与 tushare 两个数据源的分工、互补逻辑与降级策略。
+> 本文档描述 akshare 与 tushare 两个数据源的分工与采集策略。  
+> 版本：v2.0 | 变更：去除实时降级逻辑与异常分层，改为顺序脚本 + 独立补充模式。
 
 ---
 
@@ -19,7 +20,7 @@
 ### 1.2 tushare
 
 - **性质**：专业金融数据接口，Pro 版需注册 Token 和积分
-- **限制**：免费用户有积分上限和调用频次限制；高频/历史数据需付费
+- **限制**：免费用户有积分上限和调用频次限制
 - **优势**：数据规范化程度高、字段定义清晰、有统一社会信用代码等官方字段
 - **核心接口**：
   - `pro.stock_basic()` — 股票基础信息
@@ -34,10 +35,10 @@
 | 本表字段 | akshare 来源 | tushare 来源 | 说明 |
 |----------|-------------|-------------|------|
 | stock_code | `stock_info_a_code_name.code` | `stock_basic.symbol` | 两者均可 |
-| ts_code | — | `stock_basic.ts_code` | 仅 tushare 提供 |
+| ts_code | — | `stock_basic.ts_code` | 仅 tushare |
 | name | `stock_info_a_code_name.name` | `stock_basic.name` | 两者均可 |
 | full_name | `stock_info_sh_name_code.公司全称` | — | 仅 akshare |
-| market | `stock_info_sz_name_code.板块` | `stock_basic.market` | akshare 更直观 |
+| market | `stock_info_sz_name_code.板块` | `stock_basic.market` | 两者均可 |
 | exchange | `stock_profile_cninfo.所属市场` | — | 仅 akshare |
 | list_date | `stock_info_sh/sz_name_code.上市日期` | `stock_basic.list_date` | 两者均可 |
 | industry | `stock_info_sz_name_code.所属行业` | `stock_basic.industry` | 两者均可 |
@@ -75,92 +76,89 @@
 
 ---
 
-## 三、采集策略
+## 三、采集策略（顺序执行）
 
 ### 3.1 股票全量采集（stock_full）
 
-1. **主源 akshare**：
-   - 调用 `stock_info_a_code_name()` 获取全量代码列表
-   - 分别调用 `stock_info_sh_name_code()` 和 `stock_info_sz_name_code()` 补充详细信息
-   - 合并后写入 `tb_stock_basic`
-
-2. **辅助源 tushare**（可选增强）：
-   - 调用 `pro.stock_basic()` 获取 area、market、实控人信息
-   - 以 `stock_code` / `ts_code` 为键，合并到已有记录
+**仅使用 akshare：**
+1. 调用 `stock_info_a_code_name()` 获取全量代码列表
+2. 分别调用 `stock_info_sh_name_code()` 和 `stock_info_sz_name_code()` 补充详细信息
+3. 合并后 upsert 到 `tb_stock_basic`
+4. 单条失败记录 `fail_count`，继续下一条；失败率超过 10% 则整体标记 `failed`
 
 ### 3.2 公司全量采集（company_full）
 
-1. **主源 akshare**：
-   - 遍历 `tb_stock_basic`，逐条调用 `stock_profile_cninfo()`
-   - 获取公司全称、法人代表、注册资金、注册地址、主营业务、经营范围等
-   - 写入 `tb_company_basic`
+**仅使用 akshare：**
+1. 遍历 `tb_stock_basic`，逐条调用 `stock_profile_cninfo()`
+2. 获取公司信息后 upsert 到 `tb_company_basic`
+3. 更新 `tb_stock_basic.company_id` 建立外键关联（废弃关联表）
+4. 单条失败记录 `fail_count`，继续下一条
 
-2. **辅助源 tushare**（可选增强）：
-   - 调用 `pro.stock_company()` 获取管理层、员工人数、统一社会信用代码
-   - 以 `stock_code` 为键，合并到已有记录
+### 3.3 字段补充采集（field_supplement）—— 独立脚本
 
-3. **关联关系建立**：
-   - 采集完成后，根据 `stock_code` + `company_usc_code` 写入 `tb_relation_stock_company`
+**仅使用 tushare：**
+1. 调用 `pro.stock_basic()` 补充 `area`、`ts_code`、实控人信息到 `tb_stock_basic`
+2. 调用 `pro.stock_company()` 补充管理层、员工人数、统一信用代码、省份/城市到 `tb_company_basic`
+3. 此脚本独立运行，失败不影响主数据完整性
 
-### 3.3 单条精准采集
+### 3.4 单条精准采集
 
 - `stock_single`：针对指定 `stock_code`，调用 akshare 个股信息接口
 - `company_single`：针对指定 `stock_code`，调用 akshare `stock_profile_cninfo()`
 
 ---
 
-## 四、降级策略
+## 四、容错策略（简化）
 
-### 4.1 异常分类与处理
+### 4.1 单条失败处理
 
 ```python
-class DataSourceError(Exception):
-    """数据源异常基类"""
-    pass
-
-class SourceUnavailableError(DataSourceError):
-    """数据源不可达（网络超时、连接失败）"""
-    pass
-
-class SourceRateLimitError(DataSourceError):
-    """触发限流（反爬、积分超限）"""
-    pass
-
-class SourceDataError(DataSourceError):
-    """返回数据异常（格式错误、字段缺失）"""
-    pass
+def fetch_and_save(stock_code):
+    try:
+        data = ak.stock_profile_cninfo(symbol=stock_code)
+        db.upsert('tb_company_basic', data)
+        return True
+    except Exception as e:
+        logger.warning(f"{stock_code} 采集失败: {e}")
+        return False
 ```
 
-### 4.2 降级流程
+- 单条异常仅记录日志和 `fail_count`，不阻断整体批次
+- 不区分异常类型（废弃 `SourceUnavailableError` / `SourceRateLimitError` / `SourceDataError` 分层）
+- 不重试（废弃重试逻辑）
 
-```
-调用主数据源（akshare）
-    ├── 成功 → 继续处理下一条
-    ├── SourceUnavailableError / SourceRateLimitError
-    │       → 延迟 3-5 秒 → 重试（最多3次）
-    │       → 仍失败 → 切换备用源（tushare）
-    │       → 备用源成功 → 记录日志
-    │       → 备用源也失败 → fail_count + 1，跳过本条
-    └── SourceDataError
-            → 尝试备用源
-            → 仍失败 → fail_count + 1，跳过本条
-```
-
-### 4.3 降级配置
+### 4.2 批次失败阈值
 
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
-| `SOURCE_MAX_RETRIES` | 单条记录重试次数 | 3 |
-| `SOURCE_RETRY_DELAY` | 重试基础延迟（秒）| 3 |
-| `SOURCE_RETRY_BACKOFF` | 退避倍数 | 2 |
-| `SOURCE_REQUEST_DELAY_MIN` | 请求间最小延迟（秒）| 1 |
-| `SOURCE_REQUEST_DELAY_MAX` | 请求间最大延迟（秒）| 3 |
+| `BATCH_FAIL_THRESHOLD` | 批次失败率阈值 | 0.1（10%）|
+
+当 `fail_count / total_count > BATCH_FAIL_THRESHOLD` 时：
+- 中断当前批次
+- 将任务标记为 `failed`
+- 记录 `error_message = "批次失败率超过阈值: XX%"`
+- 由人工或告警系统介入排查
 
 ---
 
-## 五、并发与限流
+## 五、限流控制
 
-- APScheduler `max_workers=5`：限制整体并发线程数
-- 单条采集内部串行：全量采集时逐条处理，条间增加随机延迟
-- 东方财富源敏感：避免并发请求，单线程 + 随机延迟是最佳实践
-- Tushare 积分敏感：全量采集公司信息时，控制调用频率
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| `SOURCE_REQUEST_DELAY_MIN` | 请求间最小随机延迟（秒）| 1 |
+| `SOURCE_REQUEST_DELAY_MAX` | 请求间最大随机延迟（秒）| 3 |
+
+- 全量采集逐条串行执行，条间增加 `random.uniform(min, max)` 延迟
+- APScheduler `max_workers=3` 控制整体并发
+- 东方财富源敏感：单脚本内部不启用多线程
+
+> 废弃 v1.0 配置：`SOURCE_MAX_RETRIES`、`SOURCE_RETRY_DELAY`、`SOURCE_RETRY_BACKOFF`。
+
+---
+
+## 六、版本记录
+
+| 版本 | 日期 | 变更内容 |
+|------|------|----------|
+| v2.0 | 2026-05-11 | 去除实时降级与异常分层，改为顺序脚本 + 独立补充 + 批次阈值 |
+| v1.0 | 2026-05-10 | 初始版本（已废弃） |

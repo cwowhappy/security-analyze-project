@@ -29,6 +29,7 @@ public class StockRowMapper implements RowMapper<StockEntity> {
         entity.setArea(rs.getString("area"));
         entity.setTotalShares(rs.getObject("total_shares", Long.class));
         entity.setFloatShares(rs.getObject("float_shares", Long.class));
+        entity.setCompanyId(rs.getString("company_id"));
         entity.setCreatedAt(rs.getTimestamp("created_at") != null
                 ? rs.getTimestamp("created_at").toLocalDateTime()
                 : null);

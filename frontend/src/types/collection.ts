@@ -1,5 +1,5 @@
 /**
- * 采集任务领域类型定义
+ * 采集任务领域类型定义 v2.0
  */
 
 export interface CollectionTask {
@@ -12,7 +12,6 @@ export interface CollectionTask {
   successCount: number
   failCount: number
   errorMessage: string | null
-  scheduledAt: string | null
   startedAt: string | null
   completedAt: string | null
   createdAt: string
@@ -22,25 +21,4 @@ export interface CreateCollectionTaskRequest {
   taskType: string
   taskParams?: Record<string, unknown>
   dataSource?: string
-}
-
-export interface CollectionTaskSchedule {
-  id: string
-  name: string
-  taskType: string
-  taskParams: Record<string, unknown> | null
-  dataSource: string | null
-  cronExpression: string
-  isEnabled: boolean
-  lastTriggeredAt: string | null
-  createdAt: string
-}
-
-export interface CreateCollectionTaskScheduleRequest {
-  name: string
-  taskType: string
-  cronExpression: string
-  dataSource?: string
-  taskParams?: Record<string, unknown>
-  isEnabled?: boolean
 }

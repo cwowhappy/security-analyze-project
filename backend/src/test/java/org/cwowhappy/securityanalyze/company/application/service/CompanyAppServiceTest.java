@@ -83,6 +83,20 @@ class CompanyAppServiceTest {
     }
 
     @Test
+    void shouldReturnCompanyWhenFoundById() {
+        // Arrange
+        when(companyRepository.findById(CompanyId.of("comp001"))).thenReturn(Optional.of(sampleCompany));
+
+        // Act
+        Optional<CompanyDTO> result = companyAppService.findById("comp001");
+
+        // Assert
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo("comp001");
+        verify(companyRepository, times(1)).findById(CompanyId.of("comp001"));
+    }
+
+    @Test
     void shouldReturnPageResultWhenFindByPage() {
         // Arrange
         PageQuery pageQuery = new PageQuery();
@@ -95,11 +109,11 @@ class CompanyAppServiceTest {
                 .page(1)
                 .size(10)
                 .build();
-        when(companyRepository.findByPage(pageQuery, "银行", "广东省", "平安"))
+        when(companyRepository.findByPage(pageQuery, "银行", "广东省", "民营", "平安"))
                 .thenReturn(repoResult);
 
         // Act
-        PageResult<CompanyDTO> result = companyAppService.findByPage(pageQuery, "银行", "广东省", "平安");
+        PageResult<CompanyDTO> result = companyAppService.findByPage(pageQuery, "银行", "广东省", "民营", "平安");
 
         // Assert
         assertThat(result.getList()).hasSize(1);
@@ -107,7 +121,7 @@ class CompanyAppServiceTest {
         assertThat(result.getPage()).isEqualTo(1);
         assertThat(result.getSize()).isEqualTo(10);
         assertThat(result.getList().get(0).getName()).isEqualTo("平安银行股份有限公司");
-        verify(companyRepository, times(1)).findByPage(pageQuery, "银行", "广东省", "平安");
+        verify(companyRepository, times(1)).findByPage(pageQuery, "银行", "广东省", "民营", "平安");
     }
 
     @Test

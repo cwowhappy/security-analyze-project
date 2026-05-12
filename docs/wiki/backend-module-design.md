@@ -1,6 +1,7 @@
-# 后端模块设计
+# 后端模块设计 v2
 
-> 本文档描述 Java 后端新增的领域模块、分层结构与 REST API 规划。
+> 本文档描述 Java 后端新增的领域模块、分层结构与 REST API 规划。  
+> 版本：v2.0 | 变更：去除定时规则模块，股票表直接外键关联公司，API 统一 `/api/v1` 前缀。
 
 ---
 
@@ -20,7 +21,7 @@ backend/src/main/java/org/cwowhappy/securityanalyze/
 │   ├── application/
 │   ├── infrastructure/
 │   └── interfaces/
-└── collection/               # 新建模块
+└── collection/               # 新建模块（不含 schedule）
     ├── domain/
     ├── application/
     ├── infrastructure/
@@ -37,14 +38,14 @@ backend/src/main/java/org/cwowhappy/securityanalyze/
 |----|------|
 | `Company.java` | 领域实体：封装公司属性与业务规则 |
 | `CompanyId.java` | 值对象：基于 UUID 的 ID 生成 |
-| `CompanyRepository.java` | 仓库端口：findById / findByUscCode / findAll / save / deleteById |
+| `CompanyRepository.java` | 仓库端口：findById / findByUscCode / findAll / save |
 
 ### 2.2 应用层（Application）
 
 | 类 | 职责 |
 |----|------|
 | `CompanyDTO.java` | 数据传输对象 |
-| `CompanyAppService.java` | 应用服务接口：查询列表、按统一社会信用代码查询、创建公司 |
+| `CompanyAppService.java` | 应用服务：查询列表、按统一社会信用代码查询 |
 | `CompanyAppServiceImpl.java` | 实现 |
 
 ### 2.3 基础设施层（Infrastructure）
@@ -59,8 +60,7 @@ backend/src/main/java/org/cwowhappy/securityanalyze/
 
 | 类 | 职责 |
 |----|------|
-| `CompanyController.java` | REST 控制器：`/api/companies` |
-| `CreateCompanyRequest.java` | 创建请求 DTO（含字段校验注解）|
+| `CompanyController.java` | REST 控制器：`/api/v1/companies` |
 
 ---
 
@@ -73,8 +73,8 @@ backend/src/main/java/org/cwowhappy/securityanalyze/
 | `CollectionTask.java` | 领域实体：采集任务状态与统计 |
 | `CollectionTaskId.java` | 值对象 |
 | `CollectionTaskRepository.java` | 仓库端口 |
-| `CollectionTaskSchedule.java` | 领域实体：定时规则 |
-| `CollectionTaskScheduleRepository.java` | 仓库端口 |
+
+> **注意**：v2.0 去除 `CollectionTaskSchedule` 实体与相关仓库。
 
 ### 3.2 应用层（Application）
 
@@ -82,24 +82,19 @@ backend/src/main/java/org/cwowhappy/securityanalyze/
 |----|------|
 | `CollectionTaskDTO.java` | 任务 DTO |
 | `CollectionTaskAppService.java` | 任务查询、创建即时任务 |
-| `CollectionTaskScheduleDTO.java` | 规则 DTO |
-| `CollectionTaskScheduleAppService.java` | 规则增删改查、启停 |
 
 ### 3.3 基础设施层（Infrastructure）
 
 | 类 | 职责 |
 |----|------|
 | `CollectionTaskEntity.java` | 映射 `tb_collection_task` |
-| `CollectionTaskScheduleEntity.java` | 映射 `tb_collection_task_schedule` |
 | `JdbcCollectionTaskRepository.java` | JDBC 实现 |
-| `JdbcCollectionTaskScheduleRepository.java` | JDBC 实现 |
 
 ### 3.4 接口层（Interfaces）
 
 | 类 | 职责 |
 |----|------|
-| `CollectionTaskController.java` | `/api/collection/tasks` |
-| `CollectionTaskScheduleController.java` | `/api/collection/schedules` |
+| `CollectionTaskController.java` | `/api/v1/collection/tasks` |
 
 ---
 
@@ -108,11 +103,12 @@ backend/src/main/java/org/cwowhappy/securityanalyze/
 现有 `stock` 模块需做以下调整：
 
 1. **实体字段调整**：
-   - 移除 `companyId`、`currentPrice`、`changePercent`
+   - 移除 `currentPrice`、`changePercent`
    - 新增 `stockCode`（替换 `symbol`）、`tsCode`、`fullName`、`listDate`、`industry`、`area`、`totalShares`、`floatShares`
+   - **新增 `companyId`**：直接外键关联 `tb_company_basic.id`
 
 2. **关联查询**：
-   - `StockController.getByStockCode()` 返回股票详情时，通过 `tb_relation_stock_company` 关联查询对应公司信息
+   - `StockController.getByStockCode()` 返回股票详情时，通过 `tb_stock_basic.company_id` JOIN `tb_company_basic` 获取关联公司信息
 
 3. **表名调整**：
    - 持久化实体从 `stock` 表迁移到 `tb_stock_basic`
@@ -125,32 +121,31 @@ backend/src/main/java/org/cwowhappy/securityanalyze/
 
 | 方法 | 路径 | 功能 | 响应 |
 |------|------|------|------|
-| GET | `/api/stocks` | 股票列表（分页） | `PageResult<StockDTO>` |
-| GET | `/api/stocks/{stockCode}` | 股票详情 | `StockDTO` + 关联 `CompanyDTO` |
+| GET | `/api/v1/stocks` | 股票列表（分页、筛选、搜索） | `PageResult<StockDTO>` |
+| GET | `/api/v1/stocks/{stockCode}` | 股票详情（含关联公司信息） | `StockDTO` + `CompanyBriefDTO` |
 
 ### 5.2 公司 API
 
 | 方法 | 路径 | 功能 | 响应 |
 |------|------|------|------|
-| GET | `/api/companies` | 公司列表（分页，支持 industry/province 筛选） | `PageResult<CompanyDTO>` |
-| GET | `/api/companies/{uscCode}` | 公司详情 | `CompanyDTO` + 关联股票列表 |
+| GET | `/api/v1/companies` | 公司列表（分页、筛选、搜索） | `PageResult<CompanyDTO>` |
+| GET | `/api/v1/companies/{uscCode}` | 公司详情（含关联股票列表） | `CompanyDTO` + `List<StockBriefDTO>` |
 
 ### 5.3 采集任务 API
 
 | 方法 | 路径 | 功能 | 响应 |
 |------|------|------|------|
-| GET | `/api/collection/tasks` | 任务历史列表（分页） | `PageResult<CollectionTaskDTO>` |
-| POST | `/api/collection/tasks` | 创建即时采集任务 | `CollectionTaskDTO` |
-| GET | `/api/collection/tasks/{id}` | 任务详情/进度 | `CollectionTaskDTO` |
+| GET | `/api/v1/collection/tasks` | 任务历史列表（分页、筛选） | `PageResult<CollectionTaskDTO>` |
+| POST | `/api/v1/collection/tasks` | 创建即时采集任务 | `CollectionTaskDTO` |
+| GET | `/api/v1/collection/tasks/{id}` | 任务详情/进度 | `CollectionTaskDTO` |
 
-### 5.4 定时规则 API
+### 5.4 首页统计 API（P1）
 
 | 方法 | 路径 | 功能 | 响应 |
 |------|------|------|------|
-| GET | `/api/collection/schedules` | 定时规则列表 | `List<CollectionTaskScheduleDTO>` |
-| POST | `/api/collection/schedules` | 创建定时规则 | `CollectionTaskScheduleDTO` |
-| PUT | `/api/collection/schedules/{id}` | 更新/启停规则 | `CollectionTaskScheduleDTO` |
-| DELETE | `/api/collection/schedules/{id}` | 删除规则 | 空 |
+| GET | `/api/v1/dashboard/stats` | 首页核心统计数据 | `DashboardStatsDTO` |
+
+> **注意**：v2.0 去除 `/api/v1/collection/schedules` 全部接口（列表、创建、更新、删除）。定时规则由采集器内部管理。
 
 ---
 
@@ -167,3 +162,12 @@ backend/src/main/java/org/cwowhappy/securityanalyze/
   "timestamp": 1715340000000
 }
 ```
+
+---
+
+## 七、版本记录
+
+| 版本 | 日期 | 变更内容 |
+|------|------|----------|
+| v2.0 | 2026-05-11 | 去除 schedule 模块，股票直接外键关联公司，API 统一 `/api/v1` |
+| v1.0 | 2026-05-10 | 初始版本（已废弃） |

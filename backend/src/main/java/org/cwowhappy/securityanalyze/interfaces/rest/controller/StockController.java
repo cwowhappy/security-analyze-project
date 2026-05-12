@@ -3,6 +3,9 @@ package org.cwowhappy.securityanalyze.interfaces.rest.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.cwowhappy.securityanalyze.company.application.dto.CompanyDTO;
+import org.cwowhappy.securityanalyze.shared.dto.CompanyBriefDTO;
+import org.cwowhappy.securityanalyze.company.application.service.CompanyAppService;
 import org.cwowhappy.securityanalyze.interfaces.rest.request.CreateStockRequest;
 import org.cwowhappy.securityanalyze.interfaces.rest.response.ApiResponse;
 import org.cwowhappy.securityanalyze.shared.dto.PageQuery;
@@ -13,44 +16,39 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 /**
  * 股票 REST 控制器。
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/stocks")
+@RequestMapping("/api/v1/stocks")
 @RequiredArgsConstructor
 public class StockController {
 
     private final StockAppService stockAppService;
+    private final CompanyAppService companyAppService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<StockDTO>>> listStocks(
+    public ResponseEntity<ApiResponse<PageResult<StockDTO>>> listStocks(
+            PageQuery query,
+            @RequestParam(required = false) String market,
             @RequestParam(required = false) String industry,
-            @RequestParam(required = false) String market) {
-        List<StockDTO> stocks;
-        if (industry != null && !industry.isBlank()) {
-            stocks = stockAppService.findByIndustry(industry);
-        } else if (market != null && !market.isBlank()) {
-            stocks = stockAppService.findAll(); // 当前 AppService 无 findByMarket，先返回全部
-        } else {
-            stocks = stockAppService.findAll();
-        }
-        return ResponseEntity.ok(ApiResponse.success(stocks));
-    }
-
-    @GetMapping("/page")
-    public ResponseEntity<ApiResponse<PageResult<StockDTO>>> pageStocks(PageQuery query) {
-        PageResult<StockDTO> result = stockAppService.findByPage(query);
+            @RequestParam(required = false) String area,
+            @RequestParam(required = false) String keyword) {
+        PageResult<StockDTO> result = stockAppService.findByPage(query, market, industry, area, keyword);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     @GetMapping("/{stockCode}")
     public ResponseEntity<ApiResponse<StockDTO>> getStock(@PathVariable String stockCode) {
         return stockAppService.findByStockCode(stockCode)
-                .map(dto -> ResponseEntity.ok(ApiResponse.success(dto)))
+                .map(dto -> {
+                    if (dto.getCompanyId() != null) {
+                        companyAppService.findById(dto.getCompanyId())
+                                .ifPresent(company -> dto.setCompany(toBrief(company)));
+                    }
+                    return ResponseEntity.ok(ApiResponse.success(dto));
+                })
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), "股票不存在: " + stockCode)));
     }
@@ -69,9 +67,23 @@ public class StockController {
                 .area(request.getArea())
                 .totalShares(request.getTotalShares())
                 .floatShares(request.getFloatShares())
+                .companyId(request.getCompanyId())
                 .build();
         String id = stockAppService.createStock(dto);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("创建成功", id));
+    }
+
+    private CompanyBriefDTO toBrief(CompanyDTO company) {
+        return CompanyBriefDTO.builder()
+                .id(company.getId())
+                .unifiedSocialCreditCode(company.getUnifiedSocialCreditCode())
+                .name(company.getName())
+                .shortName(company.getShortName())
+                .legalRepresentative(company.getLegalRepresentative())
+                .regCapital(company.getRegCapital())
+                .setupDate(company.getSetupDate())
+                .mainBusiness(company.getMainBusiness())
+                .build();
     }
 }

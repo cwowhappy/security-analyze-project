@@ -18,20 +18,16 @@ export const useStockStore = defineStore('stock', () => {
   const stockCount = computed(() => stocks.value.length)
 
   // Actions
-  const fetchStocks = async (industry?: string, market?: string) => {
+  const fetchStockPage = async (
+    query: PageQuery,
+    market?: string,
+    industry?: string,
+    area?: string,
+    keyword?: string,
+  ) => {
     loading.value = true
     try {
-      const data = await stockApi.list(industry, market)
-      stocks.value = data
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const fetchStockPage = async (query: PageQuery, industry?: string, market?: string) => {
-    loading.value = true
-    try {
-      const result = await stockApi.page(query, industry, market)
+      const result = await stockApi.page(query, market, industry, area, keyword)
       stocks.value = result.list
       stockTotal.value = result.total
     } finally {
@@ -59,7 +55,6 @@ export const useStockStore = defineStore('stock', () => {
     currentStock,
     loading,
     stockCount,
-    fetchStocks,
     fetchStockPage,
     fetchStockDetail,
     getStockByCode,

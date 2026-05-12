@@ -22,9 +22,9 @@ class DbCollectionTaskRepository:
         sql = """
         INSERT INTO tb_collection_task (
             id, task_type, task_params, status, data_source,
-            total_count, success_count, fail_count, scheduled_at,
+            total_count, success_count, fail_count,
             error_message, started_at, completed_at, created_at
-        ) VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+        ) VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
         """
         import json
 
@@ -37,7 +37,6 @@ class DbCollectionTaskRepository:
             task.total_count,
             task.success_count,
             task.fail_count,
-            task.scheduled_at,
             task.error_message,
             task.started_at,
             task.completed_at,
@@ -91,13 +90,12 @@ class DbCollectionTaskRepository:
         rows = execute_query(sql, (limit,))
         return [CollectionTask.from_dict(row) for row in rows]
 
-    def find_schedules(self) -> Sequence[dict]:
-        """查询所有启用的定时规则。"""
+    def find_pending(self) -> Sequence[CollectionTask]:
+        """查询所有待执行的任务。"""
         sql = """
-        SELECT id, name, task_type, task_params, data_source,
-               cron_expression, is_enabled, last_triggered_at
-        FROM tb_collection_task_schedule
-        WHERE is_enabled = TRUE
-        ORDER BY created_at
+        SELECT * FROM tb_collection_task
+        WHERE status = 'pending'
+        ORDER BY created_at ASC
         """
-        return execute_query(sql)
+        rows = execute_query(sql)
+        return [CollectionTask.from_dict(row) for row in rows]

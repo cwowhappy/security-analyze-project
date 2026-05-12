@@ -26,6 +26,7 @@ public class Stock {
     private String area;
     private Long totalShares;
     private Long floatShares;
+    private String companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

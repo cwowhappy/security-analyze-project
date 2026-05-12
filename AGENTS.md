@@ -72,26 +72,33 @@ cd backend
 - **HTTP 请求**：`requests`
 - **测试**：pytest + pytest-asyncio
 
-#### 项目结构
+#### 项目结构（v2.0 简化架构）
 ```
 collector/
 ├── pyproject.toml            # Poetry 项目配置
 ├── poetry.lock               # 锁定依赖版本
-├── .env.example              # 环境变量示例（含数据库配置与采集策略）
-├── src/stock_collector/
-│   └── __init__.py           # 包入口（当前为空）
+├── .env.example              # 环境变量示例
+├── src/data_collector/
+│   ├── cli.py                # CLI 入口
+│   ├── config.py             # pydantic-settings 配置
+│   ├── task_executor.py      # 任务执行器
+│   ├── core/domain/          # 领域模型（Stock、Company、CollectionTask）
+│   ├── adapters/             # PostgreSQL 仓库实现
+│   ├── scripts/              # 采集脚本（直接调用 AKShare / Tushare）
+│   │   ├── stock_full.py
+│   │   ├── company_full.py
+│   │   └── field_supplement.py
+│   └── infrastructure/       # 数据库连接池、日志配置
 └── tests/
-    └── __init__.py
+    └── unit/
 ```
 
 #### 环境变量说明（见 `.env.example`）
 - **数据库**：`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
-  - 注意：示例值须与后端 `application.yml` 保持一致，但示例文件中的 `DB_NAME=security_analyze` 与后端的 `db-security-analyze` 不完全一致，需留意。
 - **连接池**（可选）：`DB_POOL_MIN_SIZE`, `DB_POOL_MAX_SIZE`
-- **采集重试**（针对东方财富限流）：`SOURCE_MAX_RETRIES`, `SOURCE_RETRY_DELAY`, `SOURCE_RETRY_BACKOFF`
 - **请求延迟**：`SOURCE_REQUEST_DELAY_MIN`, `SOURCE_REQUEST_DELAY_MAX`
-- **财务采集并发**：`FINANCE_BATCH_SIZE`, `FINANCE_MAX_WORKERS`, `FINANCE_BATCH_CONCURRENT_WORKERS`
-  - 建议 `max_workers=1`, `concurrent_workers=1`，因东方财富对并发敏感。
+- **批次失败率阈值**：`BATCH_FAIL_THRESHOLD`（默认 0.1）
+- **Tushare Token**：`TUSHARE_TOKEN`（字段补充脚本使用）
 
 #### 常用命令
 ```bash

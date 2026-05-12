@@ -14,11 +14,9 @@ public interface StockAppService {
 
     Optional<StockDTO> findByStockCode(String stockCode);
 
-    List<StockDTO> findAll();
+    PageResult<StockDTO> findByPage(PageQuery query, String market, String industry, String area, String keyword);
 
-    PageResult<StockDTO> findByPage(PageQuery query);
-
-    List<StockDTO> findByIndustry(String industry);
+    List<StockDTO> findByCompanyId(String companyId);
 
     String createStock(StockDTO dto);
 }

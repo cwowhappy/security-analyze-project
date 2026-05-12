@@ -76,19 +76,6 @@ class StockAppServiceTest {
     }
 
     @Test
-    void shouldReturnAllStocks() {
-        // Arrange
-        when(stockRepository.findAll()).thenReturn(List.of(sampleStock));
-
-        // Act
-        List<StockDTO> result = stockAppService.findAll();
-
-        // Assert
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getStockCode()).isEqualTo("000001");
-    }
-
-    @Test
     void shouldCreateStockAndReturnId() {
         // Arrange
         StockDTO dto = StockDTO.builder()
@@ -121,28 +108,29 @@ class StockAppServiceTest {
                 .page(1)
                 .size(20)
                 .build();
-        when(stockRepository.findByPage(query)).thenReturn(pageResult);
+        when(stockRepository.findByPage(query, "主板", "银行", "深圳", "平安"))
+                .thenReturn(pageResult);
 
         // Act
-        PageResult<StockDTO> result = stockAppService.findByPage(query);
+        PageResult<StockDTO> result = stockAppService.findByPage(query, "主板", "银行", "深圳", "平安");
 
         // Assert
         assertThat(result.getList()).hasSize(1);
         assertThat(result.getTotal()).isEqualTo(1L);
-        verify(stockRepository, times(1)).findByPage(query);
+        verify(stockRepository, times(1)).findByPage(query, "主板", "银行", "深圳", "平安");
     }
 
     @Test
-    void shouldReturnStocksWhenFindByIndustry() {
+    void shouldReturnStocksWhenFindByCompanyId() {
         // Arrange
-        when(stockRepository.findByIndustry("银行")).thenReturn(List.of(sampleStock));
+        when(stockRepository.findByCompanyId("comp001")).thenReturn(List.of(sampleStock));
 
         // Act
-        List<StockDTO> result = stockAppService.findByIndustry("银行");
+        List<StockDTO> result = stockAppService.findByCompanyId("comp001");
 
         // Assert
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getIndustry()).isEqualTo("银行");
-        verify(stockRepository, times(1)).findByIndustry("银行");
+        assertThat(result.get(0).getStockCode()).isEqualTo("000001");
+        verify(stockRepository, times(1)).findByCompanyId("comp001");
     }
 }

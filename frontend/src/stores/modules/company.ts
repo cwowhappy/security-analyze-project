@@ -15,10 +15,10 @@ export const useCompanyStore = defineStore('company', () => {
   const companyCount = computed(() => companies.value.length)
 
   // Actions
-  const fetchCompanies = async (query: PageQuery, industry?: string, province?: string, keyword?: string) => {
+  const fetchCompanies = async (query: PageQuery, industry?: string, province?: string, keyword?: string, controllerType?: string) => {
     loading.value = true
     try {
-      const result = await companyApi.list(query, industry, province, keyword)
+      const result = await companyApi.list(query, industry, province, keyword, controllerType)
       companies.value = result.list
       companyTotal.value = result.total
     } finally {

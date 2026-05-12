@@ -2,6 +2,7 @@ package org.cwowhappy.securityanalyze.stock.application.dto;
 
 import lombok.Builder;
 import lombok.Data;
+import org.cwowhappy.securityanalyze.shared.dto.CompanyBriefDTO;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +26,8 @@ public class StockDTO {
     private String area;
     private Long totalShares;
     private Long floatShares;
+    private String companyId;
+    private CompanyBriefDTO company;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

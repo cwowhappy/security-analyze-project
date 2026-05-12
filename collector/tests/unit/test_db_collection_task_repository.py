@@ -59,11 +59,12 @@ class TestDbCollectionTaskRepository:
             results = self.repo.find_all(limit=10)
             assert len(results) == 2
 
-    def test_should_find_schedules(self) -> None:
+    def test_should_find_pending(self) -> None:
         with patch("data_collector.adapters.db_collection_task_repository.execute_query") as mock_query:
             mock_query.return_value = [
-                {"id": "s1", "name": "每日股票", "task_type": "stock_full", "cron_expression": "0 9 * * *"},
+                {"id": "1", "task_type": "stock_full", "status": "pending", "task_params": None},
+                {"id": "2", "task_type": "company_full", "status": "pending", "task_params": None},
             ]
-            results = self.repo.find_schedules()
-            assert len(results) == 1
-            assert results[0]["name"] == "每日股票"
+            results = self.repo.find_pending()
+            assert len(results) == 2
+            assert results[0].status == "pending"

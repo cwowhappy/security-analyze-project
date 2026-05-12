@@ -59,7 +59,7 @@ class CollectionTaskControllerTest {
         when(taskAppService.findByPage(any(PageQuery.class), eq("success"), eq("stock_full"))).thenReturn(pageResult);
 
         // Act & Assert
-        mockMvc.perform(get("/api/collection/tasks")
+        mockMvc.perform(get("/api/v1/collection/tasks")
                         .param("status", "success")
                         .param("taskType", "stock_full"))
                 .andExpect(status().isOk())
@@ -81,7 +81,7 @@ class CollectionTaskControllerTest {
         when(taskAppService.findById("task001")).thenReturn(Optional.of(dto));
 
         // Act & Assert
-        mockMvc.perform(get("/api/collection/tasks/task001"))
+        mockMvc.perform(get("/api/v1/collection/tasks/task001"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value("task001"))
@@ -95,14 +95,23 @@ class CollectionTaskControllerTest {
         request.setTaskType("stock_daily");
         request.setDataSource("akshare");
 
+        CollectionTaskDTO createdDto = CollectionTaskDTO.builder()
+                .id("task002")
+                .taskType("stock_daily")
+                .status("pending")
+                .dataSource("akshare")
+                .build();
+
         when(taskAppService.createTask(any(CollectionTaskDTO.class))).thenReturn("task002");
+        when(taskAppService.findById("task002")).thenReturn(Optional.of(createdDto));
 
         // Act & Assert
-        mockMvc.perform(post("/api/collection/tasks")
+        mockMvc.perform(post("/api/v1/collection/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value("task002"));
+                .andExpect(jsonPath("$.data.id").value("task002"))
+                .andExpect(jsonPath("$.data.status").value("pending"));
     }
 }

@@ -85,11 +85,11 @@ public class JdbcCollectionTaskRepository implements CollectionTaskRepository {
         String sql = """
                 INSERT INTO tb_collection_task (
                     id, task_type, task_params, status, data_source,
-                    total_count, success_count, fail_count, scheduled_at,
+                    total_count, success_count, fail_count,
                     error_message, started_at, completed_at, created_at
                 ) VALUES (
                     :id, :taskType, :taskParams::jsonb, :status, :dataSource,
-                    :totalCount, :successCount, :failCount, :scheduledAt,
+                    :totalCount, :successCount, :failCount,
                     :errorMessage, :startedAt, :completedAt, :createdAt
                 )
                 ON CONFLICT (id) DO UPDATE SET
@@ -100,7 +100,6 @@ public class JdbcCollectionTaskRepository implements CollectionTaskRepository {
                     total_count = EXCLUDED.total_count,
                     success_count = EXCLUDED.success_count,
                     fail_count = EXCLUDED.fail_count,
-                    scheduled_at = EXCLUDED.scheduled_at,
                     error_message = EXCLUDED.error_message,
                     started_at = EXCLUDED.started_at,
                     completed_at = EXCLUDED.completed_at
@@ -121,7 +120,6 @@ public class JdbcCollectionTaskRepository implements CollectionTaskRepository {
                 .totalCount(entity.getTotalCount())
                 .successCount(entity.getSuccessCount())
                 .failCount(entity.getFailCount())
-                .scheduledAt(entity.getScheduledAt())
                 .errorMessage(entity.getErrorMessage())
                 .startedAt(entity.getStartedAt())
                 .completedAt(entity.getCompletedAt())
@@ -139,7 +137,6 @@ public class JdbcCollectionTaskRepository implements CollectionTaskRepository {
         entity.setTotalCount(task.getTotalCount());
         entity.setSuccessCount(task.getSuccessCount());
         entity.setFailCount(task.getFailCount());
-        entity.setScheduledAt(task.getScheduledAt());
         entity.setErrorMessage(task.getErrorMessage());
         entity.setStartedAt(task.getStartedAt());
         entity.setCompletedAt(task.getCompletedAt());

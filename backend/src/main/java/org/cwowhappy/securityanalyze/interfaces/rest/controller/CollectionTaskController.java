@@ -13,14 +13,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+
 
 /**
  * 采集任务 REST 控制器。
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/collection/tasks")
+@RequestMapping("/api/v1/collection/tasks")
 @RequiredArgsConstructor
 public class CollectionTaskController {
 
@@ -47,27 +47,17 @@ public class CollectionTaskController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createTask(@Valid @RequestBody CreateCollectionTaskRequest request) {
+    public ResponseEntity<ApiResponse<CollectionTaskDTO>> createTask(@Valid @RequestBody CreateCollectionTaskRequest request) {
         log.info("创建采集任务: taskType={}", request.getTaskType());
-        String taskParamsJson = null;
-        if (request.getTaskParams() != null) {
-            taskParamsJson = toJsonString(request.getTaskParams());
-        }
         CollectionTaskDTO dto = CollectionTaskDTO.builder()
                 .taskType(request.getTaskType())
-                .taskParams(taskParamsJson)
+                .taskParams(request.getTaskParams())
                 .dataSource(request.getDataSource())
                 .build();
         String id = taskAppService.createTask(dto);
+        CollectionTaskDTO created = taskAppService.findById(id)
+                .orElseThrow(() -> new IllegalStateException("创建任务后无法查询: " + id));
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("创建成功", id));
-    }
-
-    private String toJsonString(Map<String, Object> map) {
-        try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(map);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("taskParams 序列化失败", e);
-        }
+                .body(ApiResponse.success("创建成功", created));
     }
 }

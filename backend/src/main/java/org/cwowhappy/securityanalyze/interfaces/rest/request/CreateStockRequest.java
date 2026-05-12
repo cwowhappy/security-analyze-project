@@ -34,4 +34,6 @@ public class CreateStockRequest {
     private Long totalShares;
 
     private Long floatShares;
+
+    private String companyId;
 }

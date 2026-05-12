@@ -3,9 +3,11 @@ package org.cwowhappy.securityanalyze.interfaces.rest.advice;
 import lombok.extern.slf4j.Slf4j;
 import org.cwowhappy.securityanalyze.interfaces.rest.response.ApiResponse;
 import org.cwowhappy.securityanalyze.shared.exception.ApplicationException;
+import org.cwowhappy.securityanalyze.shared.exception.ConflictException;
 import org.cwowhappy.securityanalyze.shared.exception.DomainException;
 import org.cwowhappy.securityanalyze.shared.exception.InfrastructureException;
 import org.cwowhappy.securityanalyze.shared.exception.NotFoundException;
+import org.cwowhappy.securityanalyze.shared.exception.UnauthorizedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -51,6 +54,26 @@ public class GlobalExceptionHandler {
         log.warn("参数校验失败: {}", message);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), message));
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnauthorized(UnauthorizedException ex) {
+        log.warn("认证失败: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleConflict(ConflictException ex) {
+        log.warn("资源冲突: {}", ex.getMessage());
+        var response = ApiResponse.<Map<String, String>>builder()
+                .success(false)
+                .code(HttpStatus.CONFLICT.value())
+                .message(ex.getMessage())
+                .data(ex.getErrors())
+                .timestamp(java.time.LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     @ExceptionHandler(Exception.class)

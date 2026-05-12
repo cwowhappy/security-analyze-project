@@ -26,7 +26,6 @@ public class CollectionTaskRowMapper implements RowMapper<CollectionTaskEntity> 
         entity.setTotalCount(rs.getObject("total_count", Integer.class));
         entity.setSuccessCount(rs.getObject("success_count", Integer.class));
         entity.setFailCount(rs.getObject("fail_count", Integer.class));
-        entity.setScheduledAt(toLocalDateTime(rs.getTimestamp("scheduled_at")));
         entity.setErrorMessage(rs.getString("error_message"));
         entity.setStartedAt(toLocalDateTime(rs.getTimestamp("started_at")));
         entity.setCompletedAt(toLocalDateTime(rs.getTimestamp("completed_at")));

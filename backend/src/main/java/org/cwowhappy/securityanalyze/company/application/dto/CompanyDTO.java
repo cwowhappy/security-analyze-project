@@ -2,10 +2,12 @@ package org.cwowhappy.securityanalyze.company.application.dto;
 
 import lombok.Builder;
 import lombok.Data;
+import org.cwowhappy.securityanalyze.shared.dto.StockBriefDTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 公司应用层 DTO。
@@ -38,6 +40,7 @@ public class CompanyDTO {
     private Integer employees;
     private String controllerName;
     private String controllerType;
+    private List<StockBriefDTO> stocks;
     private LocalDateTime updatedAt;
     private LocalDateTime createdAt;
 }

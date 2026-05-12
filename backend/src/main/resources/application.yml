@@ -23,6 +23,18 @@ management:
     health:
       show-details: always
 
+jwt:
+  secret: ${JWT_SECRET:security-analyze-default-secret-key-change-in-production}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+mail:
+  enabled: ${MAIL_ENABLED:false}
+  host: ${MAIL_HOST:smtp.example.com}
+  port: ${MAIL_PORT:587}
+  username: ${MAIL_USERNAME:}
+  password: ${MAIL_PASSWORD:}
+  from: ${MAIL_FROM:noreply@example.com}
+
 logging:
   level:
     org.cwowhappy.securityanalyze: DEBUG

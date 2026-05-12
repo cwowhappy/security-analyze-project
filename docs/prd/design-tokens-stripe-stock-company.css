@@ -1,0 +1,63 @@
+/* ============================================
+   Stripe 设计系统令牌 - 证券投研系统定制版
+   基于 Stripe 公开设计语言
+   ============================================ */
+
+:root {
+  /* === Color Palette === */
+
+  /* Primary - Stripe 标志性紫蓝色 */
+  --color-primary: #635BFF;
+  --color-primary-hover: #524CE0;
+  --color-primary-light: #E8E6FF;
+
+  /* Backgrounds */
+  --color-bg: #FFFFFF;
+  --color-surface: #F6F8FA;
+  --color-surface-hover: #EEF1F5;
+
+  /* Text */
+  --color-text-primary: #1A1F36;
+  --color-text-secondary: #6B7A8D;
+  --color-text-tertiary: #99A6B5;
+
+  /* Borders */
+  --color-border: #E2E8F0;
+  --color-border-strong: #CDD5DF;
+
+  /* Semantic - 证券专用 */
+  --color-success: #00D924;     /* 涨 / 正收益 */
+  --color-success-bg: #E6F9EA;
+  --color-danger: #FF3B30;      /* 跌 / 负收益 */
+  --color-danger-bg: #FFEAEE;
+  --color-warning: #FFC107;     /* 警告 */
+  --color-info: #3B82F6;       /* 信息 */
+
+  /* === Typography === */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'SF Mono', 'Courier New', monospace;
+
+  /* === Spacing === */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* === Border Radius === */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* === Shadows === */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* === Layout === */
+  --container-max: 1280px;
+  --nav-height: 56px;
+  --sidebar-width: 240px;
+}

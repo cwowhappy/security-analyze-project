@@ -1,6 +1,8 @@
-# 前后端交互契约：股票与公司基础信息模块
+# 前后端交互契约：股票与公司基础信息模块 v2
 
-> 本文档定义后端 REST API 的请求/响应格式、状态码与字段说明。
+> 版本：v2.0 | 日期：2026-05-11  
+> 本文档定义后端 REST API 的请求/响应格式、状态码与字段说明。  
+> 变更：精简接口，去除定时规则相关 API，统一版本前缀 `/api/v1`。
 
 ---
 
@@ -37,7 +39,7 @@
 ### 2.1 获取股票列表
 
 ```
-GET /api/stocks?page=1&size=20&industry=银行
+GET /api/v1/stocks?page=1&size=20&market=主板&keyword=平安
 ```
 
 **请求参数（Query）：**
@@ -45,9 +47,11 @@ GET /api/stocks?page=1&size=20&industry=银行
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | page | int | 否 | 页码，默认 1 |
-| size | int | 否 | 每页大小，默认 20 |
+| size | int | 否 | 每页大小，默认 20，最大 100 |
+| market | string | 否 | 市场类型筛选：主板/创业板/科创板/北交所 |
 | industry | string | 否 | 行业筛选 |
-| market | string | 否 | 市场类型筛选 |
+| area | string | 否 | 地域筛选 |
+| keyword | string | 否 | 关键词：匹配 stock_code（前缀）或 name（模糊） |
 
 **响应：**
 
@@ -71,6 +75,7 @@ GET /api/stocks?page=1&size=20&industry=银行
         "area": "深圳",
         "totalShares": 19405918198,
         "floatShares": 19405562184,
+        "companyId": "cmp_xxx",
         "updatedAt": "2026-05-10T10:00:00"
       }
     ],
@@ -84,14 +89,14 @@ GET /api/stocks?page=1&size=20&industry=银行
 ### 2.2 获取股票详情
 
 ```
-GET /api/stocks/{stockCode}
+GET /api/v1/stocks/{stockCode}
 ```
 
 **路径参数：**
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| stockCode | string | 股票代码，如 000001 |
+| stockCode | string | 股票代码，如 `000001` |
 
 **响应：**
 
@@ -117,6 +122,7 @@ GET /api/stocks/{stockCode}
       "id": "cmp_xxx",
       "unifiedSocialCreditCode": "9144030019218538XX",
       "name": "平安银行股份有限公司",
+      "shortName": "平安银行",
       "legalRepresentative": "谢永林",
       "regCapital": 1940591.8198,
       "setupDate": "1987-12-22",
@@ -126,6 +132,8 @@ GET /api/stocks/{stockCode}
 }
 ```
 
+> 股票详情直接内嵌关联公司信息，无需前端二次请求。
+
 ---
 
 ## 三、公司 API
@@ -133,7 +141,7 @@ GET /api/stocks/{stockCode}
 ### 3.1 获取公司列表
 
 ```
-GET /api/companies?page=1&size=20&industry=银行&province=深圳
+GET /api/v1/companies?page=1&size=20&industry=银行&province=广东
 ```
 
 **请求参数（Query）：**
@@ -141,10 +149,11 @@ GET /api/companies?page=1&size=20&industry=银行&province=深圳
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | page | int | 否 | 页码，默认 1 |
-| size | int | 否 | 每页大小，默认 20 |
+| size | int | 否 | 每页大小，默认 20，最大 100 |
 | industry | string | 否 | 行业筛选 |
 | province | string | 否 | 省份筛选 |
-| keyword | string | 否 | 公司名称关键词 |
+| controllerType | string | 否 | 企业性质筛选：国企/民营/外资/其他 |
+| keyword | string | 否 | 关键词：匹配 name / short_name / unifiedSocialCreditCode（模糊） |
 
 **响应：**
 
@@ -152,6 +161,7 @@ GET /api/companies?page=1&size=20&industry=银行&province=深圳
 {
   "success": true,
   "code": 200,
+  "message": "OK",
   "data": {
     "list": [
       {
@@ -160,11 +170,13 @@ GET /api/companies?page=1&size=20&industry=银行&province=深圳
         "name": "平安银行股份有限公司",
         "shortName": "平安银行",
         "industry": "银行",
-        "province": "广东省",
-        "city": "深圳市",
+        "province": "广东",
+        "city": "深圳",
         "setupDate": "1987-12-22",
         "regCapital": 1940591.8198,
-        "employees": 44277
+        "employees": 44277,
+        "controllerType": "民营",
+        "legalRepresentative": "谢永林"
       }
     ],
     "total": 5200,
@@ -177,7 +189,7 @@ GET /api/companies?page=1&size=20&industry=银行&province=深圳
 ### 3.2 获取公司详情
 
 ```
-GET /api/companies/{uscCode}
+GET /api/v1/companies/{uscCode}
 ```
 
 **路径参数：**
@@ -198,14 +210,15 @@ GET /api/companies/{uscCode}
     "name": "平安银行股份有限公司",
     "shortName": "平安银行",
     "englishName": "Ping An Bank Co., Ltd.",
+    "formerName": "深圳发展银行",
     "legalRepresentative": "谢永林",
     "chairman": "谢永林",
     "manager": "胡跃飞",
     "secretary": "周强",
     "regCapital": 1940591.8198,
     "setupDate": "1987-12-22",
-    "province": "广东省",
-    "city": "深圳市",
+    "province": "广东",
+    "city": "深圳",
     "regAddress": "深圳市罗湖区深南东路5047号",
     "officeAddress": "深圳市福田区益田路5023号平安金融中心",
     "website": "bank.pingan.com",
@@ -215,7 +228,7 @@ GET /api/companies/{uscCode}
     "introduction": "平安银行是一家总部设在深圳的全国性股份制商业银行",
     "employees": 44277,
     "controllerName": "中国平安保险（集团）股份有限公司",
-    "controllerType": "其他",
+    "controllerType": "民营",
     "stocks": [
       {
         "stockCode": "000001",
@@ -229,6 +242,8 @@ GET /api/companies/{uscCode}
 }
 ```
 
+> 公司详情直接内嵌关联股票列表，无需前端二次请求。
+
 ---
 
 ## 四、采集任务 API
@@ -236,7 +251,7 @@ GET /api/companies/{uscCode}
 ### 4.1 获取任务列表
 
 ```
-GET /api/collection/tasks?page=1&size=20&status=success
+GET /api/v1/collection/tasks?page=1&size=20&status=success&taskType=stock_full
 ```
 
 **请求参数（Query）：**
@@ -245,7 +260,7 @@ GET /api/collection/tasks?page=1&size=20&status=success
 |------|------|------|------|
 | page | int | 否 | 页码，默认 1 |
 | size | int | 否 | 每页大小，默认 20 |
-| status | string | 否 | 状态筛选：pending/running/success/failed |
+| status | string | 否 | 状态筛选：pending / running / success / failed |
 | taskType | string | 否 | 任务类型筛选 |
 
 **响应：**
@@ -280,7 +295,7 @@ GET /api/collection/tasks?page=1&size=20&status=success
 ### 4.2 创建即时采集任务
 
 ```
-POST /api/collection/tasks
+POST /api/v1/collection/tasks
 ```
 
 **请求体：**
@@ -300,7 +315,7 @@ POST /api/collection/tasks
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | taskType | string | 是 | stock_full / company_full / stock_single / company_single |
-| taskParams | object | 否 | 任务参数，如 {"stockCode": "000001"} |
+| taskParams | object | 否 | 任务参数，如 `{"stockCode": "000001"}` |
 | dataSource | string | 否 | akshare / tushare，默认 akshare |
 
 **响应：**
@@ -322,92 +337,19 @@ POST /api/collection/tasks
 ### 4.3 获取任务详情
 
 ```
-GET /api/collection/tasks/{id}
+GET /api/v1/collection/tasks/{id}
 ```
 
 **响应：** 同任务列表中的单条记录，含 `errorMessage` 字段。
 
 ---
 
-## 五、定时规则 API
+## 五、首页统计 API（P1）
 
-### 5.1 获取规则列表
-
-```
-GET /api/collection/schedules
-```
-
-**响应：**
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "data": [
-    {
-      "id": "sch_xxx",
-      "name": "每日股票全量采集",
-      "taskType": "stock_full",
-      "dataSource": "akshare",
-      "cronExpression": "0 2 * * *",
-      "isEnabled": true,
-      "lastTriggeredAt": "2026-05-10T02:00:00",
-      "createdAt": "2026-05-01T10:00:00"
-    }
-  ]
-}
-```
-
-### 5.2 创建定时规则
+### 5.1 获取首页统计数据
 
 ```
-POST /api/collection/schedules
-```
-
-**请求体：**
-
-```json
-{
-  "name": "每日公司全量采集",
-  "taskType": "company_full",
-  "cronExpression": "0 3 * * *",
-  "dataSource": "akshare",
-  "taskParams": null
-}
-```
-
-**字段说明：**
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| name | string | 是 | 规则名称 |
-| taskType | string | 是 | 任务类型 |
-| cronExpression | string | 是 | Cron 表达式 |
-| dataSource | string | 否 | 默认数据源 |
-| taskParams | object | 否 | 默认参数 |
-
-### 5.3 更新定时规则
-
-```
-PUT /api/collection/schedules/{id}
-```
-
-**请求体：**
-
-```json
-{
-  "name": "每日公司全量采集",
-  "cronExpression": "0 4 * * *",
-  "isEnabled": false
-}
-```
-
-> 支持部分更新，仅传入需要修改的字段。
-
-### 5.4 删除定时规则
-
-```
-DELETE /api/collection/schedules/{id}
+GET /api/v1/dashboard/stats
 ```
 
 **响应：**
@@ -416,7 +358,12 @@ DELETE /api/collection/schedules/{id}
 {
   "success": true,
   "code": 200,
-  "data": null
+  "data": {
+    "totalCompanies": 5387,
+    "totalStocks": 4982,
+    "nextScheduledTime": "2026-05-12T02:00:00",
+    "lastSuccessRate": 99.4
+  }
 }
 ```
 
@@ -429,5 +376,14 @@ DELETE /api/collection/schedules/{id}
 | 200 | 成功 |
 | 400 | 请求参数校验失败 |
 | 404 | 股票/公司/任务不存在 |
-| 409 | 资源冲突（如重复的唯一键）|
+| 409 | 资源冲突（如重复的唯一键） |
 | 500 | 服务端内部错误 |
+
+---
+
+## 七、版本记录
+
+| 版本 | 日期 | 变更内容 |
+|------|------|----------|
+| v2.0 | 2026-05-11 | 精简接口：去除定时规则 API，统一 `/api/v1` 前缀，股票/公司详情内嵌关联数据 |
+| v1.0 | 2026-05-10 | 初始版本（已废弃） |

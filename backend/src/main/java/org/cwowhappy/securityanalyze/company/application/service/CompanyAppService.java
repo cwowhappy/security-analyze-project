@@ -11,9 +11,11 @@ import java.util.Optional;
  */
 public interface CompanyAppService {
 
-    PageResult<CompanyDTO> findByPage(PageQuery pageQuery, String industry, String province, String keyword);
+    PageResult<CompanyDTO> findByPage(PageQuery pageQuery, String industry, String province, String controllerType, String keyword);
 
     Optional<CompanyDTO> findByUscCode(String uscCode);
+
+    Optional<CompanyDTO> findById(String id);
 
     String createCompany(CompanyDTO dto);
 }

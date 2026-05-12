@@ -1,0 +1,25 @@
+package org.cwowhappy.securityanalyze.user.application.dto;
+
+import lombok.Builder;
+import lombok.Getter;
+
+import java.time.LocalDateTime;
+
+/**
+ * 用户列表项 DTO（管理员视角）。
+ */
+@Getter
+@Builder
+public class UserListItemDTO {
+
+    private final String id;
+    private final String username;
+    private final String email;
+    private final String displayName;
+    private final String role;
+    private final String avatarInitial;
+    private final boolean emailVerified;
+    private final boolean locked;
+    private final LocalDateTime lastLoginAt;
+    private final LocalDateTime createdAt;
+}

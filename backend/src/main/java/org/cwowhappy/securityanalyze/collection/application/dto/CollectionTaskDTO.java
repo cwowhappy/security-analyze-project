@@ -14,13 +14,12 @@ public class CollectionTaskDTO {
 
     private String id;
     private String taskType;
-    private String taskParams;
+    private Object taskParams;
     private String status;
     private String dataSource;
     private Integer totalCount;
     private Integer successCount;
     private Integer failCount;
-    private LocalDateTime scheduledAt;
     private String errorMessage;
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;

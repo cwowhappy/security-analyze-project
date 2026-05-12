@@ -20,11 +20,9 @@ public interface StockRepository {
 
     List<Stock> findAll();
 
-    PageResult<Stock> findByPage(PageQuery query);
+    PageResult<Stock> findByPage(PageQuery query, String market, String industry, String area, String keyword);
 
-    List<Stock> findByIndustry(String industry);
-
-    List<Stock> findByMarket(String market);
+    List<Stock> findByCompanyId(String companyId);
 
     StockId save(Stock stock);
 

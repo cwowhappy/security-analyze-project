@@ -29,6 +29,10 @@ dependencies {
 
     runtimeOnly("org.postgresql:postgresql")
 
+    implementation("com.auth0:java-jwt:4.4.0")
+    implementation("org.springframework.security:spring-security-crypto:6.3.4")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
 

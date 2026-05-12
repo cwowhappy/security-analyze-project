@@ -1,91 +1,77 @@
 /* ============================================================
-   证券分析系统 — 数据矩阵主题 (Data Matrix)
-   专业金融终端深色风格，克制、严谨、数据优先
+   证券分析与投资 — Stripe 风格 Design Tokens
+   支持亮色/暗色主题切换
    ============================================================ */
 
-/* ---- 1. CSS 变量系统 ------------------------------------------------ */
 :root {
-  /* 背景层级 — 基于 Bloomberg Terminal / Wind 的深蓝灰系 */
-  --bg-page: #0b0f1a;
-  --bg-card: #111827;
-  --bg-card-hover: #1a2332;
-  --bg-overlay: #0f172a;
-  --bg-input: #0d1420;
-  --bg-header-row: #162032;
-  --bg-row-hover: rgba(45, 140, 240, 0.05);
-  --bg-row-alt: rgba(255, 255, 255, 0.015);
-
-  /* 边框 — 极细、低对比度 */
-  --border-subtle: rgba(148, 163, 184, 0.06);
-  --border-default: rgba(148, 163, 184, 0.1);
-  --border-strong: rgba(148, 163, 184, 0.18);
-  --border-focus: #2d8cf0;
-
-  /* 文字 — 高可读性层级 */
-  --text-primary: #f0f4f8;
-  --text-secondary: #94a3b8;
-  --text-muted: #5e6e82;
-  --text-data: #dbe4f0;
-
-  /* 功能色 — 专业金融标准 */
-  --primary: #2d8cf0;
-  --primary-dim: #1a6fc4;
-  --primary-subtle: rgba(45, 140, 240, 0.12);
-  --green: #27ae60;
-  --green-subtle: rgba(39, 174, 96, 0.12);
-  --red: #e74c3c;
-  --red-subtle: rgba(231, 76, 60, 0.12);
-  --amber: #f39c12;
-  --amber-subtle: rgba(243, 156, 18, 0.12);
-  --cyan: #17a2b8;
-  --cyan-subtle: rgba(23, 162, 184, 0.12);
-
-  /* 阴影 — 极克制，仅用于层级区分 */
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.35);
-  --shadow-dropdown: 0 8px 32px rgba(0, 0, 0, 0.5);
-
-  /* 字体 */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', 'Monaco', monospace;
-
-  /* 尺寸 */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --navbar-h: 52px;
-
-  /* 动画 */
+  /* Light Theme (默认) */
+  --bg: #F4F6F9;
+  --surface: #FFFFFF;
+  --surface-hover: #F0F2F6;
+  --text-primary: #1A1F36;
+  --text-secondary: #697386;
+  --text-muted: #9AA3B2;
+  --border: #DDE1EA;
+  --primary: #635BFF;
+  --primary-hover: #524CE0;
+  --success: #00D924;
+  --danger: #FF3B30;
+  --warning: #FF9500;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --sidebar-w: 240px;
+  --topbar-h: 60px;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --mono: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  --nav-hover: rgba(99, 91, 255, 0.08);
+  --nav-active: rgba(99, 91, 255, 0.14);
   --transition-fast: 0.12s ease;
   --transition-base: 0.2s ease;
 }
 
-/* ---- 2. 基础重置 ---------------------------------------------------- */
+[data-theme="dark"] {
+  --bg: #0F1117;
+  --surface: #1A1D2E;
+  --surface-hover: #22263A;
+  --text-primary: #E8EAF0;
+  --text-secondary: #8B92A5;
+  --text-muted: #5C6378;
+  --border: #2E3347;
+  --primary: #7C73FF;
+  --primary-hover: #635BFF;
+  --success: #00D924;
+  --danger: #FF3B30;
+  --warning: #FF9500;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --nav-hover: rgba(124, 115, 255, 0.12);
+  --nav-active: rgba(124, 115, 255, 0.20);
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--text-secondary);
-  background: var(--bg-page);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+html, body {
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
-  min-height: 100vh;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.25s, color 0.25s;
 }
 
-/* ---- 3. 通用工具类 -------------------------------------------------- */
-.text-primary { color: var(--text-primary); }
-.text-secondary { color: var(--text-secondary); }
-.text-muted { color: var(--text-muted); }
-.text-green { color: var(--green); }
-.text-red { color: var(--red); }
-.text-amber { color: var(--amber); }
-.text-cyan { color: var(--cyan); }
-.font-mono { font-family: var(--font-mono); }
+/* 通用工具类 */
+.font-mono { font-family: var(--mono); }

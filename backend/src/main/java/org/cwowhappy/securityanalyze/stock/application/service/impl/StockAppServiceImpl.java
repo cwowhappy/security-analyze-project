@@ -35,17 +35,10 @@ public class StockAppServiceImpl implements StockAppService {
     }
 
     @Override
-    public List<StockDTO> findAll() {
-        log.debug("查询所有股票");
-        return stockRepository.findAll().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public PageResult<StockDTO> findByPage(PageQuery query) {
-        log.debug("分页查询股票: page={}, size={}", query.getPage(), query.getSize());
-        PageResult<Stock> pageResult = stockRepository.findByPage(query);
+    public PageResult<StockDTO> findByPage(PageQuery query, String market, String industry, String area, String keyword) {
+        log.debug("分页查询股票: page={}, size={}, market={}, industry={}, area={}, keyword={}",
+                query.getPage(), query.getSize(), market, industry, area, keyword);
+        PageResult<Stock> pageResult = stockRepository.findByPage(query, market, industry, area, keyword);
         List<StockDTO> dtos = pageResult.getList().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -58,9 +51,9 @@ public class StockAppServiceImpl implements StockAppService {
     }
 
     @Override
-    public List<StockDTO> findByIndustry(String industry) {
-        log.debug("按行业查询股票: industry={}", industry);
-        return stockRepository.findByIndustry(industry).stream()
+    public List<StockDTO> findByCompanyId(String companyId) {
+        log.debug("按公司ID查询股票: companyId={}", companyId);
+        return stockRepository.findByCompanyId(companyId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -82,6 +75,7 @@ public class StockAppServiceImpl implements StockAppService {
                 .area(dto.getArea())
                 .totalShares(dto.getTotalShares())
                 .floatShares(dto.getFloatShares())
+                .companyId(dto.getCompanyId())
                 .build();
         StockId id = stockRepository.save(stock);
         log.info("股票创建成功: id={}", id);
@@ -102,6 +96,7 @@ public class StockAppServiceImpl implements StockAppService {
                 .area(stock.getArea())
                 .totalShares(stock.getTotalShares())
                 .floatShares(stock.getFloatShares())
+                .companyId(stock.getCompanyId())
                 .createdAt(stock.getCreatedAt())
                 .updatedAt(stock.getUpdatedAt())
                 .build();

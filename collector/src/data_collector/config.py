@@ -26,22 +26,11 @@ class Settings(BaseSettings):
     tushare_token: str = Field(default="", alias="TUSHARE_TOKEN")
 
     # 采集策略
-    source_max_retries: int = Field(default=3, alias="SOURCE_MAX_RETRIES")
-    source_retry_delay: float = Field(default=1.0, alias="SOURCE_RETRY_DELAY")
-    source_retry_backoff: float = Field(default=2.0, alias="SOURCE_RETRY_BACKOFF")
     source_request_delay_min: float = Field(default=1.0, alias="SOURCE_REQUEST_DELAY_MIN")
     source_request_delay_max: float = Field(default=3.0, alias="SOURCE_REQUEST_DELAY_MAX")
 
-    # 财务采集并发
-    finance_batch_size: int = Field(default=100, alias="FINANCE_BATCH_SIZE")
-    finance_max_workers: int = Field(default=1, alias="FINANCE_MAX_WORKERS")
-    finance_batch_concurrent_workers: int = Field(
-        default=1, alias="FINANCE_BATCH_CONCURRENT_WORKERS"
-    )
-
-    # APScheduler
-    collector_max_workers: int = Field(default=5, alias="COLLECTOR_MAX_WORKERS")
-    collector_misfire_grace_time: int = Field(default=3600, alias="COLLECTOR_MISFIRE_GRACE_TIME")
+    # 批次失败率阈值
+    batch_fail_threshold: float = Field(default=0.1, alias="BATCH_FAIL_THRESHOLD")
 
     # 日志
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")

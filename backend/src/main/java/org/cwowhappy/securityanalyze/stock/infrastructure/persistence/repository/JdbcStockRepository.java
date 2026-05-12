@@ -14,8 +14,10 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.util.StringUtils;
 
 /**
  * 股票仓库 JDBC 实现（Adapter）。
@@ -52,17 +54,40 @@ public class JdbcStockRepository implements StockRepository {
     }
 
     @Override
-    public PageResult<Stock> findByPage(PageQuery query) {
-        int offset = (query.getPage() - 1) * query.getSize();
-        String countSql = "SELECT COUNT(*) FROM tb_stock_basic";
+    public PageResult<Stock> findByPage(PageQuery query, String market, String industry, String area, String keyword) {
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        List<String> conditions = new ArrayList<>();
+
+        if (StringUtils.hasText(market)) {
+            conditions.add("market = :market");
+            params.addValue("market", market);
+        }
+        if (StringUtils.hasText(industry)) {
+            conditions.add("industry = :industry");
+            params.addValue("industry", industry);
+        }
+        if (StringUtils.hasText(area)) {
+            conditions.add("area = :area");
+            params.addValue("area", area);
+        }
+        if (StringUtils.hasText(keyword)) {
+            conditions.add("(stock_code LIKE :stockCodePrefix OR name LIKE :keyword)");
+            params.addValue("stockCodePrefix", keyword + "%");
+            params.addValue("keyword", "%" + keyword + "%");
+        }
+
+        String where = conditions.isEmpty() ? "" : " WHERE " + String.join(" AND ", conditions);
+
+        String countSql = "SELECT COUNT(*) FROM tb_stock_basic" + where;
         long total = Optional.ofNullable(
-                jdbcTemplate.queryForObject(countSql, new MapSqlParameterSource(), Long.class)
+                jdbcTemplate.queryForObject(countSql, params, Long.class)
         ).orElse(0L);
 
-        String sql = "SELECT * FROM tb_stock_basic ORDER BY stock_code LIMIT :size OFFSET :offset";
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("size", query.getSize())
-                .addValue("offset", offset);
+        int offset = (query.getPage() - 1) * query.getSize();
+        params.addValue("size", query.getSize());
+        params.addValue("offset", offset);
+
+        String sql = "SELECT * FROM tb_stock_basic" + where + " ORDER BY stock_code LIMIT :size OFFSET :offset";
         List<Stock> list = jdbcTemplate.query(sql, params, rowMapper).stream()
                 .map(this::toDomain)
                 .toList();
@@ -76,18 +101,10 @@ public class JdbcStockRepository implements StockRepository {
     }
 
     @Override
-    public List<Stock> findByIndustry(String industry) {
-        String sql = "SELECT * FROM tb_stock_basic WHERE industry = :industry ORDER BY stock_code";
+    public List<Stock> findByCompanyId(String companyId) {
+        String sql = "SELECT * FROM tb_stock_basic WHERE company_id = :companyId ORDER BY stock_code";
         List<StockEntity> results = jdbcTemplate.query(sql,
-                new MapSqlParameterSource("industry", industry), rowMapper);
-        return results.stream().map(this::toDomain).toList();
-    }
-
-    @Override
-    public List<Stock> findByMarket(String market) {
-        String sql = "SELECT * FROM tb_stock_basic WHERE market = :market ORDER BY stock_code";
-        List<StockEntity> results = jdbcTemplate.query(sql,
-                new MapSqlParameterSource("market", market), rowMapper);
+                new MapSqlParameterSource("companyId", companyId), rowMapper);
         return results.stream().map(this::toDomain).toList();
     }
 
@@ -96,10 +113,10 @@ public class JdbcStockRepository implements StockRepository {
         String sql = """
                 INSERT INTO tb_stock_basic (
                     id, stock_code, name, market, ts_code, full_name, exchange,
-                    list_date, industry, area, total_shares, float_shares, created_at, updated_at
+                    list_date, industry, area, total_shares, float_shares, company_id, created_at, updated_at
                 ) VALUES (
                     :id, :stockCode, :name, :market, :tsCode, :fullName, :exchange,
-                    :listDate, :industry, :area, :totalShares, :floatShares, :createdAt, :updatedAt
+                    :listDate, :industry, :area, :totalShares, :floatShares, :companyId, :createdAt, :updatedAt
                 )
                 ON CONFLICT (id) DO UPDATE SET
                     stock_code = EXCLUDED.stock_code,
@@ -113,6 +130,7 @@ public class JdbcStockRepository implements StockRepository {
                     area = EXCLUDED.area,
                     total_shares = EXCLUDED.total_shares,
                     float_shares = EXCLUDED.float_shares,
+                    company_id = EXCLUDED.company_id,
                     updated_at = EXCLUDED.updated_at
                 """;
         StockEntity entity = toEntity(stock);
@@ -141,6 +159,7 @@ public class JdbcStockRepository implements StockRepository {
                 .area(entity.getArea())
                 .totalShares(entity.getTotalShares())
                 .floatShares(entity.getFloatShares())
+                .companyId(entity.getCompanyId())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -160,6 +179,7 @@ public class JdbcStockRepository implements StockRepository {
         entity.setArea(stock.getArea());
         entity.setTotalShares(stock.getTotalShares());
         entity.setFloatShares(stock.getFloatShares());
+        entity.setCompanyId(stock.getCompanyId());
         entity.setCreatedAt(stock.getCreatedAt());
         entity.setUpdatedAt(stock.getUpdatedAt());
         return entity;

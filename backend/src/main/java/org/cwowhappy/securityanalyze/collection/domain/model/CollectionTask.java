@@ -21,7 +21,6 @@ public class CollectionTask {
     private Integer totalCount;
     private Integer successCount;
     private Integer failCount;
-    private LocalDateTime scheduledAt;
     private String errorMessage;
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;

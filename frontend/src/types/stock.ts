@@ -15,6 +15,7 @@ export interface Stock {
   area: string | null
   totalShares: number | null
   floatShares: number | null
+  companyId: string | null
   updatedAt: string
   createdAt: string
 }
@@ -27,6 +28,7 @@ export interface CompanyBrief {
   id: string
   unifiedSocialCreditCode: string
   name: string
+  shortName: string | null
   legalRepresentative: string | null
   regCapital: number | null
   setupDate: string | null

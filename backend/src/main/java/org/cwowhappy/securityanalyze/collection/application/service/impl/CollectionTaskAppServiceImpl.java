@@ -1,5 +1,7 @@
 package org.cwowhappy.securityanalyze.collection.application.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cwowhappy.securityanalyze.collection.application.dto.CollectionTaskDTO;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 public class CollectionTaskAppServiceImpl implements CollectionTaskAppService {
 
     private final CollectionTaskRepository taskRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     public Optional<CollectionTaskDTO> findById(String id) {
@@ -51,16 +54,23 @@ public class CollectionTaskAppServiceImpl implements CollectionTaskAppService {
     @Transactional
     public String createTask(CollectionTaskDTO dto) {
         log.info("创建采集任务: taskType={}", dto.getTaskType());
+        String taskParamsJson = null;
+        if (dto.getTaskParams() != null) {
+            try {
+                taskParamsJson = objectMapper.writeValueAsString(dto.getTaskParams());
+            } catch (JsonProcessingException e) {
+                throw new IllegalArgumentException("taskParams 序列化失败", e);
+            }
+        }
         CollectionTask task = CollectionTask.builder()
                 .id(CollectionTaskId.generate())
                 .taskType(dto.getTaskType())
-                .taskParams(dto.getTaskParams())
+                .taskParams(taskParamsJson)
                 .status("pending")
                 .dataSource(dto.getDataSource())
                 .totalCount(0)
                 .successCount(0)
                 .failCount(0)
-                .scheduledAt(dto.getScheduledAt())
                 .createdAt(LocalDateTime.now())
                 .build();
         CollectionTaskId id = taskRepository.save(task);
@@ -69,16 +79,24 @@ public class CollectionTaskAppServiceImpl implements CollectionTaskAppService {
     }
 
     private CollectionTaskDTO toDTO(CollectionTask task) {
+        Object taskParamsObj = null;
+        if (task.getTaskParams() != null) {
+            try {
+                taskParamsObj = objectMapper.readValue(task.getTaskParams(), Object.class);
+            } catch (JsonProcessingException e) {
+                log.warn("taskParams 反序列化失败, 返回原始字符串: {}", task.getTaskParams());
+                taskParamsObj = task.getTaskParams();
+            }
+        }
         return CollectionTaskDTO.builder()
                 .id(task.getId().getValue())
                 .taskType(task.getTaskType())
-                .taskParams(task.getTaskParams())
+                .taskParams(taskParamsObj)
                 .status(task.getStatus())
                 .dataSource(task.getDataSource())
                 .totalCount(task.getTotalCount())
                 .successCount(task.getSuccessCount())
                 .failCount(task.getFailCount())
-                .scheduledAt(task.getScheduledAt())
                 .errorMessage(task.getErrorMessage())
                 .startedAt(task.getStartedAt())
                 .completedAt(task.getCompletedAt())

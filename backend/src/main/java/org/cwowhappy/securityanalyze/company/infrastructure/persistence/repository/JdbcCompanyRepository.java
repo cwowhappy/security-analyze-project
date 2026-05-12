@@ -47,11 +47,11 @@ public class JdbcCompanyRepository implements CompanyRepository {
 
     @Override
     public PageResult<Company> findByPage(PageQuery pageQuery) {
-        return findByPage(pageQuery, null, null, null);
+        return findByPage(pageQuery, null, null, null, null);
     }
 
     @Override
-    public PageResult<Company> findByPage(PageQuery pageQuery, String industry, String province, String keyword) {
+    public PageResult<Company> findByPage(PageQuery pageQuery, String industry, String province, String controllerType, String keyword) {
         MapSqlParameterSource params = new MapSqlParameterSource();
         List<String> conditions = new ArrayList<>();
 
@@ -63,8 +63,12 @@ public class JdbcCompanyRepository implements CompanyRepository {
             conditions.add("province = :province");
             params.addValue("province", province);
         }
+        if (StringUtils.hasText(controllerType)) {
+            conditions.add("controller_type = :controllerType");
+            params.addValue("controllerType", controllerType);
+        }
         if (StringUtils.hasText(keyword)) {
-            conditions.add("name LIKE :keyword");
+            conditions.add("(name LIKE :keyword OR short_name LIKE :keyword OR unified_social_credit_code LIKE :keyword)");
             params.addValue("keyword", "%" + keyword + "%");
         }
 

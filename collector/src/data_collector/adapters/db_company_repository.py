@@ -6,13 +6,12 @@ import structlog
 import ulid
 
 from data_collector.core.domain.company import Company
-from data_collector.core.ports.company_repository import CompanyRepository
 from data_collector.infrastructure.db import execute_query, execute_update
 
 logger = structlog.get_logger(__name__)
 
 
-class DbCompanyRepository(CompanyRepository):
+class DbCompanyRepository:
     """基于 PostgreSQL 的公司仓库实现。"""
 
     def save(self, company: Company) -> None:

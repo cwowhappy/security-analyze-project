@@ -7,11 +7,13 @@ import org.cwowhappy.securityanalyze.collection.domain.model.CollectionTaskId;
 import org.cwowhappy.securityanalyze.collection.domain.repository.CollectionTaskRepository;
 import org.cwowhappy.securityanalyze.shared.dto.PageQuery;
 import org.cwowhappy.securityanalyze.shared.dto.PageResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
@@ -30,6 +32,9 @@ class CollectionTaskAppServiceTest {
 
     @Mock
     private CollectionTaskRepository taskRepository;
+
+    @Spy
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks
     private CollectionTaskAppServiceImpl taskAppService;

@@ -9,35 +9,55 @@ import org.cwowhappy.securityanalyze.interfaces.rest.request.CreateCompanyReques
 import org.cwowhappy.securityanalyze.interfaces.rest.response.ApiResponse;
 import org.cwowhappy.securityanalyze.shared.dto.PageQuery;
 import org.cwowhappy.securityanalyze.shared.dto.PageResult;
+import org.cwowhappy.securityanalyze.shared.dto.StockBriefDTO;
+import org.cwowhappy.securityanalyze.stock.application.dto.StockDTO;
+import org.cwowhappy.securityanalyze.stock.application.service.StockAppService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 公司 REST 控制器。
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/companies")
+@RequestMapping("/api/v1/companies")
 @RequiredArgsConstructor
 public class CompanyController {
 
     private final CompanyAppService companyAppService;
+    private final StockAppService stockAppService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResult<CompanyDTO>>> listCompanies(
             PageQuery pageQuery,
             @RequestParam(required = false) String industry,
             @RequestParam(required = false) String province,
+            @RequestParam(required = false) String controllerType,
             @RequestParam(required = false) String keyword) {
-        PageResult<CompanyDTO> result = companyAppService.findByPage(pageQuery, industry, province, keyword);
+        PageResult<CompanyDTO> result = companyAppService.findByPage(pageQuery, industry, province, controllerType, keyword);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     @GetMapping("/{uscCode}")
     public ResponseEntity<ApiResponse<CompanyDTO>> getCompany(@PathVariable String uscCode) {
         return companyAppService.findByUscCode(uscCode)
-                .map(dto -> ResponseEntity.ok(ApiResponse.success(dto)))
+                .map(dto -> {
+                    List<StockDTO> stocks = stockAppService.findByCompanyId(dto.getId());
+                    List<StockBriefDTO> briefStocks = stocks.stream()
+                            .map(s -> StockBriefDTO.builder()
+                                    .stockCode(s.getStockCode())
+                                    .name(s.getName())
+                                    .market(s.getMarket())
+                                    .exchange(s.getExchange())
+                                    .listDate(s.getListDate())
+                                    .build())
+                            .toList();
+                    dto.setStocks(briefStocks);
+                    return ResponseEntity.ok(ApiResponse.success(dto));
+                })
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), "公司不存在: " + uscCode)));
     }

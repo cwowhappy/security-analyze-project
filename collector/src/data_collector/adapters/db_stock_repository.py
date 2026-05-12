@@ -6,13 +6,12 @@ import structlog
 import ulid
 
 from data_collector.core.domain.stock import Stock
-from data_collector.core.ports.stock_repository import StockRepository
 from data_collector.infrastructure.db import execute_query, execute_update
 
 logger = structlog.get_logger(__name__)
 
 
-class DbStockRepository(StockRepository):
+class DbStockRepository:
     """基于 PostgreSQL 的股票仓库实现。"""
 
     def save(self, stock: Stock) -> None:
@@ -23,8 +22,9 @@ class DbStockRepository(StockRepository):
         sql = """
         INSERT INTO tb_stock_basic (
             id, stock_code, ts_code, name, full_name, market, exchange,
-            list_date, industry, area, total_shares, float_shares, created_at, updated_at
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            list_date, industry, area, total_shares, float_shares, company_id,
+            created_at, updated_at
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
         ON CONFLICT (stock_code) DO UPDATE SET
             ts_code = EXCLUDED.ts_code,
             name = EXCLUDED.name,
@@ -36,6 +36,7 @@ class DbStockRepository(StockRepository):
             area = EXCLUDED.area,
             total_shares = EXCLUDED.total_shares,
             float_shares = EXCLUDED.float_shares,
+            company_id = EXCLUDED.company_id,
             updated_at = NOW()
         """
         params = (
@@ -51,6 +52,7 @@ class DbStockRepository(StockRepository):
             stock.area,
             stock.total_shares,
             stock.float_shares,
+            stock.company_id,
         )
         execute_update(sql, params)
         logger.debug("股票已保存", stock_code=stock.stock_code, name=stock.name)
@@ -94,3 +96,12 @@ class DbStockRepository(StockRepository):
         sql = "SELECT COUNT(*) as cnt FROM tb_stock_basic"
         rows = execute_query(sql)
         return rows[0]["cnt"] if rows else 0
+
+    def update_company_id(self, stock_code: str, company_id: str | None) -> None:
+        """更新股票关联的公司 ID。"""
+        sql = """
+        UPDATE tb_stock_basic SET company_id = %s, updated_at = NOW()
+        WHERE stock_code = %s
+        """
+        execute_update(sql, (company_id, stock_code))
+        logger.debug("股票公司关联已更新", stock_code=stock_code, company_id=company_id)

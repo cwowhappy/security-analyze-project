@@ -29,10 +29,10 @@ public class CompanyAppServiceImpl implements CompanyAppService {
     private final CompanyRepository companyRepository;
 
     @Override
-    public PageResult<CompanyDTO> findByPage(PageQuery pageQuery, String industry, String province, String keyword) {
-        log.debug("分页查询公司: page={}, size={}, industry={}, province={}, keyword={}",
-                pageQuery.getPage(), pageQuery.getSize(), industry, province, keyword);
-        PageResult<Company> result = companyRepository.findByPage(pageQuery, industry, province, keyword);
+    public PageResult<CompanyDTO> findByPage(PageQuery pageQuery, String industry, String province, String controllerType, String keyword) {
+        log.debug("分页查询公司: page={}, size={}, industry={}, province={}, controllerType={}, keyword={}",
+                pageQuery.getPage(), pageQuery.getSize(), industry, province, controllerType, keyword);
+        PageResult<Company> result = companyRepository.findByPage(pageQuery, industry, province, controllerType, keyword);
         List<CompanyDTO> dtoList = result.getList().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -48,6 +48,13 @@ public class CompanyAppServiceImpl implements CompanyAppService {
     public Optional<CompanyDTO> findByUscCode(String uscCode) {
         log.debug("查询公司: uscCode={}", uscCode);
         return companyRepository.findByUscCode(uscCode)
+                .map(this::toDTO);
+    }
+
+    @Override
+    public Optional<CompanyDTO> findById(String id) {
+        log.debug("查询公司: id={}", id);
+        return companyRepository.findById(CompanyId.of(id))
                 .map(this::toDTO);
     }
 

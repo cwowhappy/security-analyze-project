@@ -6,6 +6,8 @@ import org.cwowhappy.securityanalyze.company.application.service.CompanyAppServi
 import org.cwowhappy.securityanalyze.interfaces.rest.request.CreateCompanyRequest;
 import org.cwowhappy.securityanalyze.shared.dto.PageQuery;
 import org.cwowhappy.securityanalyze.shared.dto.PageResult;
+import org.cwowhappy.securityanalyze.stock.application.dto.StockDTO;
+import org.cwowhappy.securityanalyze.stock.application.service.StockAppService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -41,6 +43,9 @@ class CompanyControllerTest {
     @MockitoBean
     private CompanyAppService companyAppService;
 
+    @MockitoBean
+    private StockAppService stockAppService;
+
     @Test
     void shouldReturnCompaniesWhenListCompanies() throws Exception {
         // Arrange
@@ -58,13 +63,14 @@ class CompanyControllerTest {
                 .page(1)
                 .size(20)
                 .build();
-        when(companyAppService.findByPage(any(PageQuery.class), eq("银行"), eq("广东省"), eq("平安")))
+        when(companyAppService.findByPage(any(PageQuery.class), eq("银行"), eq("广东省"), eq("民营"), eq("平安")))
                 .thenReturn(pageResult);
 
         // Act & Assert
-        mockMvc.perform(get("/api/companies")
+        mockMvc.perform(get("/api/v1/companies")
                         .param("industry", "银行")
                         .param("province", "广东省")
+                        .param("controllerType", "民营")
                         .param("keyword", "平安"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -83,14 +89,20 @@ class CompanyControllerTest {
                 .industry("银行")
                 .province("广东省")
                 .build();
+        StockDTO stock = StockDTO.builder()
+                .stockCode("000001")
+                .name("平安银行")
+                .build();
         when(companyAppService.findByUscCode("9144030019218538XX")).thenReturn(Optional.of(dto));
+        when(stockAppService.findByCompanyId("comp001")).thenReturn(List.of(stock));
 
         // Act & Assert
-        mockMvc.perform(get("/api/companies/9144030019218538XX"))
+        mockMvc.perform(get("/api/v1/companies/9144030019218538XX"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.unifiedSocialCreditCode").value("9144030019218538XX"))
-                .andExpect(jsonPath("$.data.name").value("平安银行股份有限公司"));
+                .andExpect(jsonPath("$.data.name").value("平安银行股份有限公司"))
+                .andExpect(jsonPath("$.data.stocks[0].stockCode").value("000001"));
     }
 
     @Test
@@ -110,7 +122,7 @@ class CompanyControllerTest {
         when(companyAppService.createCompany(any(CompanyDTO.class))).thenReturn("comp001");
 
         // Act & Assert
-        mockMvc.perform(post("/api/companies")
+        mockMvc.perform(post("/api/v1/companies")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -127,7 +139,7 @@ class CompanyControllerTest {
         request.setIndustry("银行");
 
         // Act & Assert
-        mockMvc.perform(post("/api/companies")
+        mockMvc.perform(post("/api/v1/companies")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())

@@ -20,7 +20,7 @@ public interface CompanyRepository {
 
     PageResult<Company> findByPage(PageQuery pageQuery);
 
-    PageResult<Company> findByPage(PageQuery pageQuery, String industry, String province, String keyword);
+    PageResult<Company> findByPage(PageQuery pageQuery, String industry, String province, String controllerType, String keyword);
 
     List<Company> findByIndustry(String industry);
 

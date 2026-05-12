@@ -40,7 +40,6 @@ class CollectionTask:
     total_count: int = 0
     success_count: int = 0
     fail_count: int = 0
-    scheduled_at: datetime | None = None
     error_message: str | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
@@ -63,7 +62,6 @@ class CollectionTask:
             "total_count": self.total_count,
             "success_count": self.success_count,
             "fail_count": self.fail_count,
-            "scheduled_at": self.scheduled_at,
             "error_message": self.error_message,
             "started_at": self.started_at,
             "completed_at": self.completed_at,
@@ -90,7 +88,6 @@ class CollectionTask:
             total_count=data.get("total_count", 0),
             success_count=data.get("success_count", 0),
             fail_count=data.get("fail_count", 0),
-            scheduled_at=data.get("scheduled_at"),
             error_message=data.get("error_message"),
             started_at=data.get("started_at"),
             completed_at=data.get("completed_at"),

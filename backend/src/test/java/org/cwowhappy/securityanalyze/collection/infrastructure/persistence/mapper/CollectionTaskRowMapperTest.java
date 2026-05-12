@@ -26,7 +26,6 @@ class CollectionTaskRowMapperTest {
         // 准备 Mock 数据
         ResultSet rs = mock(ResultSet.class);
         LocalDateTime now = LocalDateTime.of(2026, 5, 10, 12, 0, 0);
-        LocalDateTime scheduledAt = LocalDateTime.of(2026, 5, 10, 14, 30, 0);
         LocalDateTime startedAt = LocalDateTime.of(2026, 5, 10, 14, 35, 0);
         LocalDateTime completedAt = LocalDateTime.of(2026, 5, 10, 14, 40, 0);
 
@@ -38,7 +37,6 @@ class CollectionTaskRowMapperTest {
         when(rs.getObject("total_count", Integer.class)).thenReturn(5000);
         when(rs.getObject("success_count", Integer.class)).thenReturn(4980);
         when(rs.getObject("fail_count", Integer.class)).thenReturn(20);
-        when(rs.getTimestamp("scheduled_at")).thenReturn(Timestamp.valueOf(scheduledAt));
         when(rs.getString("error_message")).thenReturn("部分请求超时");
         when(rs.getTimestamp("started_at")).thenReturn(Timestamp.valueOf(startedAt));
         when(rs.getTimestamp("completed_at")).thenReturn(Timestamp.valueOf(completedAt));
@@ -56,7 +54,6 @@ class CollectionTaskRowMapperTest {
         assertThat(entity.getTotalCount()).isEqualTo(5000);
         assertThat(entity.getSuccessCount()).isEqualTo(4980);
         assertThat(entity.getFailCount()).isEqualTo(20);
-        assertThat(entity.getScheduledAt()).isEqualTo(scheduledAt);
         assertThat(entity.getErrorMessage()).isEqualTo("部分请求超时");
         assertThat(entity.getStartedAt()).isEqualTo(startedAt);
         assertThat(entity.getCompletedAt()).isEqualTo(completedAt);
