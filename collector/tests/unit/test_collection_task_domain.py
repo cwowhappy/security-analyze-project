@@ -33,3 +33,17 @@ class TestCollectionTask:
         })
         assert task.task_params == {"stock_code": "000001"}
         assert task.status == "running"
+
+
+def test_collection_task_mode_and_source_priority():
+    from data_collector.core.domain.collection_task import CollectionTask
+    task = CollectionTask(
+        task_type="stock_basic",
+        mode="full",
+        source_priority=["akshare", "tushare"],
+    )
+    assert task.mode == "full"
+    assert task.source_priority == ["akshare", "tushare"]
+    d = task.to_dict()
+    assert d["mode"] == "full"
+    assert d["source_priority"] == '["akshare", "tushare"]'

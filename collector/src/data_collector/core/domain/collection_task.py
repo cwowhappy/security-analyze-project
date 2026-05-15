@@ -34,6 +34,8 @@ class CollectionTask:
 
     id: str | None = None
     task_type: str = ""
+    mode: str = "full"          # 新增：full / single
+    source_priority: list = field(default_factory=list)  # 新增
     task_params: dict = field(default_factory=dict)
     status: str = TaskStatus.PENDING.value
     data_source: str | None = None
@@ -48,6 +50,8 @@ class CollectionTask:
     def __post_init__(self) -> None:
         if not self.task_type:
             raise ValueError("任务类型 task_type 不能为空")
+        if self.mode not in ("full", "single"):
+            raise ValueError("mode 必须是 full 或 single")
 
     def to_dict(self) -> dict:
         """转换为字典（用于入库）。"""
@@ -56,6 +60,8 @@ class CollectionTask:
         return {
             "id": self.id,
             "task_type": self.task_type,
+            "mode": self.mode,
+            "source_priority": json.dumps(self.source_priority) if self.source_priority else None,
             "task_params": json.dumps(self.task_params) if self.task_params else None,
             "status": self.status,
             "data_source": self.data_source,
@@ -78,10 +84,16 @@ class CollectionTask:
             task_params = json.loads(task_params)
         elif task_params is None:
             task_params = {}
-
+        source_priority = data.get("source_priority")
+        if isinstance(source_priority, str):
+            source_priority = json.loads(source_priority)
+        elif source_priority is None:
+            source_priority = []
         return cls(
             id=data.get("id"),
             task_type=data.get("task_type", ""),
+            mode=data.get("mode", "full"),
+            source_priority=source_priority,
             task_params=task_params,
             status=data.get("status", TaskStatus.PENDING.value),
             data_source=data.get("data_source"),
