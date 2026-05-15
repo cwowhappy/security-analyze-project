@@ -93,7 +93,7 @@ class CompanyControllerTest {
                 .stockCode("000001")
                 .name("平安银行")
                 .build();
-        when(companyAppService.findByUscCode("9144030019218538XX")).thenReturn(Optional.of(dto));
+        when(companyAppService.findById("9144030019218538XX")).thenReturn(Optional.of(dto));
         when(stockAppService.findByCompanyId("comp001")).thenReturn(List.of(stock));
 
         // Act & Assert

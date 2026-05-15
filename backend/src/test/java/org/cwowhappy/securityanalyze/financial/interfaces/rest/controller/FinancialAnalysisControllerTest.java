@@ -47,7 +47,7 @@ class FinancialAnalysisControllerTest {
                 .revenue(new BigDecimal("100000000.00"))
                 .netProfit(new BigDecimal("15000000.00"))
                 .build();
-        when(reportAppService.getIncomeStatements("000001", "Y", 20))
+        when(reportAppService.getIncomeStatements("000001", null, 20))
                 .thenReturn(List.of(dto));
 
         mockMvc.perform(get("/api/v1/stocks/000001/financial/income")
@@ -64,7 +64,7 @@ class FinancialAnalysisControllerTest {
                 .reportDate(LocalDate.of(2024, 12, 31))
                 .totalAssets(new BigDecimal("500000000.00"))
                 .build();
-        when(reportAppService.getBalanceSheets("000001", "Y", 20))
+        when(reportAppService.getBalanceSheets("000001", null, 20))
                 .thenReturn(List.of(dto));
 
         mockMvc.perform(get("/api/v1/stocks/000001/financial/balance")
@@ -81,7 +81,7 @@ class FinancialAnalysisControllerTest {
                 .reportDate(LocalDate.of(2024, 12, 31))
                 .cfOperating(new BigDecimal("50000000.00"))
                 .build();
-        when(reportAppService.getCashflowStatements("000001", "Y", 20))
+        when(reportAppService.getCashflowStatements("000001", null, 20))
                 .thenReturn(List.of(dto));
 
         mockMvc.perform(get("/api/v1/stocks/000001/financial/cashflow")
@@ -98,7 +98,7 @@ class FinancialAnalysisControllerTest {
                 .reportDate(LocalDate.of(2024, 12, 31))
                 .roe(new BigDecimal("12.50"))
                 .build();
-        when(indicatorAppService.getIndicators("000001", "Y", 20))
+        when(indicatorAppService.getIndicators("000001", null, 20))
                 .thenReturn(List.of(dto));
 
         mockMvc.perform(get("/api/v1/stocks/000001/financial/indicator")
@@ -120,7 +120,7 @@ class FinancialAnalysisControllerTest {
                                 .build()
                 ))
                 .build();
-        when(analysisAppService.getTrend(eq("000001"), anyList(), eq("Y"), eq(8)))
+        when(analysisAppService.getTrend(eq("000001"), anyList(), eq(null), eq(8)))
                 .thenReturn(List.of(dto));
 
         mockMvc.perform(get("/api/v1/stocks/000001/financial/trend")
@@ -141,7 +141,7 @@ class FinancialAnalysisControllerTest {
                 .assetTurnover(new BigDecimal("0.80"))
                 .equityMultiplier(new BigDecimal("1.50"))
                 .build();
-        when(analysisAppService.getDupontAnalysis("000001", LocalDate.of(2024, 12, 31), "Y"))
+        when(analysisAppService.getDupontAnalysis("000001", LocalDate.of(2024, 12, 31), null))
                 .thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/stocks/000001/financial/dupont")
@@ -171,7 +171,7 @@ class FinancialAnalysisControllerTest {
                                 .build()
                 ))
                 .build();
-        when(analysisAppService.getPeerComparison("000001", "roe", "Y"))
+        when(analysisAppService.getPeerComparison("000001", "roe", null))
                 .thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/stocks/000001/financial/peer-comparison")
