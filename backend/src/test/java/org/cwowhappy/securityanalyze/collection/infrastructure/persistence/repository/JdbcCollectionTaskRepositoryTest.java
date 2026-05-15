@@ -12,12 +12,15 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -51,6 +54,9 @@ class JdbcCollectionTaskRepositoryTest {
 
     @Autowired
     private CollectionTaskRepository collectionTaskRepository;
+
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Test
     @Transactional
@@ -131,6 +137,46 @@ class JdbcCollectionTaskRepositoryTest {
         assertThat(result.getStatus()).isEqualTo("running");
         assertThat(result.getTotalCount()).isEqualTo(100);
         assertThat(result.getSuccessCount()).isEqualTo(50);
+    }
+
+    @Test
+    @Transactional
+    void shouldReturnMonitorOverview() {
+        // 先插入父任务以满足外键约束
+        namedParameterJdbcTemplate.update(
+                "INSERT INTO tb_collection_task (id, task_type, status, data_source, total_count, success_count, fail_count) VALUES ('task-1', 'stock_full', 'success', 'akshare', 0, 0, 0)",
+                new MapSqlParameterSource());
+
+        // 插入测试数据到 tb_collection_stock_state
+        String insertSql = """
+                INSERT INTO tb_collection_stock_state (id, task_id, stock_code, task_type, status, error_message, updated_at)
+                VALUES
+                    (:id1, 'task-1', '000001', 'stock_basic', 'success', null, NOW()),
+                    (:id2, 'task-1', '000002', 'stock_basic', 'success', null, NOW() - INTERVAL '25 hours'),
+                    (:id3, 'task-1', '000003', 'stock_basic', 'failed', null, NOW()),
+                    (:id4, 'task-1', '000001', 'company_info', 'success', null, NOW())
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("id1", UUID.randomUUID());
+        params.addValue("id2", UUID.randomUUID());
+        params.addValue("id3", UUID.randomUUID());
+        params.addValue("id4", UUID.randomUUID());
+        namedParameterJdbcTemplate.update(insertSql, params);
+
+        var result = collectionTaskRepository.findMonitorOverview(24);
+
+        org.assertj.core.api.Assertions.assertThat(result).hasSize(2);
+        var stockBasic = result.stream().filter(r -> r.getTaskType().equals("stock_basic")).findFirst().orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(stockBasic.getTotalCount()).isEqualTo(3);
+        org.assertj.core.api.Assertions.assertThat(stockBasic.getRecentSuccessCount()).isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThat(stockBasic.getRecentExpiredCount()).isEqualTo(1);
+    }
+
+    @Test
+    @Transactional
+    void shouldReturnBaselineCount() {
+        Long count = collectionTaskRepository.countAllStocks();
+        org.assertj.core.api.Assertions.assertThat(count).isGreaterThanOrEqualTo(0);
     }
 
     private CollectionTask buildTask(String taskType, String status, String dataSource) {
