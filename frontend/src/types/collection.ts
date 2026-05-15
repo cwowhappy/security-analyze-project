@@ -5,6 +5,8 @@
 export interface CollectionTask {
   id: string
   taskType: string
+  mode: 'full' | 'single' | null
+  sourcePriority: string | null
   taskParams: Record<string, unknown> | null
   status: 'pending' | 'running' | 'success' | 'failed'
   dataSource: string | null
