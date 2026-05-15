@@ -21,6 +21,11 @@ class TestConverters:
     def test_shares_10k_converter(self):
         assert convert("shares_10k", "10000") == 100000000
 
+    def test_int_x10000_converter(self):
+        assert convert("int_x10000", "10000") == 100000000
+        assert convert("int_x10000", "1.5") == 15000
+        assert convert("int_x10000", None) is None
+
     def test_unknown_converter_raises(self):
         with pytest.raises(ValueError, match="未知的转换器"):
             convert("unknown", "x")

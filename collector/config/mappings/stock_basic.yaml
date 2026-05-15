@@ -25,12 +25,14 @@ sources:
     adapter: stock_basic_tushare_adapter
     priority: 2
     field_mapping:
-      - api_field: "ts_code"
-        db_field: "ts_code"
-        converter: "str"
-        null_policy: "skip"
-      - api_field: "industry"
-        db_field: "industry"
-        converter: "str"
-        null_policy: "default"
-        default_value: ""
+      - { api_field: "ts_code", db_field: "ts_code", converter: "str", null_policy: "skip" }
+      - { api_field: "fullname", db_field: "full_name", converter: "str", null_policy: "skip" }
+      - { api_field: "market", db_field: "market", converter: "str", null_policy: "skip" }
+      - { api_field: "exchange", db_field: "exchange", converter: "str", null_policy: "skip" }
+      - { api_field: "list_date", db_field: "list_date", converter: "date_hyphen", null_policy: "skip" }
+      - { api_field: "industry", db_field: "industry", converter: "str", null_policy: "skip" }
+      - { api_field: "area", db_field: "area", converter: "str", null_policy: "skip" }
+      - { api_field: "total_share", db_field: "total_shares", converter: "int_x10000", null_policy: "skip" }
+      - { api_field: "float_share", db_field: "float_shares", converter: "int_x10000", null_policy: "skip" }
+    params:
+      fields: "ts_code,symbol,name,area,industry,fullname,market,exchange,list_date"

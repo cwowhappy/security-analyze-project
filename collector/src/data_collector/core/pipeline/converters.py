@@ -25,6 +25,7 @@ register_converter("float", lambda x: float(x) if x is not None else None)
 register_converter("date", lambda x: datetime.datetime.strptime(str(x).strip(), "%Y%m%d").date() if x else None)
 register_converter("datetime", lambda x: datetime.datetime.strptime(str(x).strip(), "%Y%m%d %H:%M:%S") if x else None)
 register_converter("shares_10k", lambda x: int(float(x) * 10000) if x is not None else None)
+register_converter("int_x10000", lambda x: int(float(x) * 10000) if x is not None else None)
 register_converter("percent", lambda x: float(x) / 100 if x is not None else None)
 register_converter("date_hyphen", lambda x: datetime.datetime.strptime(str(x).strip(), "%Y-%m-%d").date() if x else None)
 

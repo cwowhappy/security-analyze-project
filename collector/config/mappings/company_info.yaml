@@ -62,3 +62,12 @@ sources:
         db_field: "introduction"
         converter: "str"
         null_policy: "skip"
+
+  - name: tushare
+    adapter: company_info_tushare_adapter
+    priority: 2
+    field_mapping:
+      - { api_field: "chairman", db_field: "chairman", converter: "str", null_policy: "skip" }
+      - { api_field: "manager", db_field: "manager", converter: "str", null_policy: "skip" }
+      - { api_field: "secretary", db_field: "secretary", converter: "str", null_policy: "skip" }
+      - { api_field: "employees", db_field: "employees", converter: "int", null_policy: "skip" }
