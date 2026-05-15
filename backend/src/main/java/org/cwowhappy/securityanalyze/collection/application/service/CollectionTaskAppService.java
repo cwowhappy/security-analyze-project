@@ -1,9 +1,12 @@
 package org.cwowhappy.securityanalyze.collection.application.service;
 
+import org.cwowhappy.securityanalyze.collection.application.dto.CollectionMonitorBaselineDTO;
+import org.cwowhappy.securityanalyze.collection.application.dto.CollectionMonitorOverviewDTO;
 import org.cwowhappy.securityanalyze.collection.application.dto.CollectionTaskDTO;
 import org.cwowhappy.securityanalyze.shared.dto.PageQuery;
 import org.cwowhappy.securityanalyze.shared.dto.PageResult;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -16,4 +19,8 @@ public interface CollectionTaskAppService {
     PageResult<CollectionTaskDTO> findByPage(PageQuery pageQuery, String status, String taskType);
 
     String createTask(CollectionTaskDTO dto);
+
+    List<CollectionMonitorOverviewDTO> getMonitorOverview();
+
+    CollectionMonitorBaselineDTO getMonitorBaseline();
 }
