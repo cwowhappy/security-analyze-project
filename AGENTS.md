@@ -69,25 +69,54 @@ cd backend
 - **语言**：Python 3.11+
 - **依赖管理**：Poetry（`poetry-core` 构建后端）
 - **数据验证**：Pydantic v2 + `pydantic-settings`
+- **配置解析**：PyYAML（字段映射外置配置）
 - **HTTP 请求**：`requests`
 - **测试**：pytest + pytest-asyncio
 
-#### 项目结构（v2.0 简化架构）
+#### 项目结构（v3.0 通用采集管道）
 ```
 collector/
 ├── pyproject.toml            # Poetry 项目配置
 ├── poetry.lock               # 锁定依赖版本
 ├── .env.example              # 环境变量示例
+├── config/mappings/          # YAML 字段映射配置
+│   ├── stock_basic.yaml
+│   ├── company_info.yaml
+│   ├── financial_income.yaml
+│   ├── financial_balance.yaml
+│   ├── financial_cashflow.yaml
+│   └── financial_indicator.yaml
 ├── src/data_collector/
 │   ├── cli.py                # CLI 入口
-│   ├── config.py             # pydantic-settings 配置
-│   ├── task_executor.py      # 任务执行器
-│   ├── core/domain/          # 领域模型（Stock、Company、CollectionTask）
-│   ├── adapters/             # PostgreSQL 仓库实现
-│   ├── scripts/              # 采集脚本（直接调用 AKShare / Tushare）
+│   ├── config.py             # pydantic-settings 配置（含采集管道参数）
+│   ├── task_executor.py      # 任务执行器（按 task_type + mode 路由）
+│   ├── core/
+│   │   ├── domain/           # 领域模型（Stock、Company、CollectionTask 等）
+│   │   ├── config/           # 配置加载器
+│   │   │   └── field_mapping_config.py
+│   │   └── pipeline/         # 通用采集管道核心组件
+│   │       ├── adaptive_request_engine.py  # 智能调速
+│   │       ├── field_mapper.py             # 字段映射与转换
+│   │       ├── source_fallback_pipeline.py # 多源串行 fallback
+│   │       ├── stock_state_tracker.py      # stock 级状态追踪
+│   │       └── converters.py               # 转换器注册表
+│   ├── adapters/             # 仓库实现 + 数据源适配器
+│   │   ├── db_stock_repository.py
+│   │   ├── db_company_repository.py
+│   │   ├── db_collection_task_repository.py
+│   │   ├── db_stock_state_repository.py
+│   │   ├── data_source_adapter.py          # 适配器协议
+│   │   ├── stock_basic_akshare_adapter.py
+│   │   ├── stock_basic_tushare_adapter.py
+│   │   ├── company_info_akshare_adapter.py
+│   │   ├── company_info_tushare_adapter.py
+│   │   ├── financial_sina_adapter.py
+│   │   └── financial_indicator_calculated_adapter.py
+│   ├── scripts/              # 采集脚本（Legacy，逐步迁移中）
 │   │   ├── stock_full.py
 │   │   ├── company_full.py
-│   │   └── field_supplement.py
+│   │   ├── field_supplement.py
+│   │   └── financial_*.py
 │   └── infrastructure/       # 数据库连接池、日志配置
 └── tests/
     └── unit/
@@ -96,15 +125,21 @@ collector/
 #### 环境变量说明（见 `.env.example`）
 - **数据库**：`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
 - **连接池**（可选）：`DB_POOL_MIN_SIZE`, `DB_POOL_MAX_SIZE`
-- **请求延迟**：`SOURCE_REQUEST_DELAY_MIN`, `SOURCE_REQUEST_DELAY_MAX`
+- **采集管道**：
+  - `COLLECTION_TTL_HOURS` — stock 级状态有效期（默认 24）
+  - `COLLECTION_BATCH_SIZE` — 批处理大小（默认 20）
+  - `ADAPTIVE_MIN_DELAY` / `ADAPTIVE_MAX_DELAY` — 调用间隔范围（默认 1~60 秒）
+  - `ADAPTIVE_BACKOFF_JITTER` — 退避抖动（默认 0.5）
+  - `ADAPTIVE_SUCCESS_THRESHOLD` — 连续成功降速阈值（默认 10）
+  - `RETRY_MAX_ATTEMPTS` — 单请求最大重试次数（默认 3）
 - **批次失败率阈值**：`BATCH_FAIL_THRESHOLD`（默认 0.1）
-- **Tushare Token**：`TUSHARE_TOKEN`（字段补充脚本使用）
+- **Tushare Token**：`TUSHARE_TOKEN`（补充数据源使用）
 
 #### 常用命令
 ```bash
 cd collector
 poetry install                # 安装依赖
-poetry run python -m stock_collector   # 运行模块
+poetry run python -m data_collector   # 运行模块
 poetry run pytest             # 运行测试
 ```
 
@@ -168,7 +203,7 @@ npm run test:ui    # 运行 Vitest UI 模式
 | 模块 | 安装依赖 | 开发启动 | 构建 | 测试 |
 |------|----------|----------|------|------|
 | 后端 | `./gradlew build` | `./gradlew bootRun` | `./gradlew build` | `./gradlew test` |
-| 采集器 | `poetry install` | `poetry run python -m stock_collector` | — | `poetry run pytest` |
+| 采集器 | `poetry install` | `poetry run python -m data_collector` | — | `poetry run pytest` |
 | 前端 | `npm install` | `npm run dev` | `npm run build` | `npm run test` |
 
 ---

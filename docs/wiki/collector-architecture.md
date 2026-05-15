@@ -1,170 +1,200 @@
-# 采集器架构设计 v2
+# 采集器架构设计 v3
 
-> 本文档描述 Python 采集器的内部架构，采用极简设计，废弃 v1.0 中的 FastAPI、数据源适配器抽象与实时降级逻辑。
+> 本文档描述 Python 采集器的内部架构。v3.0 在 v2.0 的脚本集合基础上，升级为**配置驱动的通用采集管道框架**。  
+> 核心变化：新增 `AdaptiveRequestEngine`（智能调速）、`FieldMapper`（配置化字段映射）、`SourceFallbackPipeline`（多源串行 fallback）、`StockCollectionStateTracker`（stock 级状态持久化）。
 
 ---
 
 ## 一、总体架构
 
-采集器作为独立后台进程运行，内部由两个核心组件组成：
+采集器作为独立后台进程运行，内部采用四层管道架构：
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    采集器进程 (Python)                    │
-│  ┌─────────────────────┐  ┌─────────────────────────┐  │
-│  │  APScheduler        │  │  Task Polling Loop      │  │
-│  │  BackgroundScheduler│  │  (轮询 pending 任务)     │  │
-│  │  内部 Cron 配置      │  │                          │  │
-│  └──────────┬──────────┘  └───────────┬─────────────┘  │
-│             │                         │                │
-│             └──────────┬──────────────┘                │
-│                        ↓                               │
-│              ┌─────────────────────┐                   │
-│              │  Collection Scripts │                   │
-│              │  stock_full.py      │  ← AKShare 全量   │
-│              │  company_full.py    │  ← AKShare 全量   │
-│              │  field_supplement.py│  ← Tushare 补充   │
-│              └──────────┬──────────┘                   │
-│                         ↓                              │
-│              ┌─────────────────────┐                   │
-│              │  PostgreSQL         │                   │
-│              │  (直接读写)          │                   │
-│              └─────────────────────┘                   │
-└─────────────────────────────────────────────────────────┘
+CLI / API 入口
+    ↓
+TaskExecutor（任务调度 + 状态机）
+    ↓
+CollectionTaskHandler（按 task_type + mode 分派）
+    ↓
+SourceFallbackPipeline（多源串行 fallback + 字段合并）
+    ← AdaptiveRequestEngine（智能调速 + 重试）
+    ← FieldMapper（字段映射 + 转换 + 空值策略）
+    ↓
+DataSourceAdapter（AKShare / Tushare / Calculated）
+    ↓
+Domain Models + DB Repositories
 ```
 
 ---
 
 ## 二、组件职责
 
-### 2.1 APScheduler BackgroundScheduler
+### 2.1 TaskExecutor + 注册表
 
-核心调度引擎，Cron 规则从环境变量或配置文件读取（**不读取数据库**）。
-
-```python
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.executors.pool import ThreadPoolExecutor
-
-executors = {
-    'default': ThreadPoolExecutor(max_workers=3)  # 降低并发，避免限流
-}
-job_defaults = {
-    'coalesce': True,
-    'max_instances': 1,
-    'misfire_grace_time': 3600
-}
-
-scheduler = BackgroundScheduler(executors=executors, job_defaults=job_defaults)
-
-# 定时任务从配置读取，硬编码示例：
-scheduler.add_job(run_stock_full, 'cron', hour=2, minute=0)
-scheduler.add_job(run_company_full, 'cron', day_of_week='sun', hour=3, minute=0)
-scheduler.add_job(run_field_supplement, 'cron', day_of_week='mon', hour=4, minute=0)
-```
-
-### 2.2 Task Polling Loop（手动任务轮询）
-
-采集器每 30 秒轮询 `tb_collection_task` 表中 `status = 'pending'` 的记录：
+任务执行器负责根据 `(task_type, mode)` 从注册表查找并调用对应的处理器。
 
 ```python
-import time
-from datetime import datetime
+# 注册表示例
+_TASK_REGISTRY: dict[tuple[str, str], tuple[Callable, str]] = {}
 
-def poll_pending_tasks():
-    """每30秒执行一次"""
-    tasks = db.query("""
-        SELECT * FROM tb_collection_task
-        WHERE status = 'pending'
-        ORDER BY created_at ASC
-    """)
-    for task in tasks:
-        execute_task(task)
-
-# 作为独立线程运行
-while True:
-    poll_pending_tasks()
-    time.sleep(30)
+@register_task("stock_basic", mode="full", data_source="akshare")
+def handle_stock_basic_full(task: CollectionTask, settings: Settings) -> dict:
+    ...
 ```
 
-**执行流程：**
-1. 读取 `pending` 任务
-2. 更新 `status = 'running'`，`started_at = NOW()`
-3. 根据 `task_type` 调用对应脚本函数
-4. 脚本执行完毕后，更新 `status = 'success'/'failed'`，`completed_at = NOW()`，写入统计数字
+| 字段 | 说明 |
+|------|------|
+| `task_type` | 纯数据类型：`stock_basic`、`company_info`、`financial_income` 等 |
+| `mode` | `full`（全量批量）或 `single`（单只股票/公司） |
+| `source_priority` | 有序数据源列表，如 `["akshare", "tushare"]` |
 
-### 2.3 采集脚本（顺序执行，无适配器抽象）
+### 2.2 AdaptiveRequestEngine（自适应请求引擎）
 
-脚本直接调用 AKShare / Tushare API，无抽象层：
+为每个数据源独立维护动态 delay 状态：
 
-| 脚本 | 数据源 | 功能 |
-|------|--------|------|
-| `scripts/stock_full.py` | AKShare | 全量股票列表采集，写入 `tb_stock_basic` |
-| `scripts/company_full.py` | AKShare | 遍历股票列表，逐条调用 `stock_profile_cninfo`，写入 `tb_company_basic`，并更新 `tb_stock_basic.company_id` |
-| `scripts/field_supplement.py` | Tushare | 补充缺失字段（area、ts_code、管理层、实控人等） |
+- **初始值**：`delay = random.uniform(min_delay, max_delay)`
+- **请求成功**：`consecutive_success += 1`；若达到阈值（默认 10），`delay = max(delay * 0.9, min_delay)`
+- **可恢复错误（429/Timeout/503）**：`consecutive_success = 0`；`delay = min(delay * 2 + jitter, max_delay)`；重试该请求（最多 3 次）
+- **不可恢复错误（404/业务错误）**：`NonRecoverableError`，不重试，立即 fallback
 
-**单条失败处理：**
+### 2.3 SourceFallbackPipeline（数据源降级管道）
+
+按 `source_priority` 串行调度适配器：
+
+1. 对每个 source，调用适配器 `fetch(stock_code, source_config)`
+2. 适配器内部通过 `AdaptiveRequestEngine` 包装调速和重试
+3. 第一个成功返回的 `mapped_record` 作为 **base_record**
+4. 后续 source 只补充 base_record 中为 `None` 或空字符串的字段（**非空不覆盖**）
+5. 所有 source 均失败，该 stock 标记为 `failed`
+
+### 2.4 FieldMapper（字段映射器）
+
+按 YAML 配置将原始数据转换为标准化记录：
+
+```yaml
+# 配置示例
+field_mapping:
+  - api_field: "代码"
+    db_field: "stock_code"
+    converter: "str"
+    null_policy: "fail"
+```
+
+| 属性 | 说明 |
+|------|------|
+| `api_field` | 接口原始字段名，支持多别名列表 |
+| `db_field` | 数据表字段名 |
+| `converter` | 转换器：`str`/`int`/`float`/`date`/`decimal`/`shares_10k`/`capital` 等 |
+| `null_policy` | `skip`（保持 None）/`default`（填充默认值）/`fail`（触发 source 失败） |
+
+### 2.5 StockCollectionStateTracker（采集状态追踪器）
+
+为 `full` 模式提供 stock 级状态持久化：
+
+```sql
+CREATE TABLE tb_collection_stock_state (
+    id UUID PRIMARY KEY,
+    task_id UUID REFERENCES tb_collection_task(id),
+    stock_code VARCHAR(20) NOT NULL,
+    task_type VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL,  -- pending / success / failed / skipped
+    error_message TEXT,
+    updated_at TIMESTAMP NOT NULL,
+    UNIQUE(task_id, stock_code, task_type)
+);
+```
+
+- 按 `batch_size`（默认 20）批次缓冲，满批次后 `flush` 到数据库
+- `full` 模式重启时，跳过 `success` 且未超过 TTL 的记录
+- `single` 模式无视 TTL，强制更新
+
+### 2.6 DataSourceAdapter（数据源适配器）
+
+统一适配器协议：
+
 ```python
-def fetch_and_save_stock(stock_code):
-    try:
-        data = ak.stock_individual_info_em(symbol=stock_code)
-        db.upsert('tb_stock_basic', data)
-        return True
-    except Exception as e:
-        logger.warning(f"{stock_code} 采集失败: {e}")
-        return False
-
-# 批量执行
-fail_count = 0
-for code in stock_codes:
-    if not fetch_and_save_stock(code):
-        fail_count += 1
-    time.sleep(random.uniform(1, 3))  # 随机延迟
-
-# 失败率超过阈值则整体标记 failed
-if fail_count / len(stock_codes) > 0.1:
-    raise BatchFailThresholdExceeded()
+class DataSourceAdapter(Protocol):
+    def fetch(self, stock_code: str, source_config: SourceConfig) -> dict[str, Any]:
+        """调用外部 API，返回原始字段字典。"""
 ```
+
+| 适配器 | 数据源 | 数据类型 |
+|--------|--------|----------|
+| `StockBasicAkshareAdapter` | AKShare | `stock_basic` |
+| `StockBasicTushareAdapter` | Tushare | `stock_basic` |
+| `CompanyInfoAkshareAdapter` | AKShare | `company_info` |
+| `CompanyInfoTushareAdapter` | Tushare | `company_info` |
+| `FinancialSinaAdapter` | AKShare/Sina | `financial_income`/`balance`/`cashflow` |
+| `FinancialIndicatorCalculatedAdapter` | 计算衍生 | `financial_indicator` |
 
 ---
 
 ## 三、执行流程
 
-### 3.1 定时任务执行流程
+### 3.1 full 模式执行流程
 
 ```
-APScheduler CronTrigger 到期
-    → 调用 run_stock_full() / run_company_full() / run_field_supplement()
-    → 插入 tb_collection_task (status='running')
-    → 顺序执行采集逻辑
-        → 单条成功：写入 PostgreSQL
-        → 单条失败：记录 fail_count，继续下一条
-    → 更新 tb_collection_task (status='success'/'failed')
+TaskExecutor 创建 CollectionTask (mode=full, task_type=xxx)
+    ↓
+获取目标股票全量列表
+    ↓
+查询 tb_collection_stock_state，过滤已处理且未过期的记录
+    ↓
+按 batch_size 分批次处理
+    ↓
+对每只股票：
+    SourceFallbackPipeline 按 source_priority 逐个尝试
+        → 成功：写入内存缓冲区
+        → 失败：记录错误，继续下一只
+    每满一个批次：bulk_upsert 到 tb_collection_stock_state
+    计算该批次失败率，超过阈值则熔断
+    ↓
+全部完成后，Task 状态更新为 SUCCESS
 ```
 
-### 3.2 手动任务执行流程
+### 3.2 single 模式执行流程
 
 ```
-后端 POST /api/v1/collection/tasks
-    → 插入 tb_collection_task (status='pending')
-    → 采集器轮询到 pending 记录
-    → 执行流程与定时任务相同
+task_params 传入 stock_code
+    ↓
+跳过状态过滤，直接进入 SourceFallbackPipeline
+    ↓
+处理完成后更新/插入 tb_collection_stock_state
+    ↓
+Task 标记为 SUCCESS
+```
+
+### 3.3 复合任务执行流程（financial_full）
+
+`financial_full` 是 orchestrator，顺序执行 4 个子阶段：
+
+```
+对每只待处理股票：
+    1. financial_income → 利润表
+    2. financial_balance → 资产负债表
+    3. financial_cashflow → 现金流量表
+    4. financial_indicator → 计算衍生指标
+
+规则：
+- income/balance/cashflow 任一失败 → 跳过 indicator
+- 每完成一个子阶段立即 flush 状态（task_type 为子阶段类型）
+- 重启时精确跳过各子阶段中已成功且未过期的记录
 ```
 
 ---
 
 ## 四、配置项
 
-采集器通过环境变量配置：
-
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| `TUSHARE_TOKEN` | Tushare API Token | — |
-| `DB_HOST/PORT/NAME/USER/PASSWORD` | PostgreSQL 连接 | — |
-| `SOURCE_REQUEST_DELAY_MIN` | 请求间最小延迟（秒）| 1 |
-| `SOURCE_REQUEST_DELAY_MAX` | 请求间最大延迟（秒）| 3 |
-| `BATCH_FAIL_THRESHOLD` | 批次失败率阈值 | 0.1（10%）|
-
-> 废弃 v1.0 配置：`COLLECTOR_MAX_WORKERS`（改为固定3）、`SOURCE_MAX_RETRIES`（改为单次尝试）、`SOURCE_RETRY_DELAY/BACKOFF`（去除重试逻辑）。
+| 配置项 | 环境变量 | 默认值 | 说明 |
+|--------|----------|--------|------|
+| `collection_ttl_hours` | `COLLECTION_TTL_HOURS` | `24` | stock 级状态有效期 |
+| `collection_batch_size` | `COLLECTION_BATCH_SIZE` | `20` | 批处理大小，兼作状态提交批次 |
+| `adaptive_min_delay` | `ADAPTIVE_MIN_DELAY` | `1.0` | 最小调用间隔（秒） |
+| `adaptive_max_delay` | `ADAPTIVE_MAX_DELAY` | `60.0` | 最大调用间隔（秒） |
+| `adaptive_backoff_jitter` | `ADAPTIVE_BACKOFF_JITTER` | `0.5` | 退避抖动范围（秒） |
+| `adaptive_success_threshold` | `ADAPTIVE_SUCCESS_THRESHOLD` | `10` | 连续成功多少次后尝试降速 |
+| `retry_max_attempts` | `RETRY_MAX_ATTEMPTS` | `3` | 单个请求最大重试次数 |
+| `batch_fail_threshold` | `BATCH_FAIL_THRESHOLD` | `0.1` | 批次失败率阈值 |
 
 ---
 
@@ -172,5 +202,6 @@ APScheduler CronTrigger 到期
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| **v3.0** | **2026-05-13** | **通用采集管道：新增 AdaptiveRequestEngine、FieldMapper、SourceFallbackPipeline、StockCollectionStateTracker；任务类型语义化；字段映射外置到 YAML；多数据源串行 fallback；断点恢复支持 TTL** |
 | v2.0 | 2026-05-11 | 简化架构：去除 FastAPI、适配器抽象、实时降级；改为顺序脚本 + pending 轮询 |
 | v1.0 | 2026-05-10 | 初始版本（已废弃） |
