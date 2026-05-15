@@ -7,6 +7,7 @@ const router = useRouter()
 const menuItems = [
   { path: '/admin/users', label: '👥 用户管理', name: 'AdminUsers' },
   { path: '/admin/login-logs', label: '📝 登录日志', name: 'AdminLoginLogs' },
+  { path: '/admin/collection-monitor', label: '📊 采集监控', name: 'AdminCollectionMonitor' },
 ]
 
 function isActive(path: string) {
