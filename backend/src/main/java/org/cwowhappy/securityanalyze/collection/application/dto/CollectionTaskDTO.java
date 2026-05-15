@@ -17,6 +17,8 @@ public class CollectionTaskDTO {
     private Object taskParams;
     private String status;
     private String dataSource;
+    private String mode;
+    private String sourcePriority;
     private Integer totalCount;
     private Integer successCount;
     private Integer failCount;
