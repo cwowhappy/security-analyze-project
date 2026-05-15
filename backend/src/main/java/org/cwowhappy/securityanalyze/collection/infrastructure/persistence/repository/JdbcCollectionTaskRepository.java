@@ -3,6 +3,7 @@ package org.cwowhappy.securityanalyze.collection.infrastructure.persistence.repo
 import lombok.RequiredArgsConstructor;
 import org.cwowhappy.securityanalyze.collection.domain.model.CollectionTask;
 import org.cwowhappy.securityanalyze.collection.domain.model.CollectionTaskId;
+import org.cwowhappy.securityanalyze.collection.domain.repository.CollectionTaskOverview;
 import org.cwowhappy.securityanalyze.collection.domain.repository.CollectionTaskRepository;
 import org.cwowhappy.securityanalyze.collection.infrastructure.persistence.entity.CollectionTaskEntity;
 import org.cwowhappy.securityanalyze.collection.infrastructure.persistence.mapper.CollectionTaskRowMapper;
@@ -129,6 +130,44 @@ public class JdbcCollectionTaskRepository implements CollectionTaskRepository {
                 .completedAt(entity.getCompletedAt())
                 .createdAt(entity.getCreatedAt())
                 .build();
+    }
+
+    @Override
+    public List<CollectionTaskOverview> findMonitorOverview(int ttlHours) {
+        String sql = """
+                WITH latest_per_stock AS (
+                    SELECT DISTINCT ON (task_type, stock_code)
+                        task_type,
+                        stock_code,
+                        status,
+                        updated_at
+                    FROM tb_collection_stock_state
+                    ORDER BY task_type, stock_code, updated_at DESC
+                )
+                SELECT
+                    task_type,
+                    COUNT(*) AS total_count,
+                    COUNT(*) FILTER (WHERE status = 'success' AND updated_at > NOW() - INTERVAL '1 hours' * :ttlHours) AS recent_success_count,
+                    COUNT(*) FILTER (WHERE status = 'success' AND updated_at <= NOW() - INTERVAL '1 hours' * :ttlHours) AS recent_expired_count
+                FROM latest_per_stock
+                GROUP BY task_type
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource("ttlHours", ttlHours);
+        return jdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            CollectionTaskOverview overview = new CollectionTaskOverview();
+            overview.setTaskType(rs.getString("task_type"));
+            overview.setTotalCount(rs.getLong("total_count"));
+            overview.setRecentSuccessCount(rs.getLong("recent_success_count"));
+            overview.setRecentExpiredCount(rs.getLong("recent_expired_count"));
+            return overview;
+        });
+    }
+
+    @Override
+    public Long countAllStocks() {
+        String sql = "SELECT COUNT(*) FROM tb_stock_basic";
+        Long count = jdbcTemplate.queryForObject(sql, new MapSqlParameterSource(), Long.class);
+        return count != null ? count : 0L;
     }
 
     private CollectionTaskEntity toEntity(CollectionTask task) {
