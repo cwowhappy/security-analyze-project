@@ -175,10 +175,13 @@ def _handle_financial_indicator(task: CollectionTask, settings: Settings) -> dic
 
 def _handle_financial_full(task: CollectionTask, settings: Settings) -> dict[str, Any]:
     """处理财务全量采集（三表+指标）。"""
-    from data_collector.scripts.financial_full import run_financial_full
+    from data_collector.core.pipeline.financial_full_orchestrator import (
+        FinancialFullOrchestrator,
+    )
 
     stock_code = task.task_params.get("stock_code")
-    return run_financial_full(stock_code, settings)
+    orchestrator = FinancialFullOrchestrator(TaskExecutor(settings))
+    return orchestrator.run(stock_code, task, settings)
 
 
 # ---------------------------------------------------------------------------
@@ -196,6 +199,7 @@ register_task("financial_balance", mode="full", data_source="akshare")(_handle_f
 register_task("financial_cashflow", mode="full", data_source="akshare")(_handle_financial_cashflow)
 register_task("financial_indicator", mode="full", data_source="calculated")(_handle_financial_indicator)
 register_task("financial_full", mode="full", data_source="akshare")(_handle_financial_full)
+register_task("financial_full", mode="single", data_source="akshare")(_handle_financial_full)
 
 
 # ---------------------------------------------------------------------------

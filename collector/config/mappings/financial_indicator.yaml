@@ -1,0 +1,8 @@
+task_type: financial_indicator
+ttl_hours: 168
+
+sources:
+  - name: calculated
+    adapter: financial_indicator_calculated_adapter
+    priority: 1
+    field_mapping: []
