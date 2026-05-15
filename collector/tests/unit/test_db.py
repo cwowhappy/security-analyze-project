@@ -110,3 +110,40 @@ class TestDatabasePool:
             mock_conn.rollback.assert_called_once()
 
             db_module._pool = None
+
+    def test_should_commit_transaction(self) -> None:
+        """transaction() 上下文应正确提交并释放连接。"""
+        with patch("data_collector.infrastructure.db.ThreadedConnectionPool"):
+            mock_conn = MagicMock()
+            mock_pool = MagicMock()
+            mock_pool.getconn.return_value = mock_conn
+            db_module._pool = mock_pool
+
+            with db_module.transaction() as conn:
+                cursor = conn.cursor()
+                cursor.execute("INSERT INTO test VALUES (%s)", (1,))
+                cursor.close()
+
+            mock_conn.commit.assert_called_once()
+            mock_pool.putconn.assert_called_once_with(mock_conn)
+            db_module._pool = None
+
+    def test_should_rollback_transaction_on_error(self) -> None:
+        """transaction() 上下文在异常时应回滚并释放连接。"""
+        with patch("data_collector.infrastructure.db.ThreadedConnectionPool"):
+            mock_conn = MagicMock()
+            mock_pool = MagicMock()
+            mock_pool.getconn.return_value = mock_conn
+            db_module._pool = mock_pool
+
+            with pytest.raises(Exception, match="Batch Error"):
+                with db_module.transaction() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("INSERT INTO test VALUES (%s)", (1,))
+                    cursor.close()
+                    raise Exception("Batch Error")
+
+            mock_conn.rollback.assert_called_once()
+            mock_conn.commit.assert_not_called()
+            mock_pool.putconn.assert_called_once_with(mock_conn)
+            db_module._pool = None

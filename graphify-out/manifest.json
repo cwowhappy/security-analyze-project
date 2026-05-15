@@ -1,0 +1,1506 @@
+{
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/eslint.config.js": {
+    "mtime": 1778410290.5479493,
+    "hash": "3fe20fdf3c2e968d53b38d3c147ae8d8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/vite.config.ts": {
+    "mtime": 1778432188.0400462,
+    "hash": "2629f1b28237644578024d8443d37c29"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/vitest.config.ts": {
+    "mtime": 1778408063.0641418,
+    "hash": "d57bbb685608e6de63a62d38fe62b28c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/App.vue": {
+    "mtime": 1778561040.2350748,
+    "hash": "5109738e33d719999ca966d9ea02ab04"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/main.ts": {
+    "mtime": 1778522599.74128,
+    "hash": "769825fac9533a17526fa27c61dfe0af"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/types/collection.ts": {
+    "mtime": 1778514769.879573,
+    "hash": "d77bd09c18f242885d8ac2849fc77bd2"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/types/api.ts": {
+    "mtime": 1778410290.5506291,
+    "hash": "7f35556757a54754dcf6ce967a3ed8d5"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/types/stock.ts": {
+    "mtime": 1778518569.3206081,
+    "hash": "9e87f899a8ade3fdd7752046bb3c41d8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/types/financial.ts": {
+    "mtime": 1778581343.9409788,
+    "hash": "1c4614a729d745d248e99b391caf090d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/types/company.ts": {
+    "mtime": 1778429189.6931198,
+    "hash": "f011e5dff63ca5927a5318911ec2d295"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/composables/useRequest.ts": {
+    "mtime": 1778410290.5497751,
+    "hash": "42d67af387b52af7c7a339f4ddec43d6"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/composables/__tests__/useRequest.spec.ts": {
+    "mtime": 1778562308.6884565,
+    "hash": "ef4ccb807bd0c9ada3ef32b26f388d72"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/stores/index.ts": {
+    "mtime": 1778410290.5501657,
+    "hash": "46b4fef32d46a6d2669116c3022eccf0"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/stores/modules/collection.ts": {
+    "mtime": 1778515087.7255888,
+    "hash": "611d7f71aacd15b772e0c6f32c75552b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/stores/modules/admin.ts": {
+    "mtime": 1778560772.368953,
+    "hash": "12ee76e30494928da72fd427da8920e3"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/stores/modules/loginLogs.ts": {
+    "mtime": 1778560449.6384263,
+    "hash": "c74fce7bb8dcc363fc53c24e9a17efb6"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/stores/modules/stock.ts": {
+    "mtime": 1778515076.784116,
+    "hash": "5efefcd495750bae289be773953fb408"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/stores/modules/financial.ts": {
+    "mtime": 1778597447.4608526,
+    "hash": "0268f44aa4ed3349cfe7e1f967762232"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/stores/modules/company.ts": {
+    "mtime": 1778631282.0038478,
+    "hash": "5b1beaaf17054c03478f29f7f7b350e8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/stores/modules/auth.ts": {
+    "mtime": 1778545460.5184011,
+    "hash": "894ed9dae8ffbdd2faf8c804320f00da"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/stores/modules/__tests__/auth.spec.ts": {
+    "mtime": 1778562805.7989218,
+    "hash": "084afdecb4af393dc045b8e88364efca"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/stores/modules/__tests__/stock.spec.ts": {
+    "mtime": 1778563134.3224661,
+    "hash": "4a1fc01df23fd16cfc27ede27bbe4cd4"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/stores/modules/__tests__/company.spec.ts": {
+    "mtime": 1778631324.0585804,
+    "hash": "1a0882237fce91a9889e09380d4637f1"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/stores/modules/__tests__/collection.spec.ts": {
+    "mtime": 1778563176.0049481,
+    "hash": "1cf81529ffa14f155e6080ea5cc00366"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/utils/request.ts": {
+    "mtime": 1778581480.239407,
+    "hash": "c2e56c3a503b392b33eea6a11811b7dc"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/utils/__tests__/request.spec.ts": {
+    "mtime": 1778562682.2122338,
+    "hash": "ffbf044d8254d4e24c4682cd5e43fa8c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/components/auth/VerifyStatus.vue": {
+    "mtime": 1778553455.2389736,
+    "hash": "805b2b84b75eee97c513c79ce537f606"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/components/admin/UserTable.vue": {
+    "mtime": 1778560832.440047,
+    "hash": "12c1b22924b39ef40f60261a71f5bed3"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/components/admin/LoginLogTable.vue": {
+    "mtime": 1778560520.6434748,
+    "hash": "b8a1e96fab5979b38c64c8ba62e40f04"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/components/admin/DateRangePicker.vue": {
+    "mtime": 1778560488.1546605,
+    "hash": "30e3e0402255a72c57bada434f9d5e68"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/components/admin/UserRoleBadge.vue": {
+    "mtime": 1778560792.1570394,
+    "hash": "90fff66e7216114b11111bd3a01f4ebf"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/components/admin/LogActionBadge.vue": {
+    "mtime": 1778560459.887325,
+    "hash": "22359eb51e3e8a582662396987bdc1be"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/components/admin/UserStatusBadge.vue": {
+    "mtime": 1778560784.3295693,
+    "hash": "91e5cd3480d6f424eada3bdf8e89da37"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/components/__tests__/BaseButton.spec.ts": {
+    "mtime": 1778429599.6778536,
+    "hash": "eac4c47e70f2f6a387e7ea0c92d25eb8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/components/base/BaseButton.vue": {
+    "mtime": 1778430376.325304,
+    "hash": "3ed7317bd9aa0d7d1ddd971276c1e73b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/api/__tests__/stock.spec.ts": {
+    "mtime": 1778563095.059242,
+    "hash": "ef8f7a5688a9f52df1cf8a3ebbb5c4b8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/api/__tests__/company.spec.ts": {
+    "mtime": 1778631313.8288567,
+    "hash": "7bcde6e8318165979a97faf2fa5fc39a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/api/__tests__/collection.spec.ts": {
+    "mtime": 1778563079.6659706,
+    "hash": "82a59b58057b78dccbcaa823cbac2809"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/api/modules/collection.ts": {
+    "mtime": 1778514789.5496557,
+    "hash": "c8de3b0a921c1db713786aba011410fd"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/api/modules/stock.ts": {
+    "mtime": 1778515027.3599093,
+    "hash": "39e184bce1fcf05b77ff4b09cfa4e380"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/api/modules/financial.ts": {
+    "mtime": 1778582951.1610541,
+    "hash": "e625bea8199af7c639c7d60d31756c2d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/api/modules/company.ts": {
+    "mtime": 1778631277.5880644,
+    "hash": "78760d4bcec8208677277b3cdf592e64"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/HomeView.vue": {
+    "mtime": 1778517754.827762,
+    "hash": "c62a20f97812ebe8101370a8b0b6461a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/collection/CollectionTaskListView.vue": {
+    "mtime": 1778518620.182474,
+    "hash": "72fb963423ea52e67e72cf53423b26ef"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/financial/FinancialAnalysisView.vue": {
+    "mtime": 1778597399.3360796,
+    "hash": "fdafe3946dd450eedcda15ddce2653e4"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/financial/composables/useFinancialFormatter.ts": {
+    "mtime": 1778580970.3844054,
+    "hash": "8511585dd90220b3935017bca6ec6339"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/financial/components/PeerComparisonChart.vue": {
+    "mtime": 1778583132.837673,
+    "hash": "a1dfc6f3b9bd4761e3065ded9b2f916b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/financial/components/CashflowStatement.vue": {
+    "mtime": 1778581383.5658913,
+    "hash": "7dff4a6bcd969aa6bc6dc656e2bce93c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/financial/components/IncomeStatement.vue": {
+    "mtime": 1778581425.1457622,
+    "hash": "534935b10d866ba89e9f5a4c7f47f6fe"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/financial/components/IndicatorCard.vue": {
+    "mtime": 1778581005.4009995,
+    "hash": "4ded563b71db604c4bac3a51a9b2f401"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/financial/components/IndicatorTrendChart.vue": {
+    "mtime": 1778583019.7105455,
+    "hash": "2c93fb35799f7234010c26181eb22037"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/financial/components/StatementTabs.vue": {
+    "mtime": 1778597333.6736624,
+    "hash": "39e9816eb8f92e32345bd9abd00cccc5"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/financial/components/BalanceSheet.vue": {
+    "mtime": 1778581359.5857573,
+    "hash": "9d3e9deca2b291a9db73b6eea78b6998"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/financial/components/FinancialTabs.vue": {
+    "mtime": 1778597326.072136,
+    "hash": "e9f2ce05d7cb822248c4f6d5cc62112b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/financial/components/IndicatorGrid.vue": {
+    "mtime": 1778581427.5007806,
+    "hash": "f9ae06f9c1d450c7ad34ceeeec4a53b5"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/financial/components/DupontAnalysis.vue": {
+    "mtime": 1778583077.889406,
+    "hash": "c79d7eae65cd743c8daa14300be500eb"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/auth/AuthLayout.vue": {
+    "mtime": 1778522263.6928236,
+    "hash": "982b4862321072defe2515253ff8fac7"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/auth/ResetPasswordView.vue": {
+    "mtime": 1778545536.1228905,
+    "hash": "49437ec94905ff40b1c18bfc948c0dc3"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/auth/RegisterView.vue": {
+    "mtime": 1778545507.1478417,
+    "hash": "c44edf6b5c21fd218319e2ec1c3c01d8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/auth/LoginView.vue": {
+    "mtime": 1778545587.6521206,
+    "hash": "750610638a0272781d9d1be1ea1f7dcc"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/auth/ForgotPasswordView.vue": {
+    "mtime": 1778545548.2586613,
+    "hash": "45add388869f52864d7e6177f4e410dc"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/auth/VerifyEmailView.vue": {
+    "mtime": 1778553430.3891132,
+    "hash": "09b531dd21e5b4cc5da3ab0d866dd3cc"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/admin/AdminLayout.vue": {
+    "mtime": 1778561057.1946914,
+    "hash": "c30589ad2e96f789f139e19175caebb2"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/admin/users/UserDetailView.vue": {
+    "mtime": 1778560989.9579864,
+    "hash": "b1d01f522879ccf5b1258fe581731b9a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/admin/users/UserListView.vue": {
+    "mtime": 1778560919.340386,
+    "hash": "64ad9d46580b1e3d8ff5279995596ab6"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/__tests__/StockListView.spec.ts": {
+    "mtime": 1778581482.4379902,
+    "hash": "f4f527ba41514292594c9f22682391e0"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/__tests__/CompanyListView.spec.ts": {
+    "mtime": 1778564621.6745498,
+    "hash": "b3aa457ebb59812782be90b8d61de951"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/__tests__/HomeView.spec.ts": {
+    "mtime": 1778564055.3939815,
+    "hash": "756917e572651570f156c9e6d7325db2"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/stock/StockListView.vue": {
+    "mtime": 1778517722.9395113,
+    "hash": "a0975a3888abd8a903d98c37ba3685ee"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/stock/StockDetailView.vue": {
+    "mtime": 1778631304.5997448,
+    "hash": "a690302aaa976694b63f82870c3c308b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/company/CompanyDetailView.vue": {
+    "mtime": 1778631290.7066374,
+    "hash": "2428e0a1a1bea444b093a859f881aa0c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/views/company/CompanyListView.vue": {
+    "mtime": 1778631302.3557658,
+    "hash": "dc4b62bf75f38a893901e41a3daaa95b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/router/index.ts": {
+    "mtime": 1778631286.1819599,
+    "hash": "4aa33f23364913eaa8725b87dc9f56a8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/run_financial_task.py": {
+    "mtime": 1778596394.6897807,
+    "hash": "cd7975d177a80afec90395c42370a186"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/__init__.py": {
+    "mtime": 1778431184.6047134,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_db.py": {
+    "mtime": 1778431184.6014717,
+    "hash": "27d71bb365d50c6213a258d462b5af96"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_collection_task_domain.py": {
+    "mtime": 1778431184.6016643,
+    "hash": "d5bc4f363354501462a18804179418ac"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_task_executor_exceptions.py": {
+    "mtime": 1778563209.3139846,
+    "hash": "ac1f347901c264badff680e37a5b95af"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_db_company_repository.py": {
+    "mtime": 1778431184.6018538,
+    "hash": "254ff65cb770af6b43f2498ae2f0c38e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_task_executor.py": {
+    "mtime": 1778516055.6457484,
+    "hash": "4972877251d360c5d4e942e2afd57b1d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_company_domain.py": {
+    "mtime": 1778431184.6028187,
+    "hash": "3e2016a64b56c6f6b15da207fa2d78b2"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_config.py": {
+    "mtime": 1778431184.6030173,
+    "hash": "bf226075fa423777d4d7d48366ff452e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_db_exceptions.py": {
+    "mtime": 1778562588.5471666,
+    "hash": "c4ec8a2ab90087ee696673560e3c2620"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_stock_domain.py": {
+    "mtime": 1778431184.6033814,
+    "hash": "a5308461e2b5e7b322194c5cc7ebe435"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_cli.py": {
+    "mtime": 1778515917.2601073,
+    "hash": "64111791d8816be50170c1a05cdaf338"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_db_collection_task_repository.py": {
+    "mtime": 1778515984.9650886,
+    "hash": "6f7203e13cb75c71fc16f8aa1cdf493c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_main.py": {
+    "mtime": 1778431184.6042743,
+    "hash": "97d8144ba11402103b3a1efc67cd0f0e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_db_stock_repository.py": {
+    "mtime": 1778431184.604458,
+    "hash": "a63172e2b2f8a35f0959daec37088aa2"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_scripts.py": {
+    "mtime": 1778663107.951636,
+    "hash": "d067ee130630d001042a2dddb1eaf3a6"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_logging_config.py": {
+    "mtime": 1778431184.6046069,
+    "hash": "6ecf9edbdb0c72dd2dfff18b05767e12"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/unit/test_scripts_run.py": {
+    "mtime": 1778564692.3699875,
+    "hash": "1668ebaadd01f8e05b4907257c63c17a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/integration/test_collection_flow.py": {
+    "mtime": 1778563225.1784885,
+    "hash": "83f3a002306c16c03f4183ceb672421f"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/config.py": {
+    "mtime": 1778516198.9940112,
+    "hash": "68e647a2dea5fc83c8eaec3884de7f0a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/__init__.py": {
+    "mtime": 1778431184.6073942,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/cli.py": {
+    "mtime": 1778596362.3425925,
+    "hash": "3d58e117117feba90798dbf1aaf195fc"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/task_executor.py": {
+    "mtime": 1778576956.9256606,
+    "hash": "62fbe051079ab5a63a33f3fb2e1d4031"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/__main__.py": {
+    "mtime": 1778431184.6109853,
+    "hash": "8e850b0bc694b49391ad10e93988ab4d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/core/__init__.py": {
+    "mtime": 1778431184.6052582,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/core/use_cases/__init__.py": {
+    "mtime": 1778431184.6055024,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/core/domain/company.py": {
+    "mtime": 1778431184.6067228,
+    "hash": "f52096d7de514179b4519f0ad08086ba"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/core/domain/financial_balance.py": {
+    "mtime": 1778571744.865922,
+    "hash": "c95bc592820e0733eee1e61677f990d7"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/core/domain/financial_cashflow.py": {
+    "mtime": 1778571761.3266783,
+    "hash": "80b87134584f6fc2e720c58d020641f8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/core/domain/__init__.py": {
+    "mtime": 1778431184.6068997,
+    "hash": "b983ffdaf2e460504f7f18c9a50aa74f"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/core/domain/stock.py": {
+    "mtime": 1778515459.7292645,
+    "hash": "317eb0976b09297203289e7c731d3f02"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/core/domain/collection_task.py": {
+    "mtime": 1778515483.8520222,
+    "hash": "5ce2730403b397e94189b0889f5f82eb"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/core/domain/financial_indicator.py": {
+    "mtime": 1778571796.6941745,
+    "hash": "62e7b50c7cd524a7ff2e9d24cc3d0afb"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/core/domain/financial_income.py": {
+    "mtime": 1778571718.7410047,
+    "hash": "42fd428cbbfe199c388415f365e3edfe"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/adapters/db_financial_income_repository.py": {
+    "mtime": 1778571830.0986917,
+    "hash": "e3ae21df355e5c4cf008089163d01cd1"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/adapters/db_collection_task_repository.py": {
+    "mtime": 1778515570.306307,
+    "hash": "0a167315610f6d9b175bf93862ebb303"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/adapters/__init__.py": {
+    "mtime": 1778431184.608409,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/adapters/db_financial_balance_repository.py": {
+    "mtime": 1778571862.8617616,
+    "hash": "36c229e136f02dbaaaf2b438674357bc"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/adapters/db_company_repository.py": {
+    "mtime": 1778515840.9800773,
+    "hash": "ed526557ebd65f3a5da13066dbdb5bba"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/adapters/db_stock_repository.py": {
+    "mtime": 1778515544.143269,
+    "hash": "1f3cb24328cbb869f9b05da10bbd595b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/adapters/db_financial_indicator_repository.py": {
+    "mtime": 1778571926.2093244,
+    "hash": "9992b118fd230b8a4ac87e6585b873c8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/adapters/db_financial_cashflow_repository.py": {
+    "mtime": 1778571885.8689897,
+    "hash": "005900471eef55d9dfa70137d0250bce"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/scripts/financial_balance.py": {
+    "mtime": 1778598458.8570137,
+    "hash": "0bd71c950b33f9f46a1d29fe3eace8a3"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/scripts/financial_cashflow.py": {
+    "mtime": 1778596746.8313587,
+    "hash": "1e5dfd851b785abb49710674f02cdf86"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/scripts/company_full.py": {
+    "mtime": 1778599033.2045805,
+    "hash": "a8b5a3c52c73f334f5c98de81207531a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/scripts/__init__.py": {
+    "mtime": 1778515582.5222225,
+    "hash": "6e43d7149594812119553d37647ea58b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/scripts/field_supplement.py": {
+    "mtime": 1778681166.9292474,
+    "hash": "579c29f51e08a46ac5541294b2cf2e82"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/scripts/financial_indicator.py": {
+    "mtime": 1778598535.197853,
+    "hash": "3a075e5d0978516ea20edad9792f94fc"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/scripts/stock_full.py": {
+    "mtime": 1778663305.407112,
+    "hash": "e7c3a2d1d4d441192c0755bd0baae7d0"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/scripts/financial_full.py": {
+    "mtime": 1778576895.4966989,
+    "hash": "12066b5ff64e1f83e7ff95f4cbe3dd74"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/scripts/financial_income.py": {
+    "mtime": 1778598440.3547873,
+    "hash": "e55a4474162f4e83db8ee16cd04f897e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/infrastructure/db.py": {
+    "mtime": 1778431184.6104195,
+    "hash": "1c04ca105b744d7022179e5e0061d77b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/infrastructure/__init__.py": {
+    "mtime": 1778431184.6105082,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/infrastructure/logging/config.py": {
+    "mtime": 1778431184.6107097,
+    "hash": "8122998703488dda31d7b8a5a260c5d7"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/infrastructure/logging/__init__.py": {
+    "mtime": 1778431184.610811,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/services/indicator_calculator.py": {
+    "mtime": 1778598513.4668703,
+    "hash": "60e68680a7d25c5ed2b6da2564b19a43"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/src/data_collector/services/__init__.py": {
+    "mtime": 1778571974.0360475,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/gradlew": {
+    "mtime": 1778408063.0595934,
+    "hash": "4d4b3d2fc55666b84f3ed64317c7b8a0"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/build.gradle.kts": {
+    "mtime": 1778544689.5827506,
+    "hash": "fa3d98c488938a5f4d0af835aa42982d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/settings.gradle.kts": {
+    "mtime": 1778408063.0598595,
+    "hash": "53b05f12e142215f96e34cc743c39c00"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/AbstractIntegrationTest.java": {
+    "mtime": 1778428271.9819527,
+    "hash": "188570dda3b61ee16fe9a6f697605bf8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/collection/application/service/CollectionTaskAppServiceTest.java": {
+    "mtime": 1778518550.7435758,
+    "hash": "05dd59c099852e9e0b03b336f01dcb20"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/collection/infrastructure/persistence/repository/JdbcCollectionTaskRepositoryTest.java": {
+    "mtime": 1778428282.8219779,
+    "hash": "b2e02da498c5ed0eb0cf940980156784"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/collection/infrastructure/persistence/mapper/CollectionTaskRowMapperTest.java": {
+    "mtime": 1778514050.5815628,
+    "hash": "fb1ad165dd4c65c9a2e0937780d980e5"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/financial/application/service/FinancialReportAppServiceTest.java": {
+    "mtime": 1778579366.3646061,
+    "hash": "490c6768b87d9d61cc7fa64f3408bdd5"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/financial/application/service/FinancialIndicatorAppServiceTest.java": {
+    "mtime": 1778579389.9178078,
+    "hash": "707d2cba21f26f1ae6c6c137b03d3ad6"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/financial/application/service/FinancialAnalysisAppServiceTest.java": {
+    "mtime": 1778579440.4016602,
+    "hash": "cb18b362daca2b8623bda1db22e44a87"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/repository/JdbcFinancialBalanceRepositoryTest.java": {
+    "mtime": 1778578929.3652554,
+    "hash": "db2a424c3f8b860b1b715879a4e06848"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/repository/JdbcFinancialIndicatorRepositoryTest.java": {
+    "mtime": 1778579313.5615218,
+    "hash": "92059887ee3918b0fc8b4fcabfbe580b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/repository/JdbcFinancialCashflowRepositoryTest.java": {
+    "mtime": 1778579255.2609532,
+    "hash": "b1b3a999c67626f5f79f870af592065a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/repository/JdbcFinancialIncomeRepositoryTest.java": {
+    "mtime": 1778578857.3321824,
+    "hash": "f576cfc4388c6eb53c8c52dc3be1b58c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/financial/interfaces/rest/controller/FinancialAnalysisControllerTest.java": {
+    "mtime": 1778583327.2379968,
+    "hash": "5ac82560d9d6273856af0cbe94984a0b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/config/JwtTokenProviderTest.java": {
+    "mtime": 1778562172.915037,
+    "hash": "3de39b896c2bbcd462c3c53499b6c803"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/application/service/AuthAppServiceTest.java": {
+    "mtime": 1778554141.791294,
+    "hash": "421a017cd76ff2bcefd6153f08762956"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/application/service/AdminLogAppServiceImplTest.java": {
+    "mtime": 1778561184.436009,
+    "hash": "10a6969822a8ed89f64025a6b5e9db7a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/application/service/UserAppServiceImplTest.java": {
+    "mtime": 1778562141.7172496,
+    "hash": "d29129f9a65aef72a512412825a9e079"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/application/service/AdminUserAppServiceImplTest.java": {
+    "mtime": 1778561215.6146498,
+    "hash": "db85cdf104c86be49bd7af2a8776815a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/application/service/LoginLogServiceImplTest.java": {
+    "mtime": 1778561168.201349,
+    "hash": "4dbebd36406de41bd11ecf23492b233c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/application/service/impl/EmailVerificationServiceImplTest.java": {
+    "mtime": 1778564508.6059453,
+    "hash": "bb1a0923fdebdaa32627d7dfca0a37eb"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/application/service/impl/TokenBlacklistServiceImplTest.java": {
+    "mtime": 1778564485.4963164,
+    "hash": "d702ffbce3634be390218e8ba4d2e665"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/repository/JdbcEmailVerificationRepositoryTest.java": {
+    "mtime": 1778565076.8081086,
+    "hash": "89ff9b7af1264c0cf6075eb48c5e6ba2"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/repository/JdbcPasswordResetRepositoryTest.java": {
+    "mtime": 1778553245.08369,
+    "hash": "baa7cd46676c366d97c83eb9420aac4c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/repository/JdbcTokenSessionRepositoryTest.java": {
+    "mtime": 1778565112.2324483,
+    "hash": "05afc2c40c0b65266666e323b88fd254"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/repository/JdbcLoginLogRepositoryTest.java": {
+    "mtime": 1778561250.5130377,
+    "hash": "35bcf3f5e28980e120519de5bdb67ae0"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/mapper/EmailVerificationRowMapperTest.java": {
+    "mtime": 1778562945.4185739,
+    "hash": "81e9156eb4c4b7fab36be1ea47add70c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/mapper/UserRowMapperTest.java": {
+    "mtime": 1778562922.44795,
+    "hash": "de02bfeaacc5470135a2fa16e33077b6"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/mapper/LoginLogRowMapperTest.java": {
+    "mtime": 1778562972.5316598,
+    "hash": "b9ec230f78b0cf6630ff7f546a71736d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/mapper/PasswordResetRowMapperTest.java": {
+    "mtime": 1778562993.904601,
+    "hash": "0994ec3c87c2cef8baa0ff1669cee504"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/shared/mail/ConsoleMailServiceTest.java": {
+    "mtime": 1778562249.9402664,
+    "hash": "b291b1b930e0339f80f2e03f9965df4f"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/shared/mail/SmtpMailServiceTest.java": {
+    "mtime": 1778562236.0477765,
+    "hash": "e282d3be654776701680c018d2b6a464"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/shared/exception/SharedExceptionTest.java": {
+    "mtime": 1778425459.9855618,
+    "hash": "fcc15847a0707f27518c8b5b884e4fba"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/architecture/ArchitectureTest.java": {
+    "mtime": 1778410290.5428483,
+    "hash": "f29c142ba3180cd21af0e3749f0fd14b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/stock/application/service/StockAppServiceTest.java": {
+    "mtime": 1778514398.4644487,
+    "hash": "cc662e6a40e59078e447119a95919a0c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/stock/infrastructure/persistence/repository/JdbcStockRepositoryTest.java": {
+    "mtime": 1778428288.2120786,
+    "hash": "ca9f242a48818efd5cef26fe343aaa37"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/stock/infrastructure/persistence/mapper/StockRowMapperTest.java": {
+    "mtime": 1778423819.7476377,
+    "hash": "39698fbeb9d0dbdf44377de783b88988"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/response/ApiResponseTest.java": {
+    "mtime": 1778425479.7509317,
+    "hash": "6145269d8f737abc5887578f2993ca8a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/advice/GlobalExceptionHandlerTest.java": {
+    "mtime": 1778424293.4955113,
+    "hash": "a387e266f4159197dd0b6ae0a642e11a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/advice/GlobalExceptionHandlerAdditionalTest.java": {
+    "mtime": 1778563275.179326,
+    "hash": "d91501a0cc3e9ecd4b6ba9ca781c97ed"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/AuthControllerContractTest.java": {
+    "mtime": 1778564169.2322536,
+    "hash": "3ba3430f0816ab0d6fa884832e44a517"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/AuthControllerTest.java": {
+    "mtime": 1778554263.421182,
+    "hash": "0e69b9718ddc958cb32ea7bdfa325e0c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/CompanyControllerTest.java": {
+    "mtime": 1778514542.2161293,
+    "hash": "75e3f279701a88e45bcc0a0c4b483826"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/StockControllerTest.java": {
+    "mtime": 1778514486.1978972,
+    "hash": "904691636094f677f584f13cb9e7ec1c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/AuthControllerValidationTest.java": {
+    "mtime": 1778564652.314525,
+    "hash": "c60f829b0e7fbf226bb0af808559ddc2"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/CollectionTaskControllerTest.java": {
+    "mtime": 1778518545.4733145,
+    "hash": "0e4bf50aa79ffe5e21d481399e92c5e3"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/AdminLoginLogControllerTest.java": {
+    "mtime": 1778561286.9591522,
+    "hash": "96896307341e900946422c8ea4f96087"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/AdminUserControllerTest.java": {
+    "mtime": 1778561330.2658246,
+    "hash": "eda97a9dec6f0d9921137d054412fe4b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/request/RegisterRequestTest.java": {
+    "mtime": 1778563028.7304544,
+    "hash": "10bdc49a57d867045af6c5921ffc1a86"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/interfaces/rest/request/LoginRequestTest.java": {
+    "mtime": 1778563021.7752676,
+    "hash": "8bbb7cc4013263bd0c503e31c24aeb63"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/company/application/service/CompanyAppServiceTest.java": {
+    "mtime": 1778514443.6837056,
+    "hash": "d08d983d4b39931661f38afcd9c920b3"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/company/infrastructure/persistence/repository/JdbcCompanyRepositoryTest.java": {
+    "mtime": 1778428277.3880265,
+    "hash": "c405d79fdfb555e35eb425279e025794"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/java/org/cwowhappy/securityanalyze/company/infrastructure/persistence/mapper/CompanyRowMapperTest.java": {
+    "mtime": 1778423857.0302882,
+    "hash": "0f0822af8c3f596d46953a301fc0676e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/resources/db/migration/V10__create_financial_indicator_table.sql": {
+    "mtime": 1778571652.725725,
+    "hash": "7408de53528bcc48bb815e7a01af24ae"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/resources/db/migration/V7__add_login_log_table.sql": {
+    "mtime": 1778553525.2094631,
+    "hash": "894757abeec7fddd33e4dca7694d0937"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/resources/db/migration/V4__enhance_user_auth.sql": {
+    "mtime": 1778544686.7788146,
+    "hash": "97b0fbad45e4f55002be866b7ae199d9"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/resources/db/migration/V9__create_financial_statement_tables.sql": {
+    "mtime": 1778571630.5920424,
+    "hash": "67eed2bdc768fac8d4cd6f2ac6afcfaf"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/resources/db/migration/V11__create_financial_report_analysis_table.sql": {
+    "mtime": 1778571663.3275037,
+    "hash": "1707ec383d877e76bc84b143a5387ca1"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/resources/db/migration/V2__simplify_stock_company_model.sql": {
+    "mtime": 1778513796.9055169,
+    "hash": "a18daffd42e39e31db5b2d35f0e3f4c8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/resources/db/migration/V8__enhance_user_and_session.sql": {
+    "mtime": 1778560611.955323,
+    "hash": "ef33d689c86419e710c7f15431313bb7"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/resources/db/migration/V3__create_user_tables.sql": {
+    "mtime": 1778543491.9538903,
+    "hash": "c39cbf80ec1ddc641302353c0a08f9ab"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/resources/db/migration/V6__add_password_reset_table.sql": {
+    "mtime": 1778552399.5256515,
+    "hash": "77712a1f90c2097aa4c30d458e40f565"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/resources/db/migration/V5__add_token_hash_unique.sql": {
+    "mtime": 1778546548.4348078,
+    "hash": "50f1b33c6dfb1b2fe8ee09ed46422018"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/resources/db/migration/V1__baseline_init.sql": {
+    "mtime": 1778431748.5453422,
+    "hash": "a34ab3b48aa5efa5d643b3560b8b4c01"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/SecurityAnalyzeApplication.java": {
+    "mtime": 1778408063.0601945,
+    "hash": "43b9ad0a58e9b53cd188038f05a8f35d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/collection/application/dto/CollectionTaskDTO.java": {
+    "mtime": 1778518471.1738045,
+    "hash": "f146858637d964675f1778839b775768"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/collection/application/service/CollectionTaskAppService.java": {
+    "mtime": 1778422618.4042997,
+    "hash": "1a9f7d8f83a097083b7010de9428c4bd"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/collection/application/service/impl/CollectionTaskAppServiceImpl.java": {
+    "mtime": 1778518507.4012585,
+    "hash": "1969e98a857dac02d3e6d6b3c207c069"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/collection/infrastructure/persistence/repository/JdbcCollectionTaskRepository.java": {
+    "mtime": 1778513861.383495,
+    "hash": "64cdd3ce41297ef84fb46a2fbe049d53"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/collection/infrastructure/persistence/entity/CollectionTaskEntity.java": {
+    "mtime": 1778513804.4073758,
+    "hash": "0b6b798f74c22b4978882de7c89ca837"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/collection/infrastructure/persistence/mapper/CollectionTaskRowMapper.java": {
+    "mtime": 1778513820.043873,
+    "hash": "d4223548759d15f96f59c0400e1c9a58"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/collection/domain/repository/CollectionTaskRepository.java": {
+    "mtime": 1778422587.8817074,
+    "hash": "5f9f299e3be4b8af800e4eb921096521"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/collection/domain/model/CollectionTaskId.java": {
+    "mtime": 1778422577.8920982,
+    "hash": "ca2a020c4678a6cd6714951b60cb7894"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/collection/domain/model/CollectionTask.java": {
+    "mtime": 1778513832.0730827,
+    "hash": "02111316712c5158325427bfd2a0e6d6"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/application/dto/FinancialCashflowDTO.java": {
+    "mtime": 1778577826.62708,
+    "hash": "ab7029936115030a3fdf61a23e41b07f"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/application/dto/PeerComparisonDTO.java": {
+    "mtime": 1778577864.349569,
+    "hash": "2755061bc59d5e1701404fb31eeb4452"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/application/dto/TrendDataDTO.java": {
+    "mtime": 1778577847.5030367,
+    "hash": "f972a611c4f9e6fb126199427029dab8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/application/dto/FinancialIncomeDTO.java": {
+    "mtime": 1778577809.3178556,
+    "hash": "fb0bb87cc591699bb4a13d76c4051d97"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/application/dto/FinancialIndicatorDTO.java": {
+    "mtime": 1778577840.4396656,
+    "hash": "e71323baa786dee274af9a60de5aea19"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/application/dto/FinancialBalanceDTO.java": {
+    "mtime": 1778577818.427009,
+    "hash": "ba38450bde578656f2744fb01c2046a2"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/application/dto/DupontAnalysisDTO.java": {
+    "mtime": 1778577854.6820798,
+    "hash": "f10ec1696ed8293ffd11f36f72e34b69"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/application/service/FinancialIndicatorAppService.java": {
+    "mtime": 1778578306.0011313,
+    "hash": "482c47358c84e91f72a29d586bcff205"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/application/service/FinancialAnalysisAppService.java": {
+    "mtime": 1778582915.8997524,
+    "hash": "5bb1f7229588d3cee84f58c32d864188"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/application/service/FinancialReportAppService.java": {
+    "mtime": 1778578250.510917,
+    "hash": "996bcc48db75436f6207f344647cf5a5"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/repository/JdbcFinancialIncomeRepository.java": {
+    "mtime": 1778579709.3568156,
+    "hash": "36689f74f7804017e31be32ddbac6283"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/repository/JdbcFinancialCashflowRepository.java": {
+    "mtime": 1778579746.4800277,
+    "hash": "dbefc30d2d41136f355c5044fee0eaca"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/repository/JdbcFinancialIndicatorRepository.java": {
+    "mtime": 1778582799.049701,
+    "hash": "6a283b610cc0ebfeee3da8f5cde2198d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/repository/JdbcFinancialBalanceRepository.java": {
+    "mtime": 1778579738.5805318,
+    "hash": "8c7f155e3936ccb26b09329df764c6a8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/entity/FinancialCashflowEntity.java": {
+    "mtime": 1778577408.1853848,
+    "hash": "e704d6e479bacf4dc8087f64d8dc23d5"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/entity/FinancialIndicatorEntity.java": {
+    "mtime": 1778577427.1813045,
+    "hash": "f8e677a2e8a5c0c9c732ace913e676c6"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/entity/FinancialBalanceEntity.java": {
+    "mtime": 1778577400.2343113,
+    "hash": "3b5ecde44e5987b723b7a843279324cb"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/entity/FinancialIncomeEntity.java": {
+    "mtime": 1778577386.9547842,
+    "hash": "ce932c1bf6e869b9887f62e2b2a8d33e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/mapper/FinancialCashflowRowMapper.java": {
+    "mtime": 1778577490.6659088,
+    "hash": "5732eccc9a03742e7af501910ebac9a2"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/mapper/FinancialIncomeRowMapper.java": {
+    "mtime": 1778577448.6066287,
+    "hash": "4b995045b8f51bd80ed00ce4c3c2013a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/mapper/FinancialBalanceRowMapper.java": {
+    "mtime": 1778577473.6325836,
+    "hash": "e59e1360d381a736cdb789ddf4e8312e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/infrastructure/persistence/mapper/FinancialIndicatorRowMapper.java": {
+    "mtime": 1778577522.6412687,
+    "hash": "bf2c9697f0781fb193abbe62e6357ae5"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/domain/repository/FinancialCashflowRepository.java": {
+    "mtime": 1778577356.7923143,
+    "hash": "02722ad9fe04547d2784d3041ce7ede5"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/domain/repository/FinancialIndicatorRepository.java": {
+    "mtime": 1778582771.0201395,
+    "hash": "2b56d5f67506ccacdfe167ce6da6185d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/domain/repository/FinancialBalanceRepository.java": {
+    "mtime": 1778577331.8049948,
+    "hash": "ecf28ccfde1b8e2511cd6ec2f0b708ac"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/domain/repository/FinancialIncomeRepository.java": {
+    "mtime": 1778577326.2822905,
+    "hash": "3c83cc241cf52c64f9f346c8332bef6b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/domain/model/FinancialBalance.java": {
+    "mtime": 1778577301.094469,
+    "hash": "218cd3a532c3540c59daaa18430e6679"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/domain/model/FinancialIndicator.java": {
+    "mtime": 1778577320.6806417,
+    "hash": "d3e3c421dee9d8d3aa8d55278ba64c87"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/domain/model/FinancialCashflow.java": {
+    "mtime": 1778577307.436287,
+    "hash": "35f81b94a1ce21545cc8c2f21869414e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/domain/model/FinancialIncome.java": {
+    "mtime": 1778577290.243346,
+    "hash": "8c994039981f799e6faa951748b604d1"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/financial/interfaces/rest/controller/FinancialAnalysisController.java": {
+    "mtime": 1778582897.778133,
+    "hash": "3dc5f184e911d24bc1cfb680ea1609c7"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/config/JwtProperties.java": {
+    "mtime": 1778521964.0902762,
+    "hash": "98d1003c34d46b3a8b7ede67fea45beb"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/config/JdbcConfig.java": {
+    "mtime": 1778410290.5384557,
+    "hash": "f0a9f670ff6bc3178c787c06705da78e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/config/WebConfig.java": {
+    "mtime": 1778432185.624937,
+    "hash": "fbc115acc2232b30d855b8600de4261c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/config/JwtTokenProvider.java": {
+    "mtime": 1778522854.245802,
+    "hash": "bf1ae01bb2322b9694895a69834b1ae3"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/dto/UserListItemDTO.java": {
+    "mtime": 1778560698.792862,
+    "hash": "c677c0b2f7745af65251ef6685325929"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/dto/LoginLogDTO.java": {
+    "mtime": 1778553792.7325404,
+    "hash": "a419cef0e050e9eeaeec72f4e4f481fb"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/dto/LoginResult.java": {
+    "mtime": 1778522006.1287525,
+    "hash": "08c32071af188a583907e22e51af78e5"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/dto/UserDTO.java": {
+    "mtime": 1778522003.343466,
+    "hash": "6c4fb22f39ad57d0705be7c8293f746b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/dto/UserDetailDTO.java": {
+    "mtime": 1778560694.3847084,
+    "hash": "63360bd86e7554071060892e7f3c29f9"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/command/RegisterCommand.java": {
+    "mtime": 1778522009.1660342,
+    "hash": "754d9f1d48b972c7b0f55535370cc59d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/AuthAppService.java": {
+    "mtime": 1778553830.3528836,
+    "hash": "d5fe3b1400436f69de5c32e119b790ff"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/AdminLogAppService.java": {
+    "mtime": 1778553643.6785736,
+    "hash": "e6670501527f1142d547e4c1ae6af533"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/TokenBlacklistService.java": {
+    "mtime": 1778544749.7895348,
+    "hash": "1d9a7ce1660a36d990e021780885bbcd"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/UserAppService.java": {
+    "mtime": 1778552496.5116642,
+    "hash": "c1d3c282e46a646fcc4d3804aa23b793"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/AdminUserAppService.java": {
+    "mtime": 1778560661.352721,
+    "hash": "30d89a8b949e6d3c8e32271ccbae3319"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/LoginAttemptRecorder.java": {
+    "mtime": 1778554116.5091724,
+    "hash": "76e109fa8e1c4ab6f2b02b22a280e0fd"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/EmailVerificationService.java": {
+    "mtime": 1778544729.8459299,
+    "hash": "0d0bd82e0f4717fe5a0d5fca66a84d05"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/LoginLogService.java": {
+    "mtime": 1778553628.5290947,
+    "hash": "b1fde9cd31facc25dced15f5cbd290fd"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/impl/UserAppServiceImpl.java": {
+    "mtime": 1778552559.8638537,
+    "hash": "26c8d10873dbf5807d3ea6aef8253243"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/impl/AuthAppServiceImpl.java": {
+    "mtime": 1778553913.4874825,
+    "hash": "e9466659ed0c8670c3e98a2e13ef0ffa"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/impl/EmailVerificationServiceImpl.java": {
+    "mtime": 1778546458.8748484,
+    "hash": "edda176e193909601fbb64146f3eb781"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/impl/LoginLogServiceImpl.java": {
+    "mtime": 1778553637.9497607,
+    "hash": "9bd17dd6d5d57376e6bfd50426870020"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/impl/TokenBlacklistServiceImpl.java": {
+    "mtime": 1778545311.0837765,
+    "hash": "da3f708dc76cdda3e3081b33f0223243"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/impl/AdminLogAppServiceImpl.java": {
+    "mtime": 1778553659.052177,
+    "hash": "2b5391dfe789aedbb39b535f258b0de3"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/application/service/impl/AdminUserAppServiceImpl.java": {
+    "mtime": 1778560683.3299897,
+    "hash": "d387175823a9629a757c5a64b20f135e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/repository/JdbcEmailVerificationRepository.java": {
+    "mtime": 1778545429.6013753,
+    "hash": "06f73961865487a89075640ac5cffafa"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/repository/JdbcPasswordResetRepository.java": {
+    "mtime": 1778552447.1371074,
+    "hash": "61819eec3ba5297846cccb8324ac6ca1"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/repository/JdbcTokenSessionRepository.java": {
+    "mtime": 1778545303.9634793,
+    "hash": "f0b5671d6856abae9a7ea986fdbdcf28"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/repository/JdbcLoginLogRepository.java": {
+    "mtime": 1778553588.6558454,
+    "hash": "bbcd61a5d7a49f0be040d45295d785e4"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/repository/JdbcUserRepository.java": {
+    "mtime": 1778560651.3696413,
+    "hash": "625013434f92fcef20877ddcc4cc4912"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/entity/UserEntity.java": {
+    "mtime": 1778544811.184138,
+    "hash": "e7d96caaa889ab15e5213328a1c917da"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/entity/LoginLogEntity.java": {
+    "mtime": 1778553538.4185357,
+    "hash": "6782a90d5afbc1b8d255bcd6e29875cd"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/entity/PasswordResetEntity.java": {
+    "mtime": 1778552414.674241,
+    "hash": "ecb9e7e55674dfc1f47e778cac4edcba"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/entity/EmailVerificationEntity.java": {
+    "mtime": 1778544769.6921928,
+    "hash": "d2e63fe976b16ad500af6f31a21d0158"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/mapper/EmailVerificationRowMapper.java": {
+    "mtime": 1778544778.2271168,
+    "hash": "09199761c36d5892ec06f18488ac2de6"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/mapper/UserRowMapper.java": {
+    "mtime": 1778544824.7236438,
+    "hash": "fab96fc40d599f3879c1a61d997105be"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/mapper/LoginLogRowMapper.java": {
+    "mtime": 1778553546.1830797,
+    "hash": "3a4ebedccd485eba06fe0f1095e1e410"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/infrastructure/persistence/mapper/PasswordResetRowMapper.java": {
+    "mtime": 1778552425.3188937,
+    "hash": "71258d353142a7854d746a94c2a6a4c8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/domain/repository/EmailVerificationRepository.java": {
+    "mtime": 1778545411.816788,
+    "hash": "548f4e225e14195ec8bae8138d09d88c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/domain/repository/LoginLogRepository.java": {
+    "mtime": 1778553535.1419153,
+    "hash": "6f7c8de12cdb9c248859ff7b06dc0bda"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/domain/repository/TokenSessionRepository.java": {
+    "mtime": 1778545288.2667556,
+    "hash": "0b2a1956b2ba065416ab717eeec33420"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/domain/repository/UserRepository.java": {
+    "mtime": 1778560616.8508935,
+    "hash": "c9f481b3cc2c83edcb5f1dbab282695f"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/domain/repository/PasswordResetRepository.java": {
+    "mtime": 1778552409.5338948,
+    "hash": "22e415213a0598dd14b68afd15c5dc04"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/domain/model/LoginLog.java": {
+    "mtime": 1778553529.1297147,
+    "hash": "cddaa1769a65256bf54568e24ab95264"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/domain/model/User.java": {
+    "mtime": 1778544726.3423717,
+    "hash": "d9f56f8ab9dbeda5a9086996003c7450"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/domain/model/UserId.java": {
+    "mtime": 1778521987.921224,
+    "hash": "a1ad151a72518761fe3a8523fdb01b40"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/domain/model/EmailVerification.java": {
+    "mtime": 1778545408.170256,
+    "hash": "0d03afffd4d09d9a9e9f9b9b1c93c928"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/user/domain/model/PasswordReset.java": {
+    "mtime": 1778552404.9510825,
+    "hash": "2e63ab7aff138ba9c30b6f579b21eb23"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/dto/StockBriefDTO.java": {
+    "mtime": 1778514653.1916754,
+    "hash": "3ef2e1ec522f7fb9219be27fe68316c8"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/dto/PageQuery.java": {
+    "mtime": 1778422321.9506624,
+    "hash": "06e570b78fc55834738d1a61a323514b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/dto/CompanyBriefDTO.java": {
+    "mtime": 1778514634.3431993,
+    "hash": "1a5c8901d9ebb5ba378df7af349bc8f2"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/dto/PageResult.java": {
+    "mtime": 1778422324.9754338,
+    "hash": "8ca485d83298e74c2e0f2840357a9518"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/mail/SmtpMailService.java": {
+    "mtime": 1778552490.0533943,
+    "hash": "4cdee80a423a015d8493faada6a053f0"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/mail/MailService.java": {
+    "mtime": 1778552461.984657,
+    "hash": "1898040dae4903f1320646fc6189ed28"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/mail/ConsoleMailService.java": {
+    "mtime": 1778552473.328681,
+    "hash": "5a7b73f26e584fb8aa6a727aae9afc15"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/infrastructure/mail/MailProperties.java": {
+    "mtime": 1778544698.1302414,
+    "hash": "82bf2e37056f9ef54f5b23a93d62847b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/exception/InfrastructureException.java": {
+    "mtime": 1778410290.5406678,
+    "hash": "2474a4a4e848fdd1277889a5d992ad1c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/exception/UnauthorizedException.java": {
+    "mtime": 1778521979.0388951,
+    "hash": "7979becb8c4a19348dd6fc2940f67875"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/exception/ConflictException.java": {
+    "mtime": 1778521983.3766313,
+    "hash": "89878cacd6fc6085ea5afb7ca7e7b6af"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/exception/DomainException.java": {
+    "mtime": 1778410290.5405502,
+    "hash": "73a2925cc52b883097b2779d4da6b471"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/exception/ApplicationException.java": {
+    "mtime": 1778410290.540437,
+    "hash": "edd7fc831d22f2970bf05120e1d413bb"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/shared/exception/NotFoundException.java": {
+    "mtime": 1778410290.5407705,
+    "hash": "e012aefc6434bfb84826bafe6ca03442"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/stock/application/dto/StockDTO.java": {
+    "mtime": 1778514667.9773002,
+    "hash": "01b7ecafb32285c5156edf7a6face472"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/stock/application/service/StockAppService.java": {
+    "mtime": 1778514194.1891096,
+    "hash": "0fe8846518962dcabdaa21044b3c85ef"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/stock/application/service/impl/StockAppServiceImpl.java": {
+    "mtime": 1778514233.6599786,
+    "hash": "2ef5894cb661720af1a3106375eb996d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/stock/infrastructure/persistence/repository/JdbcStockRepository.java": {
+    "mtime": 1778582809.2233007,
+    "hash": "2b5224c427ce49cdb9fa09b3b452c41c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/stock/infrastructure/persistence/entity/StockEntity.java": {
+    "mtime": 1778513407.9482555,
+    "hash": "42209f2069bd23b2f6ded7f835101f61"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/stock/infrastructure/persistence/mapper/StockRowMapper.java": {
+    "mtime": 1778513417.2678382,
+    "hash": "ede4321973f8b5895ffbe0559cb198e0"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/stock/domain/repository/StockRepository.java": {
+    "mtime": 1778582774.3379111,
+    "hash": "f9a3fc27f48ff687ae809f20f13f92cd"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/stock/domain/model/StockId.java": {
+    "mtime": 1778410290.541461,
+    "hash": "3a9b789648e186128619f4964c2fcd04"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/stock/domain/model/Stock.java": {
+    "mtime": 1778513399.6362917,
+    "hash": "88167a75c7c631e0de978ce4b9c3e1a4"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/filter/MdcFilter.java": {
+    "mtime": 1778410290.5387225,
+    "hash": "3f87cba7fb04345d2b4104262cace819"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/response/UserInfoResponse.java": {
+    "mtime": 1778522120.0566957,
+    "hash": "e2291b511f9ce146bfebd9289655b59c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/response/ApiResponse.java": {
+    "mtime": 1778410290.5402756,
+    "hash": "5955defa4429762285a574e9949c0eb4"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/response/LoginResponse.java": {
+    "mtime": 1778522117.1165204,
+    "hash": "b8776399f71cd7dfa48cd9cb6188517a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/advice/GlobalExceptionHandler.java": {
+    "mtime": 1778522725.789276,
+    "hash": "0c6d620c722454ae05ff1e6833abe7ab"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/CompanyController.java": {
+    "mtime": 1778630951.7717106,
+    "hash": "f43a27153559c34d6d3743a46f2d1830"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/CollectionTaskController.java": {
+    "mtime": 1778518521.420862,
+    "hash": "c1abe5b8cc57da716c1c44dd935e783c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/AuthController.java": {
+    "mtime": 1778553974.2333384,
+    "hash": "e028e2f6c04f288927cb662339a97697"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/AdminLoginLogController.java": {
+    "mtime": 1778560386.6722157,
+    "hash": "e7cbb765809fa8cd150c6dae4b593284"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/AdminUserController.java": {
+    "mtime": 1778560734.738612,
+    "hash": "b6e20136f2e600449d0c3d47fcdf357d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/controller/StockController.java": {
+    "mtime": 1778514680.5777438,
+    "hash": "bd03c604f8e36db01352a2d8ec18f398"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/support/AuthContextHelper.java": {
+    "mtime": 1778560351.4065456,
+    "hash": "870e0fefdb0d05b4e73583272276f5ee"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/request/CreateCollectionTaskRequest.java": {
+    "mtime": 1778422769.6074142,
+    "hash": "bbfc2954698aae5b248bab6cca748f4d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/request/CreateCompanyRequest.java": {
+    "mtime": 1778422936.1089709,
+    "hash": "eb9297b5dd2acdee5e8ee92949938cb9"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/request/RegisterRequest.java": {
+    "mtime": 1778522114.4482143,
+    "hash": "69bf3a092466ff60467d0746759dc77e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/request/CreateStockRequest.java": {
+    "mtime": 1778513884.2500286,
+    "hash": "c05d923ece20e6b876facdbb4a535815"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/request/VerifyEmailRequest.java": {
+    "mtime": 1778544941.239011,
+    "hash": "402505375f7c9683b8335c63b10c014f"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/request/LoginRequest.java": {
+    "mtime": 1778522107.0997634,
+    "hash": "a0ee77db878dc8f8936511c5ade1913c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/request/ForgotPasswordRequest.java": {
+    "mtime": 1778552596.0777717,
+    "hash": "61f4f9d7dfda062149382c8e411946ba"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/interfaces/rest/request/ResetPasswordRequest.java": {
+    "mtime": 1778552600.2847126,
+    "hash": "995afe005e6ad0081026b59e18a02ccc"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/company/application/dto/CompanyDTO.java": {
+    "mtime": 1778514674.0572608,
+    "hash": "7e7101161d9efec65da2409ef6720b9a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/company/application/service/CompanyAppService.java": {
+    "mtime": 1778514244.649244,
+    "hash": "6bca657ccc511277b0d4b9cb3b9bdd20"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/company/application/service/impl/CompanyAppServiceImpl.java": {
+    "mtime": 1778514290.8745303,
+    "hash": "e6f8685f54998d68e81ac8ebaccd02be"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/company/infrastructure/persistence/repository/JdbcCompanyRepository.java": {
+    "mtime": 1778513645.1272426,
+    "hash": "aa21aa1d0ddfb603c4ed228af601dbef"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/company/infrastructure/persistence/entity/CompanyEntity.java": {
+    "mtime": 1778422840.8785243,
+    "hash": "341f4981bb0026c0d07269466ff8dac9"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/company/infrastructure/persistence/mapper/CompanyRowMapper.java": {
+    "mtime": 1778422854.4348304,
+    "hash": "8edfb7229cf9c779731ff3abc6f55cf0"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/company/domain/repository/CompanyRepository.java": {
+    "mtime": 1778513630.7106643,
+    "hash": "7949b80089a7e65a62076bf11fd70c3c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/company/domain/model/CompanyId.java": {
+    "mtime": 1778422778.5464458,
+    "hash": "bb9d067d7d0bfebb9841679c19dac288"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/java/org/cwowhappy/securityanalyze/company/domain/model/Company.java": {
+    "mtime": 1778422786.0491414,
+    "hash": "06b970c3dd7af5d3964dea2d43148c87"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/AGENTS.md": {
+    "mtime": 1778516235.941326,
+    "hash": "0ff51e2ca7ed027ab057326e35708f85"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/index.html": {
+    "mtime": 1778408063.0620768,
+    "hash": "c2cebd1d0b29a7527c600b7f627fb40b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/README.md": {
+    "mtime": 1778410290.5478306,
+    "hash": "7cc1c95a139fc53081153fdfe1c18667"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/README.md": {
+    "mtime": 1778516146.1040177,
+    "hash": "f259d283a2d0df6739a3674485644642"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/collector/tests/fixtures/README.md": {
+    "mtime": 1778563956.6974251,
+    "hash": "8cfb0d127bcec93d387a7ad2ec3a9cbf"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/README.md": {
+    "mtime": 1778410290.5377333,
+    "hash": "091e295c08d82bdbb4baeebcf4f51b43"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/test/resources/application-test.yml": {
+    "mtime": 1778428267.3272114,
+    "hash": "8db0651c5d0bd315d6b6dbcf34cc4aa5"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/backend/src/main/resources/application.yml": {
+    "mtime": 1778544694.343289,
+    "hash": "994486b476c15adccd3159bc2cd9a7aa"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/plans/backend-financial-module-design.md": {
+    "mtime": 1778577220.6948893,
+    "hash": "c801f1f4b22fe680f358fee0389429c0"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/plans/financial-report-analysis-implementation-plan.md": {
+    "mtime": 1778597482.1273267,
+    "hash": "66b4d0b0bb319414f3a62e4d952f408a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/plans/2026-05-12-test-coverage-improvement-plan.md": {
+    "mtime": 1778561987.034936,
+    "hash": "114efa7af5b46fb8863a9584fa1b4a0f"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/plans/2026-05-10-stock-company-collection-design.md": {
+    "mtime": 1778512760.3291988,
+    "hash": "293fe82762d87c5756ceacc1081d7878"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/wiki/data-source-akshare-tushare-interface.md": {
+    "mtime": 1778690994.1248567,
+    "hash": "b269867be1785898cf2d88b57262160e"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/wiki/frontend-module-design.md": {
+    "mtime": 1778513016.9158423,
+    "hash": "9f2f5061310fc27e9e772a1bfc7df19c"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/wiki/backend-module-design.md": {
+    "mtime": 1778512913.6836708,
+    "hash": "1466b7b94eec1bbe9f2fe0ac7cf37c63"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/wiki/testcontainers-colima-integration-test.md": {
+    "mtime": 1778426326.287107,
+    "hash": "fe15de3a0cd8aa86ddd808abf8fa2fcb"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/wiki/data-source-strategy.md": {
+    "mtime": 1778513091.5017006,
+    "hash": "2583d276ed40259b0bffc57a3c93c499"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/wiki/data-model-stock-company-collection.md": {
+    "mtime": 1778512587.1506472,
+    "hash": "80f4cb42d15c112822d3294b433a5de1"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/wiki/collector-architecture.md": {
+    "mtime": 1778512861.7658508,
+    "hash": "7ca7634ab286c6fdb4f3af08dc83ebd9"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/2026-05-12-financial-analysis-design-spec.md": {
+    "mtime": 1778597435.1802292,
+    "hash": "88d857438a75bf219e35e4ab5e210700"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/feature-02-auth-login-register.md": {
+    "mtime": 1778547038.2318776,
+    "hash": "64a7cf917c002a9515b24c6e7ce24a80"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/prototype-stock-detail-merged.html": {
+    "mtime": 1778569424.320054,
+    "hash": "4b82553b6501fcd1668281076a79885b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/prototype-stock-company.html": {
+    "mtime": 1778521189.867189,
+    "hash": "4c1336d93b1801274f63acea74591a26"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/feature-02-auth-admin-users.md": {
+    "mtime": 1778546921.9702482,
+    "hash": "b4bf5471c1821e20e8f23fdb7ef7b979"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/feature-planning.md": {
+    "mtime": 1778512794.681788,
+    "hash": "fba39314d052fc67b3325b55792dc53a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/2026-05-12-fundamental-analysis-framework.md": {
+    "mtime": 1778569280.9412818,
+    "hash": "09eaf9fea8433dcedd293e5e904810b1"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/feature-02-auth-email-verification.md": {
+    "mtime": 1778546921.9703567,
+    "hash": "456585d3de5c03ed08c9ce170162b952"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/security-analyze-full-prd.md": {
+    "mtime": 1778406560.3259878,
+    "hash": "9ba9a3405ac52e771be0b947efee62a3"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/2026-05-12-financial-analysis-prototype.html": {
+    "mtime": 1778567879.9846995,
+    "hash": "fb967a0cce601bf574955674a7cded05"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/feature-01-stock-company-info.md": {
+    "mtime": 1778512460.0294728,
+    "hash": "c7d48b09faa38604b646e3eb308cdc6a"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/feature-02-auth-login-logs.md": {
+    "mtime": 1778546921.9702184,
+    "hash": "a767133d56eb145ecfa5078cfb7d5d98"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/prd/2026-05-12-financial-report-analysis-module-design.md": {
+    "mtime": 1778597532.5822046,
+    "hash": "2a6c9d32c8a122ada4dbf06b7aead50f"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/api-contracts/auth-api-impl-guide.md": {
+    "mtime": 1778547005.0162838,
+    "hash": "a239af4d2a3670dd24d3e17a4384789d"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/api-contracts/stock-company-collection-api-contract.md": {
+    "mtime": 1778512685.0389204,
+    "hash": "9dadbd29f7e64490080d707ec4aa6a55"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/docs/api-contracts/auth-api-contract.md": {
+    "mtime": 1778545332.1444676,
+    "hash": "6138fbb4aefa9c29da96c5afb2960127"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/public/icons.svg": {
+    "mtime": 1778408063.062722,
+    "hash": "3b4fcfcf393eca4d264dca4a4663bc37"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/public/favicon.svg": {
+    "mtime": 1778408063.0625975,
+    "hash": "7e840862161341271697daa99a40d76b"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/assets/vue.svg": {
+    "mtime": 1778408063.0632443,
+    "hash": "081c348d068770af78fcd90980521318"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/assets/hero.png": {
+    "mtime": 1778408063.063055,
+    "hash": "aead493361b27e7510691c5d7072dfc1"
+  },
+  "/Users/lixiaoyi/GitRepository/security-analyze-project/frontend/src/assets/vite.svg": {
+    "mtime": 1778408063.0631614,
+    "hash": "9960a24288958394ac50e57ff638b036"
+  }
+}

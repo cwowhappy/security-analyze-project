@@ -24,6 +24,11 @@ public interface StockRepository {
 
     List<Stock> findByCompanyId(String companyId);
 
+    /**
+     * 按行业查询股票列表。
+     */
+    List<Stock> findByIndustry(String industry);
+
     StockId save(Stock stock);
 
     void deleteById(StockId id);

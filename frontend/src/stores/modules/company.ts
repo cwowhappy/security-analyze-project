@@ -26,10 +26,10 @@ export const useCompanyStore = defineStore('company', () => {
     }
   }
 
-  const fetchCompanyDetail = async (uscCode: string) => {
+  const fetchCompanyDetail = async (id: string) => {
     loading.value = true
     try {
-      const data = await companyApi.getByUscCode(uscCode)
+      const data = await companyApi.getById(id)
       currentCompany.value = data
     } finally {
       loading.value = false

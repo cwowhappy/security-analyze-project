@@ -1,6 +1,6 @@
 """PostgreSQL 股票仓库单元测试。"""
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from data_collector.adapters.db_stock_repository import DbStockRepository
 from data_collector.core.domain.stock import Stock
@@ -24,8 +24,12 @@ class TestDbStockRepository:
             assert "ON CONFLICT (stock_code)" in sql
 
     def test_should_save_all_stocks(self) -> None:
-        with patch("data_collector.adapters.db_stock_repository.execute_update") as mock_update:
-            mock_update.return_value = 1
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.cursor.return_value = mock_cursor
+
+        with patch("data_collector.adapters.db_stock_repository.transaction") as mock_tx:
+            mock_tx.return_value.__enter__.return_value = mock_conn
             stocks = [
                 Stock(stock_code="000001", name="平安银行"),
                 Stock(stock_code="000002", name="万科A"),
@@ -33,11 +37,16 @@ class TestDbStockRepository:
             success, failed = self.repo.save_all(stocks)
             assert success == 2
             assert failed == 0
-            assert mock_update.call_count == 2
+            assert mock_cursor.execute.call_count == 2
 
     def test_should_handle_save_all_failure(self) -> None:
-        with patch("data_collector.adapters.db_stock_repository.execute_update") as mock_update:
-            mock_update.side_effect = [1, Exception("DB Error")]
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.execute.side_effect = [None, Exception("DB Error")]
+        mock_conn.cursor.return_value = mock_cursor
+
+        with patch("data_collector.adapters.db_stock_repository.transaction") as mock_tx:
+            mock_tx.return_value.__enter__.return_value = mock_conn
             stocks = [
                 Stock(stock_code="000001", name="平安银行"),
                 Stock(stock_code="000002", name="万科A"),

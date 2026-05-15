@@ -20,9 +20,13 @@ function goBack() {
 
 function goCompany() {
   const stock = stockStore.currentStock
-  if (stock?.company?.unifiedSocialCreditCode) {
-    router.push(`/companies/${stock.company.unifiedSocialCreditCode}`)
+  if (stock?.company?.id) {
+    router.push(`/companies/${stock.company.id}`)
   }
+}
+
+function goFinancial() {
+  router.push(`/stocks/${props.stockCode}/financial`)
 }
 
 function fmt(n: number | null) {
@@ -60,9 +64,14 @@ function exBadgeClass(ex: string | null) {
             </span>
             <span class="bm">{{ stockStore.currentStock.market || '-' }}</span>
           </div>
-          <button class="dl" @click="goCompany" v-if="stockStore.currentStock.company">
-            🏠 查看关联公司
-          </button>
+          <div class="dh-actions">
+            <button class="dl" @click="goFinancial">
+              📊 财务分析
+            </button>
+            <button class="dl" @click="goCompany" v-if="stockStore.currentStock.company">
+              🏠 关联公司
+            </button>
+          </div>
         </div>
         <div class="ds">{{ stockStore.currentStock.fullName || stockStore.currentStock.name }}</div>
       </div>
@@ -158,6 +167,12 @@ function exBadgeClass(ex: string | null) {
   margin-bottom: 10px;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.dh-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .dt {

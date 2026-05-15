@@ -27,9 +27,9 @@ describe('companyApi', () => {
     expect(url).toContain('controllerType=personal')
   })
 
-  it('getByUscCode should call correct endpoint', async () => {
-    mockGet.mockResolvedValue({ uscCode: 'code1' })
-    await companyApi.getByUscCode('code1')
+  it('getById should call correct endpoint', async () => {
+    mockGet.mockResolvedValue({ id: 'code1' })
+    await companyApi.getById('code1')
     expect(mockGet).toHaveBeenCalledWith('/api/v1/companies/code1')
   })
 

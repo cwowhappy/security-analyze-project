@@ -50,7 +50,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const http = {
-  get: <T>(url: string, params?: Record<string, string | number | boolean>) => {
+  get: <T>(url: string, params?: Record<string, string | number | boolean | undefined>) => {
     let fullUrl = url
     if (params) {
       const searchParams = new URLSearchParams()

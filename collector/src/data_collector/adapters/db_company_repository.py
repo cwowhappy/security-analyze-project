@@ -6,7 +6,7 @@ import structlog
 import ulid
 
 from data_collector.core.domain.company import Company
-from data_collector.infrastructure.db import execute_query, execute_update
+from data_collector.infrastructure.db import execute_query, execute_update, transaction
 
 logger = structlog.get_logger(__name__)
 
@@ -14,8 +14,13 @@ logger = structlog.get_logger(__name__)
 class DbCompanyRepository:
     """基于 PostgreSQL 的公司仓库实现。"""
 
-    def save(self, company: Company) -> None:
-        """保存或更新公司数据（Upsert 语义）。"""
+    def save(self, company: Company, conn=None) -> None:
+        """保存或更新公司数据（Upsert 语义）。
+
+        Args:
+            company: 公司领域对象。
+            conn: 可选的数据库连接，用于在显式事务中批量执行。
+        """
         if company.id is None:
             company.id = str(ulid.ULID())
 
@@ -81,24 +86,34 @@ class DbCompanyRepository:
             company.controller_name,
             company.controller_type,
         )
-        execute_update(sql, params)
+        if conn is not None:
+            cursor = conn.cursor()
+            cursor.execute(sql, params)
+            cursor.close()
+        else:
+            execute_update(sql, params)
         logger.debug("公司已保存", name=company.name)
 
     def save_all(self, companies: Sequence[Company]) -> tuple[int, int]:
-        """批量保存公司，返回 (成功数, 失败数)。"""
+        """批量保存公司，返回 (成功数, 失败数)。
+
+        采用显式事务批量提交，减少数据库往返开销；
+        单条失败仅跳过当前记录，不回滚整个批次。
+        """
         success = 0
         failed = 0
-        for company in companies:
-            try:
-                self.save(company)
-                success += 1
-            except Exception as e:
-                logger.warning(
-                    "批量保存公司失败",
-                    name=company.name,
-                    error=str(e),
-                )
-                failed += 1
+        with transaction() as conn:
+            for company in companies:
+                try:
+                    self.save(company, conn=conn)
+                    success += 1
+                except Exception as e:
+                    logger.warning(
+                        "批量保存公司失败",
+                        name=company.name,
+                        error=str(e),
+                    )
+                    failed += 1
         logger.info("批量保存完成", total=len(companies), success=success, failed=failed)
         return success, failed
 

@@ -1,6 +1,6 @@
 """PostgreSQL 公司仓库单元测试。"""
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from data_collector.adapters.db_company_repository import DbCompanyRepository
 from data_collector.core.domain.company import Company
@@ -24,8 +24,12 @@ class TestDbCompanyRepository:
             assert "ON CONFLICT (unified_social_credit_code)" in sql
 
     def test_should_save_all_companies(self) -> None:
-        with patch("data_collector.adapters.db_company_repository.execute_update") as mock_update:
-            mock_update.return_value = 1
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.cursor.return_value = mock_cursor
+
+        with patch("data_collector.adapters.db_company_repository.transaction") as mock_tx:
+            mock_tx.return_value.__enter__.return_value = mock_conn
             companies = [
                 Company(name="平安银行股份有限公司"),
                 Company(name="万科企业股份有限公司"),
@@ -33,6 +37,7 @@ class TestDbCompanyRepository:
             success, failed = self.repo.save_all(companies)
             assert success == 2
             assert failed == 0
+            assert mock_cursor.execute.call_count == 2
 
     def test_should_find_by_usc_code(self) -> None:
         with patch("data_collector.adapters.db_company_repository.execute_query") as mock_query:

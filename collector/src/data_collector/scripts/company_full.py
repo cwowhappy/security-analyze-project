@@ -42,6 +42,44 @@ def _parse_capital(value: str | None) -> Decimal | None:
         return None
 
 
+def _parse_province_city(address: str | None) -> tuple[str | None, str | None]:
+    """从注册地址解析省份和城市。
+
+    中国地址通常以"省/市/自治区"开头， followed by 城市名。
+    """
+    if not address:
+        return None, None
+    addr = str(address).strip()
+    # 直辖市
+    for city in ("北京市", "上海市", "天津市", "重庆市"):
+        if addr.startswith(city):
+            return city, city
+    # 省份（含自治区）
+    province_keywords = [
+        "黑龙江省", "内蒙古自治区", "新疆维吾尔自治区", "广西壮族自治区", "宁夏回族自治区", "西藏自治区",
+        "河北省", "山西省", "辽宁省", "吉林省", "江苏省", "浙江省", "安徽省", "福建省", "江西省",
+        "山东省", "河南省", "湖北省", "湖南省", "广东省", "海南省", "四川省", "贵州省", "云南省",
+        "陕西省", "甘肃省", "青海省", "台湾省"
+    ]
+    for pk in province_keywords:
+        if addr.startswith(pk):
+            # 尝试提取城市：省份后的下一个行政区划单位
+            rest = addr[len(pk):].lstrip("省自治区维吾尔回族")
+            # 通常城市名在 2-4 个字符之间，以"市"结尾
+            if len(rest) >= 2:
+                # 简单取前几个字符，若包含"市"则截取到"市"
+                if "市" in rest:
+                    city_end = rest.index("市") + 1
+                    city = rest[:city_end]
+                    return pk, city
+                else:
+                    return pk, rest[:4] if len(rest) >= 4 else rest
+    #  fallback：尝试简单模式
+    if len(addr) >= 2:
+        return addr[:2] + "省" if not addr[:2].endswith("省") else addr[:2], None
+    return None, None
+
+
 def fetch_company_for_stock(stock_code: str) -> Company | None:
     """为单只股票获取公司详情。
 
@@ -60,28 +98,31 @@ def fetch_company_for_stock(stock_code: str) -> Company | None:
 
     row = df.iloc[0]
     try:
+        reg_address = str(row.get("注册地址", "")).strip() or None
+        province, city = _parse_province_city(reg_address)
+
         company = Company(
             id=str(ulid.ULID()),
-            unified_social_credit_code=str(row.get("统一社会信用代码", "")).strip() or None,
+            unified_social_credit_code=None,  # stock_profile_cninfo 不返回统一社会信用代码，需通过其他数据源补充
             name=str(row.get("公司名称", stock_code)).strip(),
-            short_name=str(row.get("证券简称", "")).strip() or None,
+            short_name=str(row.get("A股简称", "")).strip() or None,
             english_name=str(row.get("英文名称", "")).strip() or None,
-            former_name=str(row.get("曾用名", "")).strip() or None,
+            former_name=str(row.get("曾用简称", "")).strip() or None,
             legal_representative=str(row.get("法人代表", "")).strip() or None,
-            chairman=str(row.get("董事长", "")).strip() or None,
-            manager=str(row.get("总经理", "")).strip() or None,
-            secretary=str(row.get("董秘", "")).strip() or None,
-            reg_capital=_parse_capital(row.get("注册资本")),
+            chairman=None,  # 当前数据源不返回董事长
+            manager=None,   # 当前数据源不返回总经理
+            secretary=None, # 当前数据源不返回董秘
+            reg_capital=_parse_capital(row.get("注册资金")),
             setup_date=_parse_date(row.get("成立日期")),
-            province=str(row.get("省份", "")).strip() or None,
-            city=str(row.get("城市", "")).strip() or None,
-            reg_address=str(row.get("注册地址", "")).strip() or None,
+            province=province,
+            city=city,
+            reg_address=reg_address,
             office_address=str(row.get("办公地址", "")).strip() or None,
-            website=str(row.get("公司网站", "")).strip() or None,
-            industry=str(row.get("行业分类", "")).strip() or None,
+            website=str(row.get("官方网站", "")).strip() or None,
+            industry=str(row.get("所属行业", "")).strip() or None,
             main_business=str(row.get("主营业务", "")).strip() or None,
             business_scope=str(row.get("经营范围", "")).strip() or None,
-            introduction=str(row.get("公司简介", "")).strip() or None,
+            introduction=str(row.get("机构简介", "")).strip() or None,
         )
         logger.info("公司详情获取成功", stock_code=stock_code, name=company.name)
         return company

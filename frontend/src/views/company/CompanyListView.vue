@@ -41,8 +41,8 @@ async function fetchData() {
   }
 }
 
-function goDetail(uscCode: string) {
-  router.push(`/companies/${uscCode}`)
+function goDetail(id: string) {
+  router.push(`/companies/${id}`)
 }
 
 function prevPage() {
@@ -127,7 +127,7 @@ onMounted(fetchData)
           </tr>
         </thead>
         <tbody>
-          <tr v-for="company in companies" :key="company.id" @click="goDetail(company.unifiedSocialCreditCode)" class="cursor-row">
+          <tr v-for="company in companies" :key="company.id" @click="goDetail(company.id)" class="cursor-row">
             <td>{{ company.name }}</td>
             <td>{{ company.shortName || '-' }}</td>
             <td>{{ company.industry || '-' }}</td>
@@ -136,7 +136,7 @@ onMounted(fetchData)
             <td><span class="bs" :class="ctBadgeClass(company.controllerType)">{{ company.controllerType || '其他' }}</span></td>
             <td>{{ company.legalRepresentative || '-' }}</td>
             <td class="nr">{{ fmt(company.employees) }}</td>
-            <td><button class="lb" @click.stop="goDetail(company.unifiedSocialCreditCode)">详情</button></td>
+            <td><button class="lb" @click.stop="goDetail(company.id)">详情</button></td>
           </tr>
           <tr v-if="!companies.length">
             <td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted)">无匹配结果</td>

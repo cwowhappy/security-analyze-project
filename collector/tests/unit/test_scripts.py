@@ -37,6 +37,9 @@ class TestParseDate:
     def test_parse_date_field_valid(self):
         assert _parse_date_field("2021-06-15") == date(2021, 6, 15)
 
+    def test_parse_date_field_YYYYMMDD(self):
+        assert _parse_date_field("20210615") == date(2021, 6, 15)
+
     def test_parse_date_field_none(self):
         assert _parse_date_field(None) is None
 
@@ -93,6 +96,12 @@ class TestToTsCode:
     def test_infer_bj_8(self):
         assert _to_ts_code("830001", None) == "830001.BJ"
 
+    def test_infer_bj_82(self):
+        assert _to_ts_code("920001", None) == "920001.BJ"
+
+    def test_infer_bj_88(self):
+        assert _to_ts_code("880001", None) == "880001.BJ"
+
     def test_empty_code(self):
         assert _to_ts_code("", None) is None
 
@@ -120,6 +129,9 @@ class TestToExchange:
 
     def test_infer_bse(self):
         assert _to_exchange("430001", None) == "BSE"
+
+    def test_infer_bse_92(self):
+        assert _to_exchange("920001", None) == "BSE"
 
     def test_unknown_prefix(self):
         assert _to_exchange("900001", None) is None

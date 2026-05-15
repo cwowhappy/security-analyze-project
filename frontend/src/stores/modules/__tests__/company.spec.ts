@@ -3,12 +3,12 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useCompanyStore } from '../company'
 
 const mockList = vi.fn()
-const mockGetByUscCode = vi.fn()
+const mockGetById = vi.fn()
 
 vi.mock('@/api/modules/company', () => ({
   companyApi: {
     list: (...args: unknown[]) => mockList(...args),
-    getByUscCode: (...args: unknown[]) => mockGetByUscCode(...args),
+    getById: (...args: unknown[]) => mockGetById(...args),
   },
 }))
 
@@ -16,7 +16,7 @@ describe('company store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     mockList.mockClear()
-    mockGetByUscCode.mockClear()
+    mockGetById.mockClear()
   })
 
   it('should have initial state', () => {
@@ -41,9 +41,9 @@ describe('company store', () => {
 
   it('fetchCompanyDetail should update currentCompany', async () => {
     const store = useCompanyStore()
-    mockGetByUscCode.mockResolvedValue({ name: 'Detail Co' })
+    mockGetById.mockResolvedValue({ name: 'Detail Co' })
 
-    await store.fetchCompanyDetail('usc-123')
+    await store.fetchCompanyDetail('id-123')
 
     expect(store.currentCompany).toEqual({ name: 'Detail Co' })
     expect(store.loading).toBe(false)

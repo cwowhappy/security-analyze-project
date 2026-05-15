@@ -18,8 +18,8 @@ export const companyApi = {
   },
 
   /** 获取公司详情 */
-  getByUscCode: (uscCode: string) =>
-    http.get<CompanyDetail>(`${PREFIX}/${uscCode}`),
+  getById: (id: string) =>
+    http.get<CompanyDetail>(`${PREFIX}/${id}`),
 
   /** 创建公司 */
   create: (data: CreateCompanyRequest) => http.post<string>(PREFIX, data),

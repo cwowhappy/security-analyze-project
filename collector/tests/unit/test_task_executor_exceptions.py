@@ -33,6 +33,7 @@ class TestTaskExecutorExceptions:
         task = CollectionTask(
             id="test-id",
             task_type="stock_single",
+            mode="single",
             task_params={},
         )
 
@@ -47,6 +48,7 @@ class TestTaskExecutorExceptions:
         task = CollectionTask(
             id="test-id",
             task_type="company_single",
+            mode="single",
             task_params={},
         )
 

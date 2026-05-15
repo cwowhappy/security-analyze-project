@@ -88,6 +88,30 @@ def execute_update(sql: str, params: tuple[Any, ...] | None = None) -> int:
         return cursor.rowcount
 
 
+@contextmanager
+def transaction():
+    """显式事务控制的上下文管理器。
+
+    适用于需要批量执行多条 SQL 并统一提交的场景。
+    使用方式::
+
+        with transaction() as conn:
+            cursor = conn.cursor()
+            cursor.execute(...)
+            cursor.execute(...)
+            cursor.close()
+    """
+    conn = get_pool().getconn()
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        get_pool().putconn(conn)
+
+
 def close_pool() -> None:
     """关闭连接池。"""
     global _pool

@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 公司 REST 控制器。
@@ -41,9 +42,9 @@ public class CompanyController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
-    @GetMapping("/{uscCode}")
-    public ResponseEntity<ApiResponse<CompanyDTO>> getCompany(@PathVariable String uscCode) {
-        return companyAppService.findByUscCode(uscCode)
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<CompanyDTO>> getCompany(@PathVariable String id) {
+        return companyAppService.findById(id)
                 .map(dto -> {
                     List<StockDTO> stocks = stockAppService.findByCompanyId(dto.getId());
                     List<StockBriefDTO> briefStocks = stocks.stream()
@@ -59,7 +60,41 @@ public class CompanyController {
                     return ResponseEntity.ok(ApiResponse.success(dto));
                 })
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), "公司不存在: " + uscCode)));
+                        .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), "公司不存在: " + id)));
+    }
+
+    /**
+     * 通过股票代码查询公司信息（备用接口，用于统一社会信用代码缺失场景）。
+     */
+    @GetMapping("/by-stock/{stockCode}")
+    public ResponseEntity<ApiResponse<CompanyDTO>> getCompanyByStockCode(@PathVariable String stockCode) {
+        Optional<StockDTO> stockOpt = stockAppService.findByStockCode(stockCode);
+        if (stockOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), "股票不存在: " + stockCode));
+        }
+        StockDTO stock = stockOpt.get();
+        if (stock.getCompanyId() == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), "股票未关联公司信息: " + stockCode));
+        }
+        return companyAppService.findById(stock.getCompanyId())
+                .map(dto -> {
+                    List<StockDTO> stocks = stockAppService.findByCompanyId(dto.getId());
+                    List<StockBriefDTO> briefStocks = stocks.stream()
+                            .map(s -> StockBriefDTO.builder()
+                                    .stockCode(s.getStockCode())
+                                    .name(s.getName())
+                                    .market(s.getMarket())
+                                    .exchange(s.getExchange())
+                                    .listDate(s.getListDate())
+                                    .build())
+                            .toList();
+                    dto.setStocks(briefStocks);
+                    return ResponseEntity.ok(ApiResponse.success(dto));
+                })
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), "公司不存在: " + stock.getCompanyId())));
     }
 
     @PostMapping

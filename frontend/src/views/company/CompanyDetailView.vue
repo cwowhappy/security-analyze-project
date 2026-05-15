@@ -4,14 +4,14 @@ import { useRouter } from 'vue-router'
 import { useCompanyStore } from '@/stores/modules/company'
 
 const props = defineProps<{
-  uscCode: string
+  id: string
 }>()
 
 const companyStore = useCompanyStore()
 const router = useRouter()
 
 onMounted(() => {
-  companyStore.fetchCompanyDetail(props.uscCode)
+  companyStore.fetchCompanyDetail(props.id)
 })
 
 function goBack() {

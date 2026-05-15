@@ -88,13 +88,20 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '股票详情', parent: { name: '股票列表', path: '/stocks' } },
   },
   {
+    path: '/stocks/:stockCode/financial',
+    name: 'FinancialAnalysis',
+    component: () => import('@/views/financial/FinancialAnalysisView.vue'),
+    props: true,
+    meta: { title: '财务分析', parent: { name: '股票详情', path: '/stocks/:stockCode' } },
+  },
+  {
     path: '/companies',
     name: 'CompanyList',
     component: () => import('@/views/company/CompanyListView.vue'),
     meta: { title: '公司列表' },
   },
   {
-    path: '/companies/:uscCode',
+    path: '/companies/:id',
     name: 'CompanyDetail',
     component: () => import('@/views/company/CompanyDetailView.vue'),
     props: true,

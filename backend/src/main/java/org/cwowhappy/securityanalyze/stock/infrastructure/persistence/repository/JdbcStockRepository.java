@@ -109,6 +109,14 @@ public class JdbcStockRepository implements StockRepository {
     }
 
     @Override
+    public List<Stock> findByIndustry(String industry) {
+        String sql = "SELECT * FROM tb_stock_basic WHERE industry = :industry ORDER BY stock_code";
+        List<StockEntity> results = jdbcTemplate.query(sql,
+                new MapSqlParameterSource("industry", industry), rowMapper);
+        return results.stream().map(this::toDomain).toList();
+    }
+
+    @Override
     public StockId save(Stock stock) {
         String sql = """
                 INSERT INTO tb_stock_basic (

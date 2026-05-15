@@ -6,7 +6,7 @@ import structlog
 import ulid
 
 from data_collector.core.domain.stock import Stock
-from data_collector.infrastructure.db import execute_query, execute_update
+from data_collector.infrastructure.db import execute_query, execute_update, transaction
 
 logger = structlog.get_logger(__name__)
 
@@ -14,8 +14,13 @@ logger = structlog.get_logger(__name__)
 class DbStockRepository:
     """基于 PostgreSQL 的股票仓库实现。"""
 
-    def save(self, stock: Stock) -> None:
-        """保存或更新股票数据（Upsert 语义）。"""
+    def save(self, stock: Stock, conn=None) -> None:
+        """保存或更新股票数据（Upsert 语义）。
+
+        Args:
+            stock: 股票领域对象。
+            conn: 可选的数据库连接，用于在显式事务中批量执行。
+        """
         if stock.id is None:
             stock.id = str(ulid.ULID())
 
@@ -54,24 +59,34 @@ class DbStockRepository:
             stock.float_shares,
             stock.company_id,
         )
-        execute_update(sql, params)
+        if conn is not None:
+            cursor = conn.cursor()
+            cursor.execute(sql, params)
+            cursor.close()
+        else:
+            execute_update(sql, params)
         logger.debug("股票已保存", stock_code=stock.stock_code, name=stock.name)
 
     def save_all(self, stocks: Sequence[Stock]) -> tuple[int, int]:
-        """批量保存股票，返回 (成功数, 失败数)。"""
+        """批量保存股票，返回 (成功数, 失败数)。
+
+        采用显式事务批量提交，减少数据库往返开销；
+        单条失败仅跳过当前记录，不回滚整个批次。
+        """
         success = 0
         failed = 0
-        for stock in stocks:
-            try:
-                self.save(stock)
-                success += 1
-            except Exception as e:
-                logger.warning(
-                    "批量保存股票失败",
-                    stock_code=stock.stock_code,
-                    error=str(e),
-                )
-                failed += 1
+        with transaction() as conn:
+            for stock in stocks:
+                try:
+                    self.save(stock, conn=conn)
+                    success += 1
+                except Exception as e:
+                    logger.warning(
+                        "批量保存股票失败",
+                        stock_code=stock.stock_code,
+                        error=str(e),
+                    )
+                    failed += 1
         logger.info("批量保存完成", total=len(stocks), success=success, failed=failed)
         return success, failed
 

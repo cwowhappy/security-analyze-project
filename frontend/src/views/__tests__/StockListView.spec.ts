@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { ref } from 'vue'
 import StockListView from '../stock/StockListView.vue'
 
 const mockPush = vi.fn()

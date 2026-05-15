@@ -1,9 +1,10 @@
 """采集器 CLI 入口。
 
 以数据类型为维度组织子命令：
-  stock     股票数据采集
-  company   公司数据采集
+  stock      股票数据采集
+  company    公司数据采集
   supplement 字段补充采集
+  financial  财务数据采集
 
 每个子命令支持两种操作模式（互斥）：
   --full, -f        全量采集
@@ -91,6 +92,24 @@ def _run_data_type(data_type: str, args: argparse.Namespace) -> int:
         close_pool()
 
 
+def _run_financial(args: argparse.Namespace) -> int:
+    """执行财务数据采集任务。"""
+    executor, task_repo = _init_context()
+    try:
+        task_type = f"financial_{args.type}"
+        task_params: dict = {}
+        if args.code:
+            task_params["stock_code"] = args.code
+
+        task = CollectionTask(
+            task_type=task_type,
+            task_params=task_params,
+        )
+        return _execute_and_report(executor, task_repo, task)
+    finally:
+        close_pool()
+
+
 def _add_mode_args(parser: argparse.ArgumentParser) -> None:
     """为子命令添加互斥的操作模式参数。"""
     mode_group = parser.add_mutually_exclusive_group()
@@ -128,6 +147,16 @@ def build_parser() -> argparse.ArgumentParser:
     supplement_parser = subparsers.add_parser("supplement", help="字段补充采集（Tushare）")
     _add_mode_args(supplement_parser)
 
+    # financial 子命令
+    financial_parser = subparsers.add_parser("financial", help="财务数据采集")
+    financial_parser.add_argument(
+        "--type", "-t",
+        required=True,
+        choices=["income", "balance", "cashflow", "indicator", "full"],
+        help="采集类型: income(利润表) / balance(资产负债表) / cashflow(现金流量表) / indicator(指标计算) / full(三表+指标全量)",
+    )
+    _add_mode_args(financial_parser)
+
     return parser
 
 
@@ -142,6 +171,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _run_data_type("company", args)
     elif args.command == "supplement":
         return _run_data_type("field", args)
+    elif args.command == "financial":
+        return _run_financial(args)
     else:
         parser.print_help()
         return 1
