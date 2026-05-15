@@ -29,6 +29,8 @@ public class CollectionTaskRowMapper implements RowMapper<CollectionTaskEntity> 
         entity.setErrorMessage(rs.getString("error_message"));
         entity.setStartedAt(toLocalDateTime(rs.getTimestamp("started_at")));
         entity.setCompletedAt(toLocalDateTime(rs.getTimestamp("completed_at")));
+        entity.setMode(rs.getString("mode"));
+        entity.setSourcePriority(rs.getString("source_priority"));
         entity.setCreatedAt(toLocalDateTime(rs.getTimestamp("created_at")));
         return entity;
     }
