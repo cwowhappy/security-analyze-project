@@ -39,3 +39,16 @@ class TestConverters:
         assert convert("capital", "1000") == 1000.0
         assert convert("capital", None) is None
         assert convert("capital", "") is None
+
+    def test_decimal_converter(self):
+        from decimal import Decimal
+
+        assert convert("decimal", "1234.56") == Decimal("1234.56")
+        assert convert("decimal", "1,234.56") == Decimal("1234.56")
+        assert convert("decimal", "--") is None
+        assert convert("decimal", "-") is None
+        assert convert("decimal", "NaN") is None
+        assert convert("decimal", "nan") is None
+        assert convert("decimal", "") is None
+        assert convert("decimal", None) is None
+        assert convert("decimal", float("nan")) is None

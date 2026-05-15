@@ -1,0 +1,74 @@
+task_type: financial_balance
+ttl_hours: 168
+
+sources:
+  - name: akshare
+    adapter: financial_sina_adapter
+    priority: 1
+    field_mapping:
+      - api_field: ["报告日", "报告期", "报告日期"]
+        db_field: "report_date"
+        converter: "date_hyphen"
+        null_policy: "fail"
+      - api_field: ["资产总计", "总资产"]
+        db_field: "total_assets"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["负债合计", "负债总计"]
+        db_field: "total_liabilities"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["所有者权益合计", "股东权益合计"]
+        db_field: "total_equity"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["归属于母公司所有者权益合计"]
+        db_field: "equity_parent_company"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["流动资产合计"]
+        db_field: "current_assets"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["非流动资产合计"]
+        db_field: "non_current_assets"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["货币资金"]
+        db_field: "cash_equivalents"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["应收账款"]
+        db_field: "accounts_receivable"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["存货"]
+        db_field: "inventories"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["流动负债合计"]
+        db_field: "current_liabilities"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["非流动负债合计"]
+        db_field: "non_current_liabilities"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["应付账款"]
+        db_field: "accounts_payable"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["短期借款"]
+        db_field: "short_term_borrowings"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["长期借款"]
+        db_field: "long_term_borrowings"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["商誉"]
+        db_field: "goodwill"
+        converter: "decimal"
+        null_policy: "skip"
+    params:
+      symbol: "资产负债表"

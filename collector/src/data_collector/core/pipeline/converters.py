@@ -2,6 +2,7 @@
 
 import datetime
 from collections.abc import Callable
+from decimal import Decimal
 from typing import Any
 
 _CONVERTERS: dict[str, Callable[[Any], Any]] = {}
@@ -36,3 +37,22 @@ def _parse_capital(value):
 
 
 register_converter("capital", _parse_capital)
+
+
+def _parse_decimal(value):
+    """安全转换为 Decimal，处理 --、-、NaN、逗号等异常值。"""
+    if value is None:
+        return None
+    try:
+        v = str(value).replace(",", "").strip()
+        if v in ("--", "-", "", "NaN", "nan"):
+            return None
+        d = Decimal(v)
+        if d != d:  # NaN 判断: NaN != NaN
+            return None
+        return d
+    except (ValueError, TypeError):
+        return None
+
+
+register_converter("decimal", _parse_decimal)

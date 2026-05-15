@@ -1,0 +1,42 @@
+task_type: financial_cashflow
+ttl_hours: 168
+
+sources:
+  - name: akshare
+    adapter: financial_sina_adapter
+    priority: 1
+    field_mapping:
+      - api_field: ["报告日", "报告期", "报告日期"]
+        db_field: "report_date"
+        converter: "date_hyphen"
+        null_policy: "fail"
+      - api_field: ["经营活动产生的现金流量净额"]
+        db_field: "cf_operating"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["投资活动产生的现金流量净额"]
+        db_field: "cf_investing"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["筹资活动产生的现金流量净额"]
+        db_field: "cf_financing"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["现金及现金等价物净增加额"]
+        db_field: "net_cash_flow"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["购建固定资产、无形资产和其他长期资产支付的现金"]
+        db_field: "capex"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["销售商品、提供劳务收到的现金"]
+        db_field: "cash_received_operating"
+        converter: "decimal"
+        null_policy: "skip"
+      - api_field: ["支付的各项税费"]
+        db_field: "tax_paid"
+        converter: "decimal"
+        null_policy: "skip"
+    params:
+      symbol: "现金流量表"
