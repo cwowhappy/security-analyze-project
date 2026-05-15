@@ -20,4 +20,8 @@ public interface CollectionTaskRepository {
     List<CollectionTask> findByStatus(String status);
 
     CollectionTaskId save(CollectionTask task);
+
+    List<CollectionTaskOverview> findMonitorOverview(int ttlHours);
+
+    Long countAllStocks();
 }
