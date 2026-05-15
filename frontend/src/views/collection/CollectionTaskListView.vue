@@ -21,11 +21,13 @@ const statusOptions = [
 ]
 
 const taskTypeOptions = [
-  { label: '股票全量', value: 'stock_full' },
-  { label: '公司全量', value: 'company_full' },
-  { label: '股票单条', value: 'stock_single' },
-  { label: '公司单条', value: 'company_single' },
-  { label: '字段补充', value: 'field_supplement' },
+  { label: '股票基础信息', value: 'stock_basic' },
+  { label: '公司信息', value: 'company_info' },
+  { label: '利润表', value: 'financial_income' },
+  { label: '资产负债表', value: 'financial_balance' },
+  { label: '现金流量表', value: 'financial_cashflow' },
+  { label: '财务指标', value: 'financial_indicator' },
+  { label: '财务全量', value: 'financial_full' },
 ]
 
 const stats = computed(() => {
@@ -110,11 +112,13 @@ function statusText(s: string) {
 
 function typeText(t: string) {
   const map: Record<string, string> = {
-    stock_full: '股票全量',
-    company_full: '公司全量',
-    stock_single: '股票单条',
-    company_single: '公司单条',
-    field_supplement: '字段补充',
+    stock_basic: '股票基础信息',
+    company_info: '公司信息',
+    financial_income: '利润表',
+    financial_balance: '资产负债表',
+    financial_cashflow: '现金流量表',
+    financial_indicator: '财务指标',
+    financial_full: '财务全量',
   }
   return map[t] || t
 }
@@ -199,6 +203,9 @@ onMounted(fetchData)
         <div class="tinf">
           <div class="tnm">{{ typeText(task.taskType) }}</div>
           <div class="tmeta">
+            <span :class="['mode-tag', task.mode === 'single' ? 'mode-single' : 'mode-full']">
+              {{ task.mode === 'single' ? '单条' : '全量' }}
+            </span>
             <span>{{ task.dataSource || '-' }}</span>
             <span>{{ formatTime(task.startedAt) }}</span>
             <span>{{ fmt(task.totalCount) }}条</span>
@@ -396,6 +403,10 @@ onMounted(fetchData)
   gap: 14px;
   flex-wrap: wrap;
 }
+
+.mode-tag { display: inline-flex; padding: 1px 6px; border-radius: 8px; font-size: 11px; font-weight: 700; }
+.mode-full { background: var(--surface-hover); color: var(--text-secondary); border: 1px solid var(--border); }
+.mode-single { background: rgba(99,91,255,0.1); color: var(--primary); }
 
 .tst {
   display: inline-flex;
