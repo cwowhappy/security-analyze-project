@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.cwowhappy.securityanalyze.collection.application.dto.CollectionMonitorBaselineDTO;
+import org.cwowhappy.securityanalyze.collection.application.dto.CollectionMonitorOverviewDTO;
 import org.cwowhappy.securityanalyze.collection.application.dto.CollectionTaskDTO;
 import org.cwowhappy.securityanalyze.collection.application.service.CollectionTaskAppService;
 import org.cwowhappy.securityanalyze.collection.domain.model.CollectionTask;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -76,6 +79,26 @@ public class CollectionTaskAppServiceImpl implements CollectionTaskAppService {
         CollectionTaskId id = taskRepository.save(task);
         log.info("采集任务创建成功: id={}", id);
         return id.getValue();
+    }
+
+    @Override
+    public List<CollectionMonitorOverviewDTO> getMonitorOverview() {
+        int ttlHours = 24; // 可从配置注入，这里先硬编码默认值
+        return taskRepository.findMonitorOverview(ttlHours).stream()
+                .map(o -> CollectionMonitorOverviewDTO.builder()
+                        .taskType(o.getTaskType())
+                        .totalCount(o.getTotalCount())
+                        .recentSuccessCount(o.getRecentSuccessCount())
+                        .recentExpiredCount(o.getRecentExpiredCount())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public CollectionMonitorBaselineDTO getMonitorBaseline() {
+        return CollectionMonitorBaselineDTO.builder()
+                .totalStocks(taskRepository.countAllStocks())
+                .build();
     }
 
     private CollectionTaskDTO toDTO(CollectionTask task) {
