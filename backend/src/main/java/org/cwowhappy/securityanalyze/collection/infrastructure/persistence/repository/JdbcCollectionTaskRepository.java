@@ -84,16 +84,18 @@ public class JdbcCollectionTaskRepository implements CollectionTaskRepository {
     public CollectionTaskId save(CollectionTask task) {
         String sql = """
                 INSERT INTO tb_collection_task (
-                    id, task_type, task_params, status, data_source,
+                    id, task_type, mode, source_priority, task_params, status, data_source,
                     total_count, success_count, fail_count,
                     error_message, started_at, completed_at, created_at
                 ) VALUES (
-                    :id, :taskType, :taskParams::jsonb, :status, :dataSource,
+                    :id, :taskType, :mode, :sourcePriority::jsonb, :taskParams::jsonb, :status, :dataSource,
                     :totalCount, :successCount, :failCount,
                     :errorMessage, :startedAt, :completedAt, :createdAt
                 )
                 ON CONFLICT (id) DO UPDATE SET
                     task_type = EXCLUDED.task_type,
+                    mode = EXCLUDED.mode,
+                    source_priority = EXCLUDED.source_priority,
                     task_params = EXCLUDED.task_params,
                     status = EXCLUDED.status,
                     data_source = EXCLUDED.data_source,
@@ -114,6 +116,8 @@ public class JdbcCollectionTaskRepository implements CollectionTaskRepository {
         return CollectionTask.builder()
                 .id(CollectionTaskId.of(entity.getId()))
                 .taskType(entity.getTaskType())
+                .mode(entity.getMode())
+                .sourcePriority(entity.getSourcePriority())
                 .taskParams(entity.getTaskParams())
                 .status(entity.getStatus())
                 .dataSource(entity.getDataSource())
@@ -131,6 +135,8 @@ public class JdbcCollectionTaskRepository implements CollectionTaskRepository {
         CollectionTaskEntity entity = new CollectionTaskEntity();
         entity.setId(task.getId().getValue());
         entity.setTaskType(task.getTaskType());
+        entity.setMode(task.getMode());
+        entity.setSourcePriority(task.getSourcePriority());
         entity.setTaskParams(task.getTaskParams());
         entity.setStatus(task.getStatus());
         entity.setDataSource(task.getDataSource());
