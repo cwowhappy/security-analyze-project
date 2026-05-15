@@ -6,6 +6,10 @@ from dataclasses import dataclass
 from typing import Callable
 
 
+class NonRecoverableError(Exception):
+    """不可恢复的错误，触发后不再重试。"""
+
+
 @dataclass
 class DelayState:
     current_delay: float
@@ -63,6 +67,9 @@ class AdaptiveRequestEngine:
                 result = fn(*args, **kwargs)
                 self.record_success(source)
                 return result
+            except NonRecoverableError:
+                self.record_failure(source, recoverable=False)
+                raise
             except Exception as e:
                 last_exception = e
                 self.record_failure(source, recoverable=True)

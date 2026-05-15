@@ -22,3 +22,30 @@ class TestAdaptiveRequestEngine:
         # 连续2次成功后应尝试降速
         delay = engine.get_delay("akshare")
         assert delay < 60.0 or pytest.approx(delay) == 60.0
+
+
+class TestAdaptiveRequestEngineRetry:
+    def test_recoverable_error_retries(self):
+        engine = AdaptiveRequestEngine(min_delay=0.01, max_delay=0.1, backoff_jitter=0.0, retry_max_attempts=3)
+        call_count = 0
+        def flaky():
+            nonlocal call_count
+            call_count += 1
+            if call_count < 3:
+                raise TimeoutError("timeout")
+            return "ok"
+        result = engine.execute("src", flaky)
+        assert result == "ok"
+        assert call_count == 3
+
+    def test_non_recoverable_error_no_retry(self):
+        from data_collector.core.pipeline.adaptive_request_engine import NonRecoverableError
+        engine = AdaptiveRequestEngine(min_delay=0.01, max_delay=0.1, backoff_jitter=0.0, retry_max_attempts=3)
+        call_count = 0
+        def fail_fast():
+            nonlocal call_count
+            call_count += 1
+            raise NonRecoverableError("not found")
+        with pytest.raises(NonRecoverableError):
+            engine.execute("src", fail_fast)
+        assert call_count == 1
