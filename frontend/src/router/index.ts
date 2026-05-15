@@ -136,6 +136,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/logs/LoginLogsView.vue'),
         meta: { title: '登录日志' },
       },
+      {
+        path: 'collection-monitor',
+        name: 'AdminCollectionMonitor',
+        component: () => import('@/views/admin/collection/CollectionMonitorView.vue'),
+        meta: { title: '采集监控' },
+      },
     ],
   },
 ]
