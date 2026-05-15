@@ -25,3 +25,14 @@ register_converter("date", lambda x: datetime.datetime.strptime(str(x).strip(), 
 register_converter("datetime", lambda x: datetime.datetime.strptime(str(x).strip(), "%Y%m%d %H:%M:%S") if x else None)
 register_converter("shares_10k", lambda x: int(float(x) * 10000) if x is not None else None)
 register_converter("percent", lambda x: float(x) / 100 if x is not None else None)
+register_converter("date_hyphen", lambda x: datetime.datetime.strptime(str(x).strip(), "%Y-%m-%d").date() if x else None)
+
+
+def _parse_capital(value):
+    if value is None:
+        return None
+    cleaned = str(value).replace(",", "").replace("万", "").replace("亿", "").strip()
+    return float(cleaned) if cleaned else None
+
+
+register_converter("capital", _parse_capital)
