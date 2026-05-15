@@ -1,9 +1,26 @@
 """PostgreSQL 采集任务仓库单元测试。"""
 
+import pytest
 from unittest.mock import patch
 
 from data_collector.adapters.db_collection_task_repository import DbCollectionTaskRepository
 from data_collector.core.domain.collection_task import CollectionTask
+from data_collector.config import Settings
+from data_collector.infrastructure.db import init_pool, close_pool
+
+
+@pytest.fixture(autouse=True)
+def db_pool():
+    """初始化数据库连接池（集成测试需要）。"""
+    settings = Settings()
+    init_pool(settings)
+    yield
+    close_pool()
+
+
+@pytest.fixture
+def repo():
+    return DbCollectionTaskRepository()
 
 
 class TestDbCollectionTaskRepository:
@@ -68,3 +85,17 @@ class TestDbCollectionTaskRepository:
             results = self.repo.find_pending()
             assert len(results) == 2
             assert results[0].status == "pending"
+
+
+def test_save_and_find_with_mode_and_source_priority(repo):
+    from data_collector.core.domain.collection_task import CollectionTask
+    task = CollectionTask(
+        task_type="stock_basic",
+        mode="single",
+        source_priority=["akshare"],
+    )
+    repo.save(task)
+    found = repo.find_by_id(task.id)
+    assert found is not None
+    assert found.mode == "single"
+    assert found.source_priority == ["akshare"]

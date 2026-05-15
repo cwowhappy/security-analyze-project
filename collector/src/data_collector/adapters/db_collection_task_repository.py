@@ -21,17 +21,19 @@ class DbCollectionTaskRepository:
 
         sql = """
         INSERT INTO tb_collection_task (
-            id, task_type, task_params, status, data_source,
+            id, task_type, mode, source_priority, task_params, status, data_source,
             total_count, success_count, fail_count,
             error_message, started_at, completed_at, created_at
-        ) VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+        ) VALUES (%s, %s, %s, %s::jsonb, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
         """
         import json
 
         params = (
             task.id,
             task.task_type,
-            json.dumps(task.task_params),
+            task.mode,
+            json.dumps(task.source_priority) if task.source_priority else None,
+            json.dumps(task.task_params) if task.task_params else None,
             task.status,
             task.data_source,
             task.total_count,
@@ -55,9 +57,13 @@ class DbCollectionTaskRepository:
             fail_count = %s,
             error_message = %s,
             started_at = %s,
-            completed_at = %s
+            completed_at = %s,
+            mode = %s,
+            source_priority = %s::jsonb
         WHERE id = %s
         """
+        import json
+
         params = (
             task.status,
             task.data_source,
@@ -67,6 +73,8 @@ class DbCollectionTaskRepository:
             task.error_message,
             task.started_at,
             task.completed_at,
+            task.mode,
+            json.dumps(task.source_priority) if task.source_priority else None,
             task.id,
         )
         execute_update(sql, params)
