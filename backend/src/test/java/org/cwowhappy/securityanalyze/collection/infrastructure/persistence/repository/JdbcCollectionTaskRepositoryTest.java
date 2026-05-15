@@ -137,6 +137,7 @@ class JdbcCollectionTaskRepositoryTest {
         return CollectionTask.builder()
                 .id(CollectionTaskId.generate())
                 .taskType(taskType)
+                .mode("full")
                 .status(status)
                 .dataSource(dataSource)
                 .totalCount(0)

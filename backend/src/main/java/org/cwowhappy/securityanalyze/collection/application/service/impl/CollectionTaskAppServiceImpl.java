@@ -100,6 +100,8 @@ public class CollectionTaskAppServiceImpl implements CollectionTaskAppService {
                 .errorMessage(task.getErrorMessage())
                 .startedAt(task.getStartedAt())
                 .completedAt(task.getCompletedAt())
+                .mode(task.getMode())
+                .sourcePriority(task.getSourcePriority())
                 .createdAt(task.getCreatedAt())
                 .build();
     }
