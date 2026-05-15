@@ -17,6 +17,8 @@ public class CollectionTask {
     private String taskType;
     private String taskParams;
     private String status;
+    private String mode;
+    private String sourcePriority;
     private String dataSource;
     private Integer totalCount;
     private Integer successCount;
