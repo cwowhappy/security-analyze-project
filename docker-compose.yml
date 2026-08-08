@@ -1,0 +1,74 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: security-postgres
+    environment:
+      POSTGRES_DB: security_analyze
+      POSTGRES_USER: security
+      POSTGRES_PASSWORD: security
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - security-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U security -d security_analyze"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: security-backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: security_analyze
+      DB_USER: security
+      DB_PASSWORD: security
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "8080:8080"
+    networks:
+      - security-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: security-frontend
+    ports:
+      - "80:80"
+    networks:
+      - security-network
+    depends_on:
+      - backend
+
+  collector:
+    build:
+      context: ./collector
+      dockerfile: Dockerfile
+    container_name: security-collector
+    environment:
+      DATABASE_URL: postgresql+psycopg://security:security@postgres:5432/security_analyze
+      LOG_LEVEL: INFO
+      SCHEDULER_TIMEZONE: Asia/Shanghai
+    networks:
+      - security-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+
+networks:
+  security-network:
+    driver: bridge

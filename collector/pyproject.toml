@@ -1,0 +1,50 @@
+[project]
+name = "security-analyze-collector"
+version = "0.1.0"
+description = "Security data collection and scheduling service"
+requires-python = ">=3.12"
+dependencies = [
+    "apscheduler==3.11.0",
+    "sqlalchemy==2.0.36",
+    "psycopg==3.2.4",
+    "psycopg-binary==3.2.4",
+    "pydantic==2.10.6",
+    "pydantic-settings==2.7.1",
+    "httpx==0.28.1",
+    "requests==2.32.3",
+    "loguru==0.7.3",
+    "schedule==1.2.2",
+]
+
+[project.optional-dependencies]
+celery = [
+    "celery==5.4.0",
+    "redis==5.2.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==8.3.5",
+    "pytest-asyncio==0.25.3",
+    "pytest-cov==6.0.0",
+    "pytest-httpx==0.35.0",
+    "factory-boy==3.3.1",
+    "freezegun==1.5.1",
+    "ruff==0.9.7",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/conftest.py" = ["E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+addopts = "--cov=src --cov-report=term-missing --cov-report=html"

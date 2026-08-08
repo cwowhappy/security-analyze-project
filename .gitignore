@@ -23,13 +23,20 @@ backend/build/
 backend/logs/
 
 # Collector
+collector/.venv/
+collector/htmlcov/
+collector/.coverage
 collector/.pytest_cache/
 collector/.ruff_cache/
 collector/__pycache__/
 collector/src/**/__pycache__/
 collector/tests/**/__pycache__/
+collector/tests/test.db
 *.pyc
 *.pyo
+
+# Frontend coverage
+frontend/coverage/
 
 # Environment
 .env
