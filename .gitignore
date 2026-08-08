@@ -23,6 +23,8 @@ backend/build/
 backend/logs/
 
 # Collector
+collector/.venv/
+collector/htmlcov/
 collector/.pytest_cache/
 collector/.ruff_cache/
 collector/__pycache__/
